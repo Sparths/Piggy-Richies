@@ -41,11 +41,23 @@
   const DROP_DUR = 330, COL_STAGGER = 58, DROP_EASE = "cubic-bezier(.3,1.03,.43,1)";
   const rowPitch = () => { const a = cellAt(0, 0), b = cellAt(0, 1); return a && b ? b.getBoundingClientRect().top - a.getBoundingClientRect().top : (a ? a.offsetHeight : 60); };
 
+  // Reuse the <img> and just swap src (no element recreation -> no flicker).
+  function setSym(sym, id) {
+    if (ART.hasImage(id)) {
+      let img = sym.firstElementChild;
+      if (!img || img.tagName !== "IMG") { sym.textContent = ""; img = document.createElement("img"); img.alt = id; sym.appendChild(img); }
+      const url = ART.imageUrl(id);
+      if (img.getAttribute("src") !== url) img.setAttribute("src", url);
+    } else {
+      sym.innerHTML = ART.svg(id);
+    }
+  }
   function paintCell(col, row, id) {
     const c = cellAt(col, row), s = SYM[id] || { kind: "low" };
     c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky");
     c.querySelectorAll(".wmult,.brick-pop").forEach((e) => e.remove());
-    const sym = c.querySelector(".sym"); sym.style.transition = "none"; sym.style.transform = "none"; sym.innerHTML = symInner(id);
+    const sym = c.querySelector(".sym"); sym.style.transition = "none"; sym.style.transform = "none";
+    if (c.dataset.sym !== id) { setSym(sym, id); c.dataset.sym = id; }  // only re-render on actual change
   }
   // instant repaint (no motion) for changed cells
   function setStatic(b) {
@@ -126,7 +138,7 @@
         case "freeSpinTrigger": if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); await sleep(800); } break;
         case "enterFreeGame": { await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1; setHouse(lvl, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break; }
         case "updateFreeSpin": fsNow = ev.current; fsTot = ev.total; fsCount.textContent = `${ev.current} / ${ev.total}`; setPhase(); break;
-        case "collectBrick": { const c = cellAt(ev.position[0], ev.position[1]); const p = document.createElement("span"); p.className = "brick-pop"; p.textContent = "🧱"; c.appendChild(p); updateBricks(ev.bricks); SND.brick(); await sleep(220); break; }
+        case "collectBrick": { const c = cellAt(ev.position[0], ev.position[1]); const p = document.createElement("span"); p.className = "brick-pop"; p.textContent = "🧱"; c.appendChild(p); setTimeout(() => p.remove(), 1000); updateBricks(ev.bricks); SND.brick(); await sleep(220); break; }
         case "houseUpgrade": setHouse(ev.level, ev.house, ev.bricks); glow.className = "board-glow bonus"; burst("🏠 " + ev.house.toUpperCase()); toast(`HAUS-UPGRADE: ${ev.house} · +${ev.extraSpins} Freispiele`, true); SND.upgrade(); await sleep(1250); break;
         case "exitFreeGame": housePanel.classList.add("hidden"); glow.className = "board-glow"; curGametype = "basegame"; if (ev.totalWin > 0) { burst("🐷 " + fmt(ev.totalWin * bet())); await sleep(900); } break;
         case "setTotalWin": roundWin = ev.amount; countWin(roundWin); break;
@@ -146,7 +158,7 @@
     if (ev.wincapReached) { burst("MAX WIN! 15.000×"); toast("🐺 MAX WIN!", true); SND.bigwin(); }
     else if (ev.amount >= 100) { burst("MEGA WIN " + Math.round(ev.amount) + "×"); toast("MEGA WIN! " + fmt(ev.amount * bet()), true); SND.bigwin(); }
     else if (ev.amount >= 20) { burst("BIG WIN"); SND.bigwin(); }
-    await sleep(ev.amount > 0 ? 500 : 90); setPhase();
+    await sleep(ev.amount > 0 ? 500 : 90); setMult(1); setPhase();
   }
 
   // ---- spin / auto --------------------------------------------------------

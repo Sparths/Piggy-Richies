@@ -1,22 +1,25 @@
-/* Generated-asset manifest.
+/* Generated-asset manifest -- WIRED to the optimized WebP art.
  *
- * The game ships with built-in SVG vector art, so it looks complete with no
- * images at all. When you generate premium art (see docs/ASSET_PROMPTS.md),
- * drop the files under frontend/assets/ and list them here — the game picks
- * them up automatically and falls back to the SVG for anything not listed.
- *
- * Example once you've added art:
- *   symbols: {
- *     W:  "assets/symbols/W.webp",
- *     S:  "assets/symbols/S.webp",
- *     P1: "assets/symbols/P1.webp",
- *     ... (one per symbol id)
- *   },
- *   background: "assets/background.webp",
- *   logo:       "assets/logo.webp",
- */
+ * Source art was generated as PNG (see docs/ASSET_PROMPTS.md), then cropped to
+ * content, squared and converted to WebP for fast loading (22 MB -> ~0.8 MB).
+ * The game uses these automatically and falls back to built-in SVG for anything
+ * not listed. */
 window.PIGGY_ASSETS = {
-  symbols: {},      // symbol id -> image path
-  background: null, // full-bleed background image path, or null
-  logo: null,       // top-left logo/wordmark image path, or null
+  symbols: {
+    W:  "assets/symbols/W.webp",
+    S:  "assets/symbols/S.webp",
+    P1: "assets/symbols/P1.webp",
+    P2: "assets/symbols/P2.webp",
+    P3: "assets/symbols/P3.webp",
+    M1: "assets/symbols/M1.webp",
+    M2: "assets/symbols/M2.webp",
+    M3: "assets/symbols/M3.webp",
+    A:  "assets/symbols/A.webp",
+    K:  "assets/symbols/K.webp",
+    Q:  "assets/symbols/Q.webp",
+    J:  "assets/symbols/J.webp",
+    BR: "assets/symbols/BR.webp",
+  },
+  background: "assets/background.webp",
+  logo: "assets/logo.webp",
 };

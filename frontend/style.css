@@ -18,7 +18,8 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background
 /* logo */
 .logo{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 10px 6px;flex:none;}
 .logo #logo-mark{width:42px;height:42px;display:none;}
-.logo #logo-mark svg,.logo #logo-mark img{width:100%;height:100%;}
+.logo #logo-mark svg{width:100%;height:100%;}
+.logo #logo-mark img{height:64px;width:auto;display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.55));}
 .logo-txt{display:flex;flex-direction:column;align-items:center;line-height:1;text-align:center;}
 .logo-txt b{font-size:26px;letter-spacing:3px;font-weight:900;
   background:linear-gradient(180deg,#fff7d6,#ffd23f 55%,#cf9a12);-webkit-background-clip:text;background-clip:text;color:transparent;

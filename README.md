@@ -87,7 +87,15 @@ No third-party packages are required (standard-library Python ≥ 3.10).
 
 Just open `frontend/index.html` in a browser (the math build writes
 `game-config.js` + `game-books.js` next to it, so it runs straight from
-`file://` — no server needed). Press **SPIN**, or buy the bonus.
+`file://` — no server needed). Press **SPIN**, or buy the bonus. There's an
+in-game **ℹ️ How-it-works** and **📊 paytable**, a phase banner, win count-up
+and sound, so it's clear what's happening on every spin.
+
+**Art:** the client ships with built-in **SVG vector symbols** (no image files
+needed). For premium, submission-ready art, generate images with the prompts in
+[`docs/ASSET_PROMPTS.md`](docs/ASSET_PROMPTS.md), drop them in `frontend/assets/`
+and list them in `frontend/assets/manifest.js` — the game swaps them in
+automatically, falling back to SVG for anything missing.
 
 ---
 

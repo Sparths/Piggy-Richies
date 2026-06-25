@@ -5,31 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Stake's Huff &amp; Puff: Piggy Richies</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
 </head>
 <body>
+  <!-- decorative background layers (replaced by assets/background.* if present) -->
+  <div class="bg" id="bg">
+    <div class="bg-stars"></div>
+    <div class="bg-moon"></div>
+    <div class="bg-hills"></div>
+    <div class="bg-vignette"></div>
+  </div>
+
   <div id="app">
     <!-- ===== Top bar ===== -->
     <header class="topbar">
-      <div class="brand">
-        <span class="brand-wolf">🐺</span>
+      <div class="brand" id="brand">
+        <span class="brand-mark" id="brand-mark"></span>
         <div class="brand-text">
           <strong>HUFF &amp; PUFF</strong>
-          <small>Piggy Richies</small>
+          <small>PIGGY RICHIES</small>
         </div>
       </div>
-      <div class="topbar-meta">
+      <div class="topbar-right">
         <div class="chip"><label>RTP</label><span id="meta-rtp">96.55%</span></div>
-        <div class="chip"><label>MAX WIN</label><span id="meta-max">15,000×</span></div>
-        <div class="chip vol"><label>VOLATILITÄT</label><span>SEHR HOCH</span></div>
+        <div class="chip"><label>MAX&nbsp;WIN</label><span id="meta-max">15.000×</span></div>
+        <button class="icon-btn" id="btn-paytable" title="Auszahlungen">📊</button>
+        <button class="icon-btn" id="btn-help" title="So funktioniert's">ℹ️</button>
+        <button class="icon-btn" id="btn-sound" title="Ton an/aus">🔊</button>
       </div>
     </header>
 
     <!-- ===== Stage ===== -->
     <main class="stage">
-      <!-- House / level progress (free spins) -->
+      <!-- house upgrade panel (free spins only) -->
       <div id="house-panel" class="house-panel hidden">
-        <div class="house-icon" id="house-icon">🏠</div>
+        <div class="house-build" id="house-build">
+          <div class="house-emoji" id="house-emoji">🌾</div>
+        </div>
         <div class="house-info">
           <div class="house-name" id="house-name">Stroh-Haus</div>
           <div class="brick-track">
@@ -38,77 +49,114 @@
           </div>
         </div>
         <div class="fs-counter">
-          <label>FREISPIELE</label>
+          <label>FREISPIEL</label>
           <span id="fs-count">0 / 0</span>
         </div>
       </div>
 
-      <!-- The wolf, who does the huffing and puffing -->
-      <div class="wolf" id="wolf">🐺</div>
+      <div class="board-area">
+        <!-- multiplier meter (left rail) -->
+        <div class="mult-rail">
+          <label>WOLF</label>
+          <div class="mult-badge" id="mult-badge">×1</div>
+          <div class="mult-ladder" id="mult-ladder"></div>
+        </div>
 
-      <!-- Reels -->
-      <div class="board-frame">
-        <div class="board" id="board"></div>
-        <div class="board-glow" id="board-glow"></div>
-        <!-- Big win / multiplier overlay -->
-        <div class="overlay" id="overlay"></div>
+        <div class="board-frame">
+          <div class="phase-banner" id="phase">BASISSPIEL</div>
+          <div class="board" id="board"></div>
+          <div class="board-glow" id="board-glow"></div>
+          <div class="overlay" id="overlay"></div>
+          <div class="wolf" id="wolf"></div>
+        </div>
       </div>
 
-      <!-- Multiplier meter -->
-      <div class="mult-meter">
-        <label>WOLF-MULTIPLIKATOR</label>
-        <div class="mult-value" id="mult-value">×1</div>
+      <!-- win display -->
+      <div class="winbar">
+        <div class="win-block">
+          <label>GEWINN</label>
+          <span id="win-amount" class="win-amount">0.00</span>
+        </div>
+        <div class="message" id="message">Drücke <b>SPIN</b> — der Wolf pustet die Symbole weg, neue fallen nach!</div>
       </div>
     </main>
 
-    <!-- ===== Win display ===== -->
-    <section class="winbar">
-      <div class="win-amount">
-        <label>GEWINN</label>
-        <span id="win-amount">0.00</span>
-      </div>
-      <div class="message" id="message">Drücke SPIN, um den Wolf pusten zu lassen!</div>
-    </section>
-
     <!-- ===== Controls ===== -->
     <footer class="controls">
-      <div class="balance">
+      <div class="ctl-balance">
         <label>GUTHABEN</label>
         <span id="balance">1000.00</span>
       </div>
 
-      <div class="bet-control">
-        <button id="bet-down" class="round">−</button>
+      <div class="ctl-bet">
+        <button id="bet-down" class="round" aria-label="Einsatz runter">−</button>
         <div class="bet-display">
           <label>EINSATZ</label>
           <span id="bet">1.00</span>
         </div>
-        <button id="bet-up" class="round">+</button>
+        <button id="bet-up" class="round" aria-label="Einsatz hoch">+</button>
       </div>
 
-      <button id="spin" class="spin-btn">
+      <button id="spin" class="spin-btn" aria-label="Spin">
+        <span class="spin-ring"></span>
         <span class="spin-label">SPIN</span>
       </button>
 
-      <div class="buy-panel">
+      <div class="ctl-buy">
         <button id="buy-a" class="buy-btn">
-          <strong>BONUS KAUFEN</strong>
-          <small>Stroh-Haus · <span id="buy-a-cost">100×</span></small>
+          <span class="buy-title">BONUS&nbsp;KAUFEN</span>
+          <span class="buy-sub">Stroh-Haus · <b id="buy-a-cost">79×</b></span>
         </button>
         <button id="buy-b" class="buy-btn vip">
-          <strong>VIP BONUS</strong>
-          <small>Holz-Haus · <span id="buy-b-cost">300×</span></small>
+          <span class="buy-title">VIP&nbsp;BONUS</span>
+          <span class="buy-sub">Holz-Haus · <b id="buy-b-cost">221×</b></span>
         </button>
       </div>
     </footer>
 
     <p class="provably">
-      🔒 Provably Fair · jeder Walzenstopp stammt aus einem verifizierbaren Server-Seed ·
+      🔒 Provably Fair · jeder Walzenstopp aus einem verifizierbaren Server-Seed ·
       <span id="seed-hash">—</span>
     </p>
   </div>
 
-  <!-- Math config + sample books emitted by `python run.py build`. -->
+  <!-- ===== Toast (big centered callouts) ===== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ===== Free-spin intro flash ===== -->
+  <div id="fs-flash" class="fs-flash hidden"></div>
+
+  <!-- ===== Help modal ===== -->
+  <div class="modal hidden" id="modal-help">
+    <div class="modal-card">
+      <button class="modal-x" data-close>×</button>
+      <h2>🐺 So funktioniert's</h2>
+      <ul class="how">
+        <li><b>5×4 Walzen, 1024 Wege.</b> Gleiche Symbole auf benachbarten Walzen von links zahlen.</li>
+        <li><b>Huff &amp; Puff Kaskaden.</b> Der Wolf pustet Gewinn­symbole weg, neue fallen nach — Gewinne in Serie!</li>
+        <li><b>Wolf-Multiplikator.</b> Jede Kaskade in Folge erhöht den Multiplikator (bis ×5, in Freispielen ×8).</li>
+        <li><b>3× 🍲 Suppentopf</b> startet die <b>House-Upgrade-Freispiele</b>.</li>
+        <li><b>Häuser aufleveln.</b> Sammle 🧱 auf Walze 5: Stroh → Holz (Wild-Multis) → Ziegel-Festung (Sticky Wilds).</li>
+        <li><b>Bonus kaufen</b> springt direkt in die Freispiele.</li>
+      </ul>
+      <button class="cta" data-close>Los geht's!</button>
+    </div>
+  </div>
+
+  <!-- ===== Paytable modal ===== -->
+  <div class="modal hidden" id="modal-paytable">
+    <div class="modal-card">
+      <button class="modal-x" data-close>×</button>
+      <h2>📊 Auszahlungen <small>(× Einsatz, pro Gewinnweg)</small></h2>
+      <div class="paytable" id="paytable-grid"></div>
+      <p class="paytable-note">Wild 🐺 ersetzt alle Symbole außer Scatter 🍲. Scatter zahlt überall.</p>
+      <button class="cta" data-close>Schließen</button>
+    </div>
+  </div>
+
+  <script src="art.js"></script>
+  <script src="audio.js"></script>
+  <script src="assets/manifest.js"></script>
   <script src="game-config.js"></script>
   <script src="game-books.js"></script>
   <script src="game.js"></script>

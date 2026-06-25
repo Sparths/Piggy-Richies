@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node (only used by the optional Playwright verification)
+node_modules/
+package-lock.json
+
+# Large, regenerable simulation books -- rebuild with:
+#   cd math && python games/piggy_richies/run.py build
+# The small lookup tables + config + the curated frontend sample ARE committed.
+math/library/books/*.jsonl
+math/library/books/*.json.zst
+
+# OS / editor
+.DS_Store
+*.swp

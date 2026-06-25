@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Stake's Huff &amp; Puff: Piggy Richies</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+</head>
+<body>
+  <div id="app">
+    <!-- ===== Top bar ===== -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-wolf">🐺</span>
+        <div class="brand-text">
+          <strong>HUFF &amp; PUFF</strong>
+          <small>Piggy Richies</small>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <div class="chip"><label>RTP</label><span id="meta-rtp">96.55%</span></div>
+        <div class="chip"><label>MAX WIN</label><span id="meta-max">15,000×</span></div>
+        <div class="chip vol"><label>VOLATILITÄT</label><span>SEHR HOCH</span></div>
+      </div>
+    </header>
+
+    <!-- ===== Stage ===== -->
+    <main class="stage">
+      <!-- House / level progress (free spins) -->
+      <div id="house-panel" class="house-panel hidden">
+        <div class="house-icon" id="house-icon">🏠</div>
+        <div class="house-info">
+          <div class="house-name" id="house-name">Stroh-Haus</div>
+          <div class="brick-track">
+            <div class="brick-fill" id="brick-fill"></div>
+            <span class="brick-label" id="brick-label">🧱 0 / 5</span>
+          </div>
+        </div>
+        <div class="fs-counter">
+          <label>FREISPIELE</label>
+          <span id="fs-count">0 / 0</span>
+        </div>
+      </div>
+
+      <!-- The wolf, who does the huffing and puffing -->
+      <div class="wolf" id="wolf">🐺</div>
+
+      <!-- Reels -->
+      <div class="board-frame">
+        <div class="board" id="board"></div>
+        <div class="board-glow" id="board-glow"></div>
+        <!-- Big win / multiplier overlay -->
+        <div class="overlay" id="overlay"></div>
+      </div>
+
+      <!-- Multiplier meter -->
+      <div class="mult-meter">
+        <label>WOLF-MULTIPLIKATOR</label>
+        <div class="mult-value" id="mult-value">×1</div>
+      </div>
+    </main>
+
+    <!-- ===== Win display ===== -->
+    <section class="winbar">
+      <div class="win-amount">
+        <label>GEWINN</label>
+        <span id="win-amount">0.00</span>
+      </div>
+      <div class="message" id="message">Drücke SPIN, um den Wolf pusten zu lassen!</div>
+    </section>
+
+    <!-- ===== Controls ===== -->
+    <footer class="controls">
+      <div class="balance">
+        <label>GUTHABEN</label>
+        <span id="balance">1000.00</span>
+      </div>
+
+      <div class="bet-control">
+        <button id="bet-down" class="round">−</button>
+        <div class="bet-display">
+          <label>EINSATZ</label>
+          <span id="bet">1.00</span>
+        </div>
+        <button id="bet-up" class="round">+</button>
+      </div>
+
+      <button id="spin" class="spin-btn">
+        <span class="spin-label">SPIN</span>
+      </button>
+
+      <div class="buy-panel">
+        <button id="buy-a" class="buy-btn">
+          <strong>BONUS KAUFEN</strong>
+          <small>Stroh-Haus · <span id="buy-a-cost">100×</span></small>
+        </button>
+        <button id="buy-b" class="buy-btn vip">
+          <strong>VIP BONUS</strong>
+          <small>Holz-Haus · <span id="buy-b-cost">300×</span></small>
+        </button>
+      </div>
+    </footer>
+
+    <p class="provably">
+      🔒 Provably Fair · jeder Walzenstopp stammt aus einem verifizierbaren Server-Seed ·
+      <span id="seed-hash">—</span>
+    </p>
+  </div>
+
+  <!-- Math config + sample books emitted by `python run.py build`. -->
+  <script src="game-config.js"></script>
+  <script src="game-books.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

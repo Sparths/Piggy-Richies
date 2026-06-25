@@ -91,10 +91,12 @@ Just open `frontend/index.html` in a browser (the math build writes
 in-game **ℹ️ How-it-works** and **📊 paytable**, a phase banner, win count-up
 and sound, so it's clear what's happening on every spin.
 
-**Art:** the client ships with built-in **SVG vector symbols** (no image files
-needed). For premium, submission-ready art, generate images with the prompts in
-[`docs/ASSET_PROMPTS.md`](docs/ASSET_PROMPTS.md), drop them in `frontend/assets/`
-and list them in `frontend/assets/manifest.js` — the game swaps them in
+**Art:** ships with **premium generated art** (3D gold symbols, scene
+background, gold wordmark — optimized WebP, ~0.8 MB) with built-in **SVG vector
+fallbacks**. To regenerate or swap art: use the prompts in
+[`docs/ASSET_PROMPTS.md`](docs/ASSET_PROMPTS.md), drop PNGs in `frontend/assets/`,
+run `python tools/optimize_assets.py` (crops/squares/compresses to WebP), and
+list them in `frontend/assets/manifest.js` — the game swaps them in
 automatically, falling back to SVG for anything missing.
 
 ---

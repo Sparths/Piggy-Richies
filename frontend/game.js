@@ -92,7 +92,7 @@
         case "dropBoard": setBoard(ev.board); SND.drop(); await sleep(300); break;
         case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger": if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); await sleep(800); } break;
-        case "enterFreeGame": await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; setHouse(1, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break;
+        case "enterFreeGame": { await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1; setHouse(lvl, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break; }
         case "updateFreeSpin": fsNow = ev.current; fsTot = ev.total; fsCount.textContent = `${ev.current} / ${ev.total}`; setPhase(); break;
         case "collectBrick": { const c = cellAt(ev.position[0], ev.position[1]); const p = document.createElement("span"); p.className = "brick-pop"; p.textContent = "🧱"; c.appendChild(p); updateBricks(ev.bricks); SND.brick(); await sleep(220); break; }
         case "houseUpgrade": setHouse(ev.level, ev.house, ev.bricks); glow.className = "board-glow bonus"; burst("🏠 " + ev.house.toUpperCase()); toast(`HAUS-UPGRADE: ${ev.house} · +${ev.extraSpins} Freispiele`, true); SND.upgrade(); await sleep(1250); break;
@@ -104,7 +104,7 @@
     return roundWin;
   }
   function setHouse(level, name, bricks) {
-    houseLabel = name; houseEmoji.textContent = { 1: "🌾", 2: "🪵", 3: "🏰" }[level] || "🏠";
+    houseLabel = name; houseName.textContent = name; houseEmoji.textContent = { 1: "🌾", 2: "🪵", 3: "🏰" }[level] || "🏠";
     const L = CFG.features.houseLevels, nx = L.find((l) => l.level === level + 1); bricksTarget = nx ? nx.bricks : L[L.length - 1].bricks; updateBricks(bricks);
   }
   function updateBricks(b) { brickFill.style.width = Math.min(100, (b / bricksTarget) * 100) + "%"; brickLabel.textContent = `🧱 ${b} / ${bricksTarget}`; }
@@ -191,7 +191,7 @@
     const A = window.PIGGY_ASSETS || {};
     if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, () => { setBoard(curBoard, false); buildPaytable(); });
     if (A.background) { const im = new Image(); im.onload = () => { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }; im.src = A.background; }
-    if (A.logo) { const im = new Image(); im.onload = () => { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="logo">`; m.style.display = "block"; document.querySelector(".logo-txt").style.display = "none"; }; im.src = A.logo; }
+    if (A.logo) { const im = new Image(); im.onload = () => { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }; im.src = A.logo; }
   }
 
   // ---- fallbacks ----------------------------------------------------------

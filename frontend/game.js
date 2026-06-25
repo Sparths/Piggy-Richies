@@ -9,7 +9,6 @@
   const ART = window.PIGGY_ART, SND = window.PIGGY_AUDIO;
   const SYM = {}; CFG.symbols.forEach((s) => (SYM[s.id] = s));
   const REELS = CFG.numReels, ROWS = CFG.numRows;
-  const ALLCOLS = new Set(Array.from({ length: REELS }, (_, i) => i));
 
   const $ = (id) => document.getElementById(id);
   const boardEl = $("board"), wolfEl = $("wolf"), overlay = $("overlay"), glow = $("board-glow");
@@ -21,7 +20,7 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeCols = null;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
@@ -39,24 +38,47 @@
     }
   }
   const cellAt = (col, row) => cells[row * REELS + col];
-  function paint(col, row, id, drop, delay = 0) {
+  const DROP_DUR = 330, COL_STAGGER = 58, DROP_EASE = "cubic-bezier(.3,1.03,.43,1)";
+  const rowPitch = () => { const a = cellAt(0, 0), b = cellAt(0, 1); return a && b ? b.getBoundingClientRect().top - a.getBoundingClientRect().top : (a ? a.offsetHeight : 60); };
+
+  function paintCell(col, row, id) {
     const c = cellAt(col, row), s = SYM[id] || { kind: "low" };
-    c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky", "drop");
+    c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky");
     c.querySelectorAll(".wmult,.brick-pop").forEach((e) => e.remove());
-    c.querySelector(".sym").innerHTML = symInner(id);
-    c.style.animationDelay = (drop ? delay : 0) + "ms";
-    if (drop) { void c.offsetWidth; c.classList.add("drop"); }
+    const sym = c.querySelector(".sym"); sym.style.transition = "none"; sym.style.transform = "none"; sym.innerHTML = symInner(id);
   }
-  // cols: Set of columns to force-animate (whole column refills, lower rows land
-  // first like gravity); null => only changed cells animate.
-  function setBoard(b, opts = {}) {
-    const { drop = true, cols = null } = opts;
-    for (let col = 0; col < REELS; col++) for (let row = 0; row < ROWS; row++) {
-      const changed = !curBoard[col] || curBoard[col][row] !== b[col][row];
-      const animate = drop && (cols ? cols.has(col) : changed);
-      if (animate || changed) paint(col, row, b[col][row], animate, cols && cols.has(col) ? (ROWS - 1 - row) * 45 : 0);
-    }
+  // instant repaint (no motion) for changed cells
+  function setStatic(b) {
+    for (let col = 0; col < REELS; col++) for (let row = 0; row < ROWS; row++)
+      if (!curBoard[col] || curBoard[col][row] !== b[col][row]) paintCell(col, row, b[col][row]);
     curBoard = b.map((c) => c.slice());
+  }
+  // Position-based gravity: every symbol slides from where it came to its final
+  // cell -- survivors visibly slide DOWN into the gaps, new symbols fall from
+  // above -- so you clearly see what falls. `removed` is 'all' (whole reels, for
+  // the spin) or {col: Set(rows)} (the cells the wolf blew away).
+  function animateColumns(b, removed, opts = {}) {
+    const { colStagger = 0 } = opts, pitch = rowPitch(), anims = [];
+    for (let col = 0; col < REELS; col++) {
+      const rem = removed === "all" ? new Set([0, 1, 2, 3]) : (removed[col] || new Set());
+      if (!rem.size) { for (let row = 0; row < ROWS; row++) if (!curBoard[col] || curBoard[col][row] !== b[col][row]) paintCell(col, row, b[col][row]); continue; }
+      const missing = rem.size, oldKept = [];
+      for (let r = 0; r < ROWS; r++) if (!rem.has(r)) oldKept.push(r);
+      for (let row = 0; row < ROWS; row++) {
+        paintCell(col, row, b[col][row]);
+        const sym = cellAt(col, row).querySelector(".sym");
+        // how many rows above its final slot this symbol starts
+        const startRows = removed === "all" ? ROWS + 0.5 : (row >= missing ? row - oldKept[row - missing] : missing);
+        sym.style.transition = "none"; sym.style.transform = `translateY(${-startRows * pitch}px)`;
+        anims.push({ sym, delay: col * colStagger });
+      }
+    }
+    void boardEl.offsetHeight; // one reflow, then release them all together
+    let end = 0;
+    anims.forEach(({ sym, delay }) => { sym.style.transition = `transform ${DROP_DUR}ms ${DROP_EASE} ${delay}ms`; sym.style.transform = "translateY(0)"; end = Math.max(end, delay + DROP_DUR); });
+    curBoard = b.map((c) => c.slice());
+    setTimeout(() => anims.forEach(({ sym }) => { sym.style.transition = ""; sym.style.transform = ""; }), end + 80);
+    return end;
   }
 
   // ---- HUD ----------------------------------------------------------------
@@ -81,8 +103,8 @@
     for (const ev of book.events) {
       switch (ev.type) {
         case "reveal":
-          curGametype = ev.gametype; explodeCols = null; setBoard(ev.board, { cols: ALLCOLS });
-          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin(); await sleep(380); break;
+          curGametype = ev.gametype; explodeMap = null; animateColumns(ev.board, "all", { colStagger: COL_STAGGER });
+          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin(); await sleep(460); break;
         case "updateGlobalMult":
           setMult(ev.globalMult);
           if (ev.globalMult > 1) setPhase(curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · KASKADE ×${ev.globalMult}` : `KASKADE ×${ev.globalMult}`);
@@ -96,10 +118,10 @@
         }
         case "tumbleBoard":
           wolfEl.classList.add("blow"); SND.puff();
-          explodeCols = new Set(ev.explodePositions.map((p) => p[0]));
-          ev.explodePositions.forEach(([c, r]) => { const el = cellAt(c, r); el.style.animationDelay = "0ms"; el.classList.add("explode"); });
-          await sleep(470); wolfEl.classList.remove("blow"); break;
-        case "dropBoard": setBoard(ev.board, { cols: explodeCols || ALLCOLS }); explodeCols = null; SND.drop(); await sleep(380); break;
+          explodeMap = {};
+          ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); cellAt(c, r).classList.add("explode"); });
+          await sleep(430); wolfEl.classList.remove("blow"); break;
+        case "dropBoard": animateColumns(ev.board, explodeMap || "all"); explodeMap = null; SND.drop(); await sleep(400); break;
         case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger": if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); await sleep(800); } break;
         case "enterFreeGame": { await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1; setHouse(lvl, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break; }
@@ -193,13 +215,13 @@
   // ---- boot ---------------------------------------------------------------
   function boot() {
     $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "×";
-    buildBoard(); setMult(1); setBoard(randomBoard(), { drop: false }); balanceEl.textContent = fmt(balance); refreshBet(); buildPaytable(); wire();
+    buildBoard(); setMult(1); setStatic(randomBoard()); balanceEl.textContent = fmt(balance); refreshBet(); buildPaytable(); wire();
     if (!localStorage.getItem("piggy_seen2")) { openModal("modal-help"); localStorage.setItem("piggy_seen2", "1"); }
     loadGeneratedAssets();
   }
   function loadGeneratedAssets() {
     const A = window.PIGGY_ASSETS || {};
-    if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, () => { setBoard(curBoard, { drop: false }); buildPaytable(); });
+    if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, () => { setStatic(curBoard); buildPaytable(); });
     if (A.background) { const im = new Image(); im.onload = () => { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }; im.src = A.background; }
     if (A.logo) { const im = new Image(); im.onload = () => { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }; im.src = A.logo; }
   }

@@ -124,6 +124,22 @@
   </div>
 
   <!-- ===== overlays ===== -->
+  <canvas id="fx" class="fx"></canvas>
+
+  <div id="bigwin" class="bigwin hidden">
+    <div class="bigwin-rays"></div>
+    <div class="bigwin-tier" id="bigwin-tier">BIG WIN</div>
+    <div class="bigwin-amount" id="bigwin-amount">0.00</div>
+  </div>
+
+  <div id="loader" class="loader">
+    <div class="loader-logo" id="loader-logo">
+      <strong>HUFF&nbsp;&amp;&nbsp;PUFF</strong><small>PIGGY&nbsp;RICHIES</small>
+    </div>
+    <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+    <div class="loader-pct" id="loader-pct">0%</div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
   <div id="fs-flash" class="fs-flash hidden"></div>
 
@@ -154,6 +170,7 @@
 
   <script src="art.js"></script>
   <script src="audio.js"></script>
+  <script src="fx.js"></script>
   <script src="assets/manifest.js"></script>
   <script src="game-config.js"></script>
   <script src="game-books.js"></script>

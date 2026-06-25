@@ -114,9 +114,14 @@
     curGametype = mode === "base" ? "basegame" : "freegame"; setMult(1); setPhase();
     for (const ev of book.events) {
       switch (ev.type) {
-        case "reveal":
+        case "reveal": {
           curGametype = ev.gametype; explodeMap = null; animateColumns(ev.board, "all", { colStagger: COL_STAGGER });
-          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin(); await sleep(460); break;
+          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin();
+          for (let c = 0; c < REELS; c++) setTimeout(() => SND.reelStop(), c * COL_STAGGER + DROP_DUR - 40);
+          let sc = 0; ev.board.forEach((cA) => cA.forEach((id) => { if (SYM[id] && SYM[id].scatter) sc++; }));
+          if (sc >= 2) { SND.riser(0.7); cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; if (SYM[ev.board[col][row]] && SYM[ev.board[col][row]].scatter) c.classList.add("scat-hot"); }); setTimeout(() => cells.forEach((c) => c.classList.remove("scat-hot")), 2400); }
+          await sleep(460); break;
+        }
         case "updateGlobalMult":
           setMult(ev.globalMult);
           if (ev.globalMult > 1) setPhase(curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · KASKADE ×${ev.globalMult}` : `KASKADE ×${ev.globalMult}`);
@@ -126,12 +131,13 @@
         case "winInfo": {
           const ks = new Set(); ev.wins.forEach((w) => w.positions.forEach((p) => ks.add(p[0] + "," + p[1])));
           cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
+          if (FX) { ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); }); if (ev.stepWin >= 4) FX.shake(3 + Math.min(7, ev.stepWin / 3), 0.25); }
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
         case "tumbleBoard":
           wolfEl.classList.add("blow"); SND.puff();
           explodeMap = {};
-          ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); cellAt(c, r).classList.add("explode"); });
+          ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); cellAt(c, r).classList.add("explode"); if (FX) { const p = cellCenter(c, r); FX.explode(p.x, p.y); } });
           await sleep(430); wolfEl.classList.remove("blow"); break;
         case "dropBoard": animateColumns(ev.board, explodeMap || "all"); explodeMap = null; SND.drop(); await sleep(400); break;
         case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
@@ -154,11 +160,17 @@
   function updateBricks(b) { brickFill.style.width = Math.min(100, (b / bricksTarget) * 100) + "%"; brickLabel.textContent = `🧱 ${b} / ${bricksTarget}`; }
   async function freeIntro(ev) { fsFlash.innerHTML = `<div class="big">🍲🐺</div><h1>HOUSE&nbsp;UPGRADE<br>FREE&nbsp;SPINS</h1><p>${ev.totalSpins} Freispiele · sammle 🧱 auf Walze 5</p>`; fsFlash.className = "fs-flash"; SND.trigger(); await sleep(1900); fsFlash.className = "fs-flash hidden"; }
   async function settle(ev) {
-    balance += ev.amount * bet(); balanceEl.textContent = fmt(balance); countWin(ev.amount);
-    if (ev.wincapReached) { burst("MAX WIN! 15.000×"); toast("🐺 MAX WIN!", true); SND.bigwin(); }
-    else if (ev.amount >= 100) { burst("MEGA WIN " + Math.round(ev.amount) + "×"); toast("MEGA WIN! " + fmt(ev.amount * bet()), true); SND.bigwin(); }
-    else if (ev.amount >= 20) { burst("BIG WIN"); SND.bigwin(); }
-    await sleep(ev.amount > 0 ? 500 : 90); setMult(1); setPhase();
+    const m = ev.amount;
+    balance += m * bet(); balanceEl.textContent = fmt(balance); countWin(m);
+    if (ev.wincapReached) await showBigWin(3, m, true);
+    else if (m >= 150) await showBigWin(3, m);
+    else if (m >= 50) await showBigWin(2, m);
+    else if (m >= 15) await showBigWin(1, m);
+    else {
+      if (m > 0 && FX) { const c = winBarCenter(); FX.burst(c.x, c.y, 9, 0.7); SND.win(2); }
+      await sleep(m > 0 ? 420 : 90);
+    }
+    setMult(1); setPhase();
   }
 
   // ---- spin / auto --------------------------------------------------------
@@ -224,18 +236,67 @@
     document.addEventListener("keydown", (e) => { if (e.code === "Space" && !busy) { e.preventDefault(); doSpin("base"); } });
   }
 
-  // ---- boot ---------------------------------------------------------------
+  // ---- juice helpers ------------------------------------------------------
+  const FX = window.PIGGY_FX;
+  const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+  function cellCenter(col, row) { const r = cellAt(col, row).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  function winBarCenter() { const r = winEl.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+
+  let skipBig = false;
+  async function showBigWin(tier, mult, isCap = false) {
+    if (!FX) return;
+    const labels = ["NICE WIN", "BIG WIN", "MEGA WIN", "EPIC WIN"];
+    const ov = $("bigwin"), tEl = $("bigwin-tier"), aEl = $("bigwin-amount");
+    tEl.textContent = isCap ? "MAX WIN!" : labels[tier];
+    aEl.textContent = fmt(0); ov.classList.remove("hidden"); skipBig = false;
+    SND.winTier(tier); FX.shake(6 + tier * 4, 0.5); FX.coinShower(1.4 + tier * 0.7, 16 + tier * 10);
+    const target = mult * bet(), dur = 850 + tier * 650, t0 = performance.now();
+    let coinT = 0;
+    await new Promise((res) => {
+      function step(t) {
+        const k = skipBig ? 1 : Math.min(1, (t - t0) / dur), v = target * easeOut(k);
+        aEl.textContent = fmt(v);
+        if (t - coinT > 95) { coinT = t; SND.coinTick(); }
+        if (k < 1) requestAnimationFrame(step); else { aEl.textContent = fmt(target); res(); }
+      }
+      requestAnimationFrame(step);
+    });
+    if (tier >= 2) { const c = { x: innerWidth / 2, y: innerHeight * 0.42 }; FX.confetti(c.x, c.y, 50); FX.shake(10, 0.4); }
+    await sleep(skipBig ? 150 : 850);
+    ov.classList.add("hidden");
+  }
+
+  // ---- boot / loading -----------------------------------------------------
+  let started = false;
   function boot() {
     $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "×";
-    buildBoard(); setMult(1); setStatic(randomBoard()); balanceEl.textContent = fmt(balance); refreshBet(); buildPaytable(); wire();
-    if (!localStorage.getItem("piggy_seen2")) { openModal("modal-help"); localStorage.setItem("piggy_seen2", "1"); }
-    loadGeneratedAssets();
+    buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire();
+    if (FX) FX.init($("fx"), document.querySelector(".stage"));
+    $("bigwin").addEventListener("click", () => (skipBig = true));
+    preloadThenStart();
   }
-  function loadGeneratedAssets() {
+  function preloadThenStart() {
     const A = window.PIGGY_ASSETS || {};
-    if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, () => { setStatic(curBoard); buildPaytable(); });
-    if (A.background) { const im = new Image(); im.onload = () => { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }; im.src = A.background; }
-    if (A.logo) { const im = new Image(); im.onload = () => { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }; im.src = A.logo; }
+    const urls = [...(A.symbols ? Object.values(A.symbols) : []), ...(A.background ? [A.background] : []), ...(A.logo ? [A.logo] : [])];
+    const fill = $("loader-fill"), pct = $("loader-pct");
+    if (!urls.length) { afterPreload(); return; }
+    let loaded = 0;
+    const tick = () => { loaded++; const p = Math.min(100, Math.round((loaded / urls.length) * 100)); fill.style.width = p + "%"; pct.textContent = p + "%"; if (loaded >= urls.length) afterPreload(); };
+    urls.forEach((u) => { const im = new Image(); im.onload = tick; im.onerror = tick; im.src = u; });
+    setTimeout(() => { if (!started) afterPreload(); }, 6000);
+  }
+  function afterPreload() {
+    const A = window.PIGGY_ASSETS || {};
+    if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, finishLoad); else finishLoad();
+  }
+  function finishLoad() {
+    if (started) return; started = true;
+    const A = window.PIGGY_ASSETS || {};
+    if (A.background) { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }
+    if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
+    setStatic(randomBoard()); buildPaytable();
+    const ld = $("loader"); ld.classList.add("gone"); setTimeout(() => (ld.style.display = "none"), 600);
+    if (!localStorage.getItem("piggy_seen3")) { setTimeout(() => openModal("modal-help"), 400); localStorage.setItem("piggy_seen3", "1"); }
   }
 
   // ---- fallbacks ----------------------------------------------------------

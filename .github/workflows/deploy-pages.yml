@@ -1,0 +1,47 @@
+name: Deploy frontend to GitHub Pages
+
+# Publishes the playable web client in frontend/ to GitHub Pages.
+# Runs automatically on this feature branch and on main (after a merge),
+# and can be triggered manually from the Actions tab.
+
+on:
+  push:
+    branches:
+      - main
+      - claude/quirky-ptolemy-vx82ms
+  workflow_dispatch:
+
+# Permissions the deploy needs (and enough for configure-pages to enable Pages).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; newer pushes supersede in-flight runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages (auto-enable if needed)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload the frontend as the site root
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

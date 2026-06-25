@@ -9,6 +9,7 @@
   const ART = window.PIGGY_ART, SND = window.PIGGY_AUDIO;
   const SYM = {}; CFG.symbols.forEach((s) => (SYM[s.id] = s));
   const REELS = CFG.numReels, ROWS = CFG.numRows;
+  const ALLCOLS = new Set(Array.from({ length: REELS }, (_, i) => i));
 
   const $ = (id) => document.getElementById(id);
   const boardEl = $("board"), wolfEl = $("wolf"), overlay = $("overlay"), glow = $("board-glow");
@@ -20,7 +21,7 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeCols = null;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
@@ -38,17 +39,22 @@
     }
   }
   const cellAt = (col, row) => cells[row * REELS + col];
-  function paint(col, row, id, drop) {
+  function paint(col, row, id, drop, delay = 0) {
     const c = cellAt(col, row), s = SYM[id] || { kind: "low" };
-    c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky");
+    c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky", "drop");
     c.querySelectorAll(".wmult,.brick-pop").forEach((e) => e.remove());
     c.querySelector(".sym").innerHTML = symInner(id);
-    if (drop) { c.classList.remove("drop"); void c.offsetWidth; c.classList.add("drop"); }
+    c.style.animationDelay = (drop ? delay : 0) + "ms";
+    if (drop) { void c.offsetWidth; c.classList.add("drop"); }
   }
-  function setBoard(b, drop = true) {
+  // cols: Set of columns to force-animate (whole column refills, lower rows land
+  // first like gravity); null => only changed cells animate.
+  function setBoard(b, opts = {}) {
+    const { drop = true, cols = null } = opts;
     for (let col = 0; col < REELS; col++) for (let row = 0; row < ROWS; row++) {
       const changed = !curBoard[col] || curBoard[col][row] !== b[col][row];
-      paint(col, row, b[col][row], drop && changed);
+      const animate = drop && (cols ? cols.has(col) : changed);
+      if (animate || changed) paint(col, row, b[col][row], animate, cols && cols.has(col) ? (ROWS - 1 - row) * 45 : 0);
     }
     curBoard = b.map((c) => c.slice());
   }
@@ -75,8 +81,8 @@
     for (const ev of book.events) {
       switch (ev.type) {
         case "reveal":
-          curGametype = ev.gametype; setBoard(ev.board);
-          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin(); await sleep(300); break;
+          curGametype = ev.gametype; explodeCols = null; setBoard(ev.board, { cols: ALLCOLS });
+          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin(); await sleep(380); break;
         case "updateGlobalMult":
           setMult(ev.globalMult);
           if (ev.globalMult > 1) setPhase(curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · KASKADE ×${ev.globalMult}` : `KASKADE ×${ev.globalMult}`);
@@ -88,8 +94,12 @@
           cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
-        case "tumbleBoard": wolfEl.classList.add("blow"); SND.puff(); ev.explodePositions.forEach(([c, r]) => cellAt(c, r).classList.add("explode")); await sleep(480); wolfEl.classList.remove("blow"); break;
-        case "dropBoard": setBoard(ev.board); SND.drop(); await sleep(300); break;
+        case "tumbleBoard":
+          wolfEl.classList.add("blow"); SND.puff();
+          explodeCols = new Set(ev.explodePositions.map((p) => p[0]));
+          ev.explodePositions.forEach(([c, r]) => { const el = cellAt(c, r); el.style.animationDelay = "0ms"; el.classList.add("explode"); });
+          await sleep(470); wolfEl.classList.remove("blow"); break;
+        case "dropBoard": setBoard(ev.board, { cols: explodeCols || ALLCOLS }); explodeCols = null; SND.drop(); await sleep(380); break;
         case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger": if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); await sleep(800); } break;
         case "enterFreeGame": { await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1; setHouse(lvl, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break; }
@@ -183,13 +193,13 @@
   // ---- boot ---------------------------------------------------------------
   function boot() {
     $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "×";
-    buildBoard(); setMult(1); setBoard(randomBoard(), false); balanceEl.textContent = fmt(balance); refreshBet(); buildPaytable(); wire();
+    buildBoard(); setMult(1); setBoard(randomBoard(), { drop: false }); balanceEl.textContent = fmt(balance); refreshBet(); buildPaytable(); wire();
     if (!localStorage.getItem("piggy_seen2")) { openModal("modal-help"); localStorage.setItem("piggy_seen2", "1"); }
     loadGeneratedAssets();
   }
   function loadGeneratedAssets() {
     const A = window.PIGGY_ASSETS || {};
-    if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, () => { setBoard(curBoard, false); buildPaytable(); });
+    if (A.symbols && Object.keys(A.symbols).length) ART.loadImages(A.symbols, () => { setBoard(curBoard, { drop: false }); buildPaytable(); });
     if (A.background) { const im = new Image(); im.onload = () => { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }; im.src = A.background; }
     if (A.logo) { const im = new Image(); im.onload = () => { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }; im.src = A.logo; }
   }

@@ -119,7 +119,7 @@ job Stake's optimiser does.
 | Hit rate | ≈ 57 % |
 | Free-spins trigger | ≈ 1 in 180 |
 | Feature share of RTP | ≈ 41 % |
-| Feature-buy cost (A / VIP) | ≈ **79× / 221×** (fair, solved) |
+| Feature-buy cost (A / VIP) | ≈ **70× / 235×** (fair, solved per build) |
 | Wood House reached | ≈ 48 % of bonuses |
 | Brick Fortress reached | ≈ 6 % of bonuses |
 | Max win | **15 000×** (enforced cap, ≈ 1 in 8 M) |

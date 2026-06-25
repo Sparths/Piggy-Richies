@@ -1,163 +1,163 @@
 /* Stake's Huff & Puff: Piggy Richies -- symbol artwork.
  *
- * Hand-authored flat-vector SVGs for all 13 symbols so the game looks like a
- * real slot out of the box (no emoji). Each icon is transparent and sits on the
- * CSS tile, which provides the gem/panel background + glow.
+ * Premium black-and-gold vector symbols so the game reads like a real slot with
+ * zero image files. A shared <defs> (gradients/filters) is injected once; each
+ * symbol references it. Letters are rendered as gold gem-letters (the most
+ * common symbols, so they matter most); characters sit on a soft gold emblem.
  *
- * Drop-in upgrade: if an image exists at assets/symbols/<ID>.webp (or .png),
- * preloadAssets() detects it and the renderer uses it instead of the SVG. So
- * generated art (see docs/ASSET_PROMPTS.md) needs zero code changes.
- */
+ * Drop-in upgrade: list generated images in assets/manifest.js and they replace
+ * the SVGs automatically (see docs/ASSET_PROMPTS.md). */
 (() => {
   "use strict";
 
-  const C = {
-    pig: "#f7adc4", pigDark: "#e07a9d", pigSnout: "#f6c1d4",
-    wolf: "#8a93a6", wolfDark: "#5b6273", wolfBelly: "#c7cdd9",
-    gold: "#ffd23f", goldDark: "#e0a400",
-    steel: "#cfd8e3", steelDark: "#8a98ab",
-    wood: "#b5793f", woodDark: "#8a531f",
-    straw: "#f4c95d", strawDark: "#caa033",
-    brick: "#c65a3a", brickDark: "#8f3b22",
-    pot: "#3a4250", potDark: "#222833",
-    cream: "#f7efe0", ink: "#2a2118",
-    soup: "#ffb14e",
-  };
+  // ---- shared gradient / filter defs (injected once) ----------------------
+  const DEFS = `
+    <linearGradient id="ggGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff4c2"/><stop offset=".4" stop-color="#ffd23f"/>
+      <stop offset=".75" stop-color="#e3a400"/><stop offset="1" stop-color="#8a5e00"/></linearGradient>
+    <linearGradient id="ggGoldR" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff0b0"/><stop offset=".5" stop-color="#f0b522"/><stop offset="1" stop-color="#915c00"/></linearGradient>
+    <radialGradient id="ggRuby" cx=".4" cy=".35" r=".8">
+      <stop offset="0" stop-color="#ff8a8a"/><stop offset=".45" stop-color="#e01b2e"/><stop offset="1" stop-color="#6e0712"/></radialGradient>
+    <linearGradient id="ggSteel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4f8fc"/><stop offset=".5" stop-color="#b7c4d4"/><stop offset="1" stop-color="#5f6e80"/></linearGradient>
+    <linearGradient id="ggWood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9a35c"/><stop offset=".55" stop-color="#a86a2e"/><stop offset="1" stop-color="#6c3f16"/></linearGradient>
+    <radialGradient id="ggPink" cx=".4" cy=".32" r=".85">
+      <stop offset="0" stop-color="#ffd9e6"/><stop offset=".55" stop-color="#f6a7c2"/><stop offset="1" stop-color="#d2789e"/></radialGradient>
+    <radialGradient id="ggGrey" cx=".4" cy=".3" r=".9">
+      <stop offset="0" stop-color="#c4ccd8"/><stop offset=".55" stop-color="#8a93a6"/><stop offset="1" stop-color="#4e5566"/></radialGradient>
+    <radialGradient id="ggSoup" cx=".5" cy=".3" r=".8">
+      <stop offset="0" stop-color="#ffe09a"/><stop offset=".5" stop-color="#ff9d4d"/><stop offset="1" stop-color="#cc5f17"/></radialGradient>
+    <linearGradient id="ggIron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a6472"/><stop offset="1" stop-color="#222833"/></linearGradient>
+    <radialGradient id="ggDisc" cx=".5" cy=".42" r=".6">
+      <stop offset="0" stop-color="rgba(255,210,63,.45)"/><stop offset=".7" stop-color="rgba(255,170,40,.12)"/><stop offset="1" stop-color="rgba(255,170,40,0)"/></radialGradient>
+    <linearGradient id="ggBrick" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e7855a"/><stop offset="1" stop-color="#a23c1f"/></linearGradient>
+    <filter id="ggSh" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.2" flood-color="#000" flood-opacity=".45"/></filter>`;
 
-  // soft drop shadow used by every icon
-  const SHADOW = `<filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
-    <feDropShadow dx="0" dy="2.2" stdDeviation="2" flood-color="#000" flood-opacity="0.35"/></filter>`;
-
-  const svg = (inner, extraDefs = "") =>
-    `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="sym-svg">
-      <defs>${SHADOW}${extraDefs}</defs><g filter="url(#ds)">${inner}</g></svg>`;
-
-  // ---- playing cards (themed to the house materials) ----------------------
-  function card(letter, color, dark, motif) {
-    return svg(`
-      <rect x="22" y="14" width="56" height="72" rx="9" fill="${C.cream}" stroke="${dark}" stroke-width="3"/>
-      <rect x="22" y="14" width="56" height="72" rx="9" fill="none" stroke="${color}" stroke-width="3" opacity="0.5"/>
-      <text x="50" y="62" font-family="Georgia, serif" font-size="46" font-weight="700"
-            text-anchor="middle" fill="${color}">${letter}</text>
-      <g transform="translate(50 78) scale(0.8)">${motif}</g>
-      <g transform="translate(30 26) scale(0.5)">${motif}</g>`);
+  function injectDefs() {
+    if (document.getElementById("piggy-defs")) return;
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("id", "piggy-defs");
+    s.setAttribute("style", "position:absolute;width:0;height:0;overflow:hidden");
+    s.innerHTML = `<defs>${DEFS}</defs>`;
+    document.body.appendChild(s);
   }
-  const pip = (c) => `<circle cx="0" cy="-2" r="6" fill="${c}"/>`;
 
-  // ---- tools --------------------------------------------------------------
-  const axe = () => svg(`
-    <rect x="46" y="20" width="8" height="62" rx="4" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="2" transform="rotate(18 50 50)"/>
-    <path d="M52 22 C70 20 82 30 80 44 C70 40 60 40 50 44 Z" fill="${C.steel}" stroke="${C.steelDark}" stroke-width="2.5"/>
-    <path d="M52 22 C60 24 66 30 66 38" fill="none" stroke="#fff" stroke-width="2" opacity="0.6"/>`);
-  const trowel = () => svg(`
-    <rect x="47" y="16" width="7" height="22" rx="3.5" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="2"/>
-    <rect x="44" y="34" width="13" height="8" rx="2" fill="${C.steelDark}"/>
-    <path d="M50 42 L78 56 L50 90 L22 56 Z" fill="${C.steel}" stroke="${C.steelDark}" stroke-width="3"/>
-    <path d="M50 50 L50 84" stroke="${C.steelDark}" stroke-width="2" opacity="0.5"/>`);
-  const fork = () => svg(`
-    <rect x="46" y="40" width="8" height="46" rx="4" fill="${C.wood}" stroke="${C.woodDark}" stroke-width="2"/>
-    <path d="M30 44 L30 16 M50 44 L50 12 M70 44 L70 16" stroke="${C.steel}" stroke-width="7" stroke-linecap="round"/>
-    <path d="M30 44 L30 16 M50 44 L50 12 M70 44 L70 16" stroke="${C.steelDark}" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
-    <rect x="26" y="40" width="48" height="10" rx="5" fill="${C.steelDark}"/>`);
+  const svg = (inner) => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="sym-svg"><g filter="url(#ggSh)">${inner}</g></svg>`;
+  const disc = `<circle cx="50" cy="50" r="43" fill="url(#ggDisc)"/><circle cx="50" cy="50" r="40.5" fill="none" stroke="url(#ggGold)" stroke-width="2" opacity=".45"/>`;
+
+  // ---- gold gem letters (low symbols) ------------------------------------
+  function gemLetter(ch) {
+    return svg(`
+      <circle cx="50" cy="50" r="40.5" fill="url(#ggDisc)"/>
+      <text x="50" y="50" dy=".34em" text-anchor="middle" font-family="Georgia,'Times New Roman',serif"
+            font-size="62" font-weight="700" fill="url(#ggGold)" stroke="#4a3208" stroke-width="3.5"
+            paint-order="stroke" style="letter-spacing:-2px">${ch}</text>
+      <text x="50" y="50" dy=".34em" text-anchor="middle" font-family="Georgia,serif" font-size="62"
+            font-weight="700" fill="none" stroke="#fff7d6" stroke-width=".8" opacity=".6">${ch}</text>
+      <path d="M50 13 l5 6 -5 6 -5 -6 Z" fill="url(#ggRuby)" stroke="#5a0a12" stroke-width="1.2"/>
+      <circle cx="48" cy="17" r="1.4" fill="#ffd6d6" opacity=".9"/>`);
+  }
+
+  // ---- tools (mid) --------------------------------------------------------
+  const axe = () => svg(`${disc}
+    <rect x="46" y="24" width="8" height="58" rx="4" fill="url(#ggWood)" stroke="#5a3413" stroke-width="1.5" transform="rotate(16 50 52)"/>
+    <path d="M52 24 C72 22 84 33 81 48 C70 43 60 43 49 47 Z" fill="url(#ggSteel)" stroke="#46535f" stroke-width="2"/>
+    <path d="M54 27 C64 28 71 34 72 42" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/>`);
+  const trowel = () => svg(`${disc}
+    <rect x="47" y="18" width="7" height="20" rx="3.5" fill="url(#ggWood)" stroke="#5a3413" stroke-width="1.5"/>
+    <rect x="43" y="34" width="14" height="8" rx="2" fill="#39424e"/>
+    <path d="M50 42 L79 56 L50 88 L21 56 Z" fill="url(#ggSteel)" stroke="#46535f" stroke-width="2.5"/>
+    <path d="M50 49 L50 82" stroke="#5f6e80" stroke-width="2" opacity=".5"/>
+    <path d="M34 52 L50 46" stroke="#fff" stroke-width="2" opacity=".5"/>`);
+  const fork = () => svg(`${disc}
+    <rect x="46" y="40" width="8" height="44" rx="4" fill="url(#ggWood)" stroke="#5a3413" stroke-width="1.5"/>
+    <path d="M31 44 V18 M50 44 V14 M69 44 V18" stroke="url(#ggSteel)" stroke-width="7" stroke-linecap="round"/>
+    <rect x="27" y="40" width="46" height="9" rx="4.5" fill="#46535f"/>
+    <path d="M31 40 V20 M50 40 V16 M69 40 V20" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>`);
 
   // ---- brick token --------------------------------------------------------
   const brick = () => svg(`
-    <rect x="16" y="30" width="68" height="40" rx="6" fill="${C.brick}" stroke="${C.brickDark}" stroke-width="3"/>
-    <path d="M16 50 H84 M50 30 V50 M33 50 V70 M67 50 V70" stroke="${C.brickDark}" stroke-width="3" opacity="0.7"/>
-    <path d="M22 38 H44" stroke="#fff" stroke-width="3" opacity="0.35" stroke-linecap="round"/>
-    <path d="M70 24 l3 6 6 3 -6 3 -3 6 -3 -6 -6 -3 6 -3z" fill="${C.gold}"/>`);
+    <rect x="15" y="31" width="70" height="40" rx="6" fill="url(#ggBrick)" stroke="#7e2f17" stroke-width="3"/>
+    <path d="M15 51 H85 M50 31 V51 M32 51 V71 M68 51 V71" stroke="#7e2f17" stroke-width="3" opacity=".75"/>
+    <path d="M22 39 H45" stroke="#fff" stroke-width="3" opacity=".35" stroke-linecap="round"/>
+    <path d="M69 22 l3.5 7 7 3.5 -7 3.5 -3.5 7 -3.5 -7 -7 -3.5 7 -3.5z" fill="url(#ggGold)" stroke="#8a5e00" stroke-width="1"/>`);
 
-  // ---- pig face builder ---------------------------------------------------
-  function pigBase(eyes, accessory, accentName) {
-    return svg(`
-      <path d="M28 30 L24 16 L40 24 Z" fill="${C.pig}" stroke="${C.pigDark}" stroke-width="2.5"/>
-      <path d="M72 30 L76 16 L60 24 Z" fill="${C.pig}" stroke="${C.pigDark}" stroke-width="2.5"/>
-      <ellipse cx="50" cy="54" rx="32" ry="29" fill="${C.pig}" stroke="${C.pigDark}" stroke-width="3"/>
-      <ellipse cx="50" cy="64" rx="16" ry="12" fill="${C.pigSnout}" stroke="${C.pigDark}" stroke-width="2.5"/>
-      <ellipse cx="44" cy="64" rx="2.6" ry="4" fill="${C.pigDark}"/>
-      <ellipse cx="56" cy="64" rx="2.6" ry="4" fill="${C.pigDark}"/>
-      ${eyes}${accessory}`);
+  // ---- pig faces (premium) -----------------------------------------------
+  function pig(eyes, acc) {
+    return svg(`${disc}
+      <path d="M28 32 L23 17 L41 25 Z" fill="url(#ggPink)" stroke="#c06a8e" stroke-width="2"/>
+      <path d="M72 32 L77 17 L59 25 Z" fill="url(#ggPink)" stroke="#c06a8e" stroke-width="2"/>
+      <ellipse cx="50" cy="55" rx="31" ry="28" fill="url(#ggPink)" stroke="#c06a8e" stroke-width="2.5"/>
+      <ellipse cx="50" cy="64" rx="15" ry="11" fill="#f7c1d4" stroke="#c06a8e" stroke-width="2"/>
+      <ellipse cx="44" cy="64" rx="2.5" ry="3.8" fill="#9c4a6a"/><ellipse cx="56" cy="64" rx="2.5" ry="3.8" fill="#9c4a6a"/>
+      ${eyes}${acc}`);
   }
-  // P3 Straw pig -- nervous, straw strand
-  const strawPig = () => pigBase(
-    `<circle cx="38" cy="46" r="6.5" fill="#fff" stroke="${C.pigDark}" stroke-width="2"/><circle cx="39" cy="47" r="3" fill="${C.ink}"/>
-     <circle cx="62" cy="46" r="6.5" fill="#fff" stroke="${C.pigDark}" stroke-width="2"/><circle cx="63" cy="47" r="3" fill="${C.ink}"/>`,
-    `<path d="M60 70 q14 2 22 -6" stroke="${C.straw}" stroke-width="4" fill="none" stroke-linecap="round"/>
-     <path d="M64 72 l6 -2 M70 70 l5 -3" stroke="${C.strawDark}" stroke-width="2.5" stroke-linecap="round"/>`);
-  // P2 Wood pig -- worker, hard hat + determined brow
-  const woodPig = () => pigBase(
-    `<circle cx="39" cy="48" r="3.4" fill="${C.ink}"/><circle cx="61" cy="48" r="3.4" fill="${C.ink}"/>
-     <path d="M32 42 l12 3 M68 42 l-12 3" stroke="${C.ink}" stroke-width="2.6" stroke-linecap="round"/>`,
-    `<path d="M22 33 q28 -22 56 0 Z" fill="${C.straw}" stroke="${C.strawDark}" stroke-width="2.5"/>
-     <rect x="20" y="31" width="60" height="7" rx="3.5" fill="${C.strawDark}"/>
-     <rect x="46" y="16" width="8" height="12" rx="2" fill="${C.wood}"/>`);
-  // P1 Brick pig -- premium, cool sunglasses + gold chain
-  const brickPig = () => pigBase(
-    ``,
-    `<rect x="30" y="42" width="16" height="10" rx="3" fill="${C.ink}"/>
-     <rect x="54" y="42" width="16" height="10" rx="3" fill="${C.ink}"/>
-     <rect x="46" y="45" width="8" height="3.5" rx="1.5" fill="${C.ink}"/>
-     <path d="M30 46 h-7 M70 46 h7" stroke="${C.ink}" stroke-width="3" stroke-linecap="round"/>
-     <path d="M38 80 q12 10 24 0" fill="none" stroke="${C.gold}" stroke-width="3.5"/>
-     <circle cx="50" cy="86" r="4" fill="${C.gold}" stroke="${C.goldDark}" stroke-width="1.5"/>`);
+  const strawPig = () => pig(
+    `<circle cx="39" cy="47" r="6" fill="#fff" stroke="#c06a8e" stroke-width="1.5"/><circle cx="40" cy="48" r="2.8" fill="#3a2418"/>
+     <circle cx="61" cy="47" r="6" fill="#fff" stroke="#c06a8e" stroke-width="1.5"/><circle cx="62" cy="48" r="2.8" fill="#3a2418"/>`,
+    `<path d="M59 71 q14 1 22 -7" stroke="url(#ggGold)" stroke-width="4" fill="none" stroke-linecap="round"/>
+     <path d="M64 72 l6 -2 M71 70 l5 -3" stroke="#caa033" stroke-width="2.4" stroke-linecap="round"/>`);
+  const woodPig = () => pig(
+    `<circle cx="40" cy="49" r="3.2" fill="#3a2418"/><circle cx="60" cy="49" r="3.2" fill="#3a2418"/>
+     <path d="M33 43 l11 3 M67 43 l-11 3" stroke="#3a2418" stroke-width="2.4" stroke-linecap="round"/>`,
+    `<path d="M22 34 q28 -22 56 0 Z" fill="url(#ggGold)" stroke="#8a5e00" stroke-width="2"/>
+     <rect x="20" y="32" width="60" height="7" rx="3.5" fill="#c89020"/>
+     <rect x="46" y="17" width="8" height="12" rx="2" fill="url(#ggWood)"/>`);
+  const brickPig = () => pig(``,
+    `<rect x="29" y="43" width="17" height="11" rx="3" fill="#1b1b22"/>
+     <rect x="54" y="43" width="17" height="11" rx="3" fill="#1b1b22"/>
+     <rect x="46" y="46" width="8" height="3.5" rx="1.5" fill="#1b1b22"/>
+     <path d="M29 47 h-6 M71 47 h6" stroke="#1b1b22" stroke-width="3" stroke-linecap="round"/>
+     <rect x="33" y="46" width="6" height="3" rx="1.5" fill="#fff" opacity=".5"/>
+     <path d="M37 82 q13 11 26 0" fill="none" stroke="url(#ggGold)" stroke-width="4"/>
+     <circle cx="50" cy="88" r="4.5" fill="url(#ggGold)" stroke="#8a5e00" stroke-width="1.2"/>`);
 
   // ---- wolf (wild) --------------------------------------------------------
-  const wolf = () => svg(`
-    <path d="M22 34 L14 12 L36 26 Z" fill="${C.wolf}" stroke="${C.wolfDark}" stroke-width="2.5"/>
-    <path d="M78 34 L86 12 L64 26 Z" fill="${C.wolf}" stroke="${C.wolfDark}" stroke-width="2.5"/>
-    <path d="M26 22 L20 14 L31 21 Z" fill="${C.pig}" opacity="0.7"/>
-    <path d="M74 22 L80 14 L69 21 Z" fill="${C.pig}" opacity="0.7"/>
-    <path d="M50 20 C74 20 80 44 78 58 C76 76 64 88 50 88 C36 88 24 76 22 58 C20 44 26 20 50 20 Z"
-          fill="${C.wolf}" stroke="${C.wolfDark}" stroke-width="3"/>
-    <path d="M50 50 C60 50 70 54 74 60 C68 74 60 80 50 80 C40 80 32 74 26 60 C30 54 40 50 50 50Z" fill="${C.wolfBelly}"/>
-    <path d="M30 44 l14 5 M70 44 l-14 5" stroke="${C.ink}" stroke-width="3" stroke-linecap="round"/>
-    <ellipse cx="40" cy="52" rx="4" ry="5" fill="${C.gold}"/><circle cx="40" cy="53" r="2.2" fill="${C.ink}"/>
-    <ellipse cx="60" cy="52" rx="4" ry="5" fill="${C.gold}"/><circle cx="60" cy="53" r="2.2" fill="${C.ink}"/>
-    <path d="M50 60 l7 6 -7 4 -7 -4 Z" fill="${C.ink}"/>
-    <path d="M42 70 q8 6 16 0" fill="none" stroke="${C.ink}" stroke-width="2.5"/>
-    <path d="M44 70 l-2 6 4 -3 M56 70 l2 6 -4 -3" fill="#fff" stroke="${C.wolfDark}" stroke-width="1"/>`);
+  const wolf = () => svg(`${disc}
+    <path d="M22 35 L13 12 L37 27 Z" fill="url(#ggGrey)" stroke="#4e5566" stroke-width="2"/>
+    <path d="M78 35 L87 12 L63 27 Z" fill="url(#ggGrey)" stroke="#4e5566" stroke-width="2"/>
+    <path d="M50 19 C75 19 81 44 79 59 C77 77 65 89 50 89 C35 89 23 77 21 59 C19 44 25 19 50 19 Z" fill="url(#ggGrey)" stroke="#4e5566" stroke-width="2.5"/>
+    <path d="M50 50 C61 50 71 55 75 61 C69 75 60 81 50 81 C40 81 31 75 25 61 C29 55 39 50 50 50Z" fill="#cfd5e0"/>
+    <path d="M30 45 l14 5 M70 45 l-14 5" stroke="#2a2f3a" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="40" cy="53" rx="4.2" ry="5.2" fill="url(#ggGold)"/><circle cx="40" cy="54" r="2.2" fill="#1b1b22"/>
+    <ellipse cx="60" cy="53" rx="4.2" ry="5.2" fill="url(#ggGold)"/><circle cx="60" cy="54" r="2.2" fill="#1b1b22"/>
+    <path d="M50 61 l7 6 -7 4 -7 -4 Z" fill="#1b1b22"/>
+    <path d="M41 71 q9 7 18 0" fill="none" stroke="#2a2f3a" stroke-width="2.5"/>
+    <path d="M44 71 l-2 7 4 -3 M56 71 l2 7 -4 -3" fill="#fff" stroke="#9aa3b3" stroke-width=".8"/>`);
 
   // ---- soup pot (scatter) -------------------------------------------------
-  const pot = () => svg(`
-    <path d="M30 36 q-6 0 -6 -6 M70 36 q6 0 6 -6" stroke="${C.soup}" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.8"/>
-    <path d="M40 30 c2 -8 -4 -10 -2 -18 M52 30 c2 -8 -4 -10 -2 -18 M64 30 c2 -8 -4 -10 -2 -18"
-          stroke="${C.cream}" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
-    <rect x="20" y="40" width="60" height="10" rx="5" fill="${C.potDark}"/>
-    <path d="M22 48 H78 L72 82 a6 6 0 0 1 -6 5 H34 a6 6 0 0 1 -6 -5 Z" fill="${C.pot}" stroke="${C.potDark}" stroke-width="3"/>
-    <ellipse cx="50" cy="50" rx="26" ry="7" fill="${C.soup}"/>
-    <circle cx="42" cy="50" r="3" fill="#ffd98a"/><circle cx="58" cy="49" r="2.4" fill="#ffd98a"/>
-    <path d="M14 58 q-6 4 0 8 M86 58 q6 4 0 8" stroke="${C.potDark}" stroke-width="4" fill="none"/>`);
+  const pot = () => svg(`${disc}
+    <path d="M40 32 c2 -9 -4 -11 -2 -19 M52 32 c2 -9 -4 -11 -2 -19 M64 32 c2 -9 -4 -11 -2 -19"
+          stroke="#e7eef5" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+    <rect x="19" y="40" width="62" height="11" rx="5.5" fill="url(#ggIron)"/>
+    <path d="M22 49 H78 L72 83 a6 6 0 0 1 -6 5 H34 a6 6 0 0 1 -6 -5 Z" fill="url(#ggIron)" stroke="#1a1f27" stroke-width="2.5"/>
+    <ellipse cx="50" cy="50" rx="27" ry="7.5" fill="url(#ggSoup)"/>
+    <circle cx="42" cy="50" r="3.2" fill="#ffe7b0"/><circle cx="59" cy="49" r="2.6" fill="#ffe7b0"/>
+    <path d="M13 58 q-6 5 0 9 M87 58 q6 5 0 9" stroke="url(#ggIron)" stroke-width="4.5" fill="none"/>
+    <path d="M26 56 l10 -3" stroke="#fff" stroke-width="2" opacity=".4"/>`);
 
   // ---- registry -----------------------------------------------------------
   const ART = {
-    A: () => card("A", "#1aa3a3", "#0f6e6e", pip("#1aa3a3")),
-    K: () => card("K", C.brick, C.brickDark, pip(C.brick)),
-    Q: () => card("Q", C.wood, C.woodDark, pip(C.wood)),
-    J: () => card("J", C.strawDark, "#9c7a1f", pip(C.straw)),
-    M1: axe, M2: trowel, M3: fork,
-    P1: brickPig, P2: woodPig, P3: strawPig,
+    A: () => gemLetter("A"), K: () => gemLetter("K"), Q: () => gemLetter("Q"), J: () => gemLetter("J"),
+    M1: axe, M2: trowel, M3: fork, P1: brickPig, P2: woodPig, P3: strawPig,
     W: wolf, S: pot, BR: brick,
   };
 
-  const IMG = {}; // id -> url when a generated asset is found
-
-  // Load only the images listed in the manifest -> no 404 noise for absent art.
+  const IMG = {};
   function loadImages(map, done) {
-    const ids = Object.keys(map || {});
-    let pending = ids.length;
+    const ids = Object.keys(map || {}); let pending = ids.length;
     if (!pending) { done && done(); return; }
-    ids.forEach((id) => {
-      const im = new Image();
-      im.onload = () => { IMG[id] = map[id]; if (--pending === 0) done && done(); };
-      im.onerror = () => { if (--pending === 0) done && done(); };
-      im.src = map[id];
-    });
+    ids.forEach((id) => { const im = new Image(); im.onload = () => { IMG[id] = map[id]; if (--pending === 0) done && done(); }; im.onerror = () => { if (--pending === 0) done && done(); }; im.src = map[id]; });
   }
 
+  injectDefs();
   window.PIGGY_ART = {
     svg: (id) => (ART[id] ? ART[id]() : `<svg viewBox="0 0 100 100"><text x="50" y="60" text-anchor="middle">${id}</text></svg>`),
-    hasImage: (id) => !!IMG[id],
-    imageUrl: (id) => IMG[id],
-    loadImages,
+    hasImage: (id) => !!IMG[id], imageUrl: (id) => IMG[id], loadImages,
   };
 })();

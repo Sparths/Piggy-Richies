@@ -194,20 +194,17 @@ def _write_fe_config(cfg: GameConfig, optimisation: dict, fair_costs: dict) -> N
 
 
 def _curate(books: list[dict], payouts: list[float], cap: int, kind: str) -> list[dict]:
-    """Pick a varied demo sample: the biggest wins + some triggers + randoms."""
+    """A *representative* random demo sample (NOT cherry-picked).
+
+    Earlier the demo injected the biggest wins + many trigger rounds, which made
+    it feel broken ("3 spins -> free spins -> 800x"). A plain random subset with
+    uniform weights (see _write_frontend) reproduces the true odds: a base spin
+    triggers the bonus only ~1 in 180, most spins are small or no win. Players
+    use the Bonus-Buy button to see the feature on demand -- exactly like a real
+    slot."""
     idx = list(range(len(books)))
-    order = sorted(idx, key=lambda i: payouts[i], reverse=True)
-    chosen = set(order[:15])  # always show the top wins (down-weighted by tilt)
-    if kind == "base":
-        triggers = [i for i in idx if any(e["type"] == "enterFreeGame" for e in books[i]["events"])]
-        chosen.update(triggers[:30])
-    rest = [i for i in idx if i not in chosen]
-    random.Random(7).shuffle(rest)
-    for i in rest:
-        if len(chosen) >= cap:
-            break
-        chosen.add(i)
-    return [books[i] for i in sorted(chosen)]
+    random.Random(20260625).shuffle(idx)
+    return [books[i] for i in sorted(idx[: min(cap, len(idx))])]
 
 
 def _write_frontend(cfg: GameConfig, generated: dict, fair_costs: dict) -> None:
@@ -220,21 +217,20 @@ def _write_frontend(cfg: GameConfig, generated: dict, fair_costs: dict) -> None:
     with open(os.path.join(fe, "game-config.js"), "w") as fh:
         fh.write("window.PIGGY_CONFIG = " + json.dumps(config, separators=(",", ":")) + ";\n")
 
-    caps = {"base": 220, "bonus": 60, "bonus_vip": 60}
+    # Bigger base sample so the rare ~1/180 trigger is represented at true odds;
+    # uniform weights => the demo's spin-to-spin frequencies match the real game.
+    caps = {"base": 1500, "bonus": 60, "bonus_vip": 60}
     out: dict[str, list] = {}
     for name, (books, payouts, kind) in generated.items():
         sample = _curate(books, payouts, caps.get(name, 80), kind)
-        sp = [b["payoutMultiplier"] for b in sample]
-        target = TARGET_RTP if kind == "base" else (sum(sp) / len(sp))
-        weights = solve_tilt_weights(sp, target)
         out[name] = [
             {
-                "weight": round(w, 5),
+                "weight": 1,
                 "serverSeedHash": b["serverSeedHash"],
                 "payoutMultiplier": b["payoutMultiplier"],
                 "events": b["events"],
             }
-            for w, b in zip(weights, sample)
+            for b in sample
         ]
     with open(os.path.join(fe, "game-books.js"), "w") as fh:
         fh.write("window.PIGGY_BOOKS = " + json.dumps(out, separators=(",", ":")) + ";\n")

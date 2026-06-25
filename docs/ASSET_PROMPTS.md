@@ -1,227 +1,208 @@
-# 🎨 Art / Image Prompt Pack — Stake's Huff & Puff: Piggy Richies
+# 🎨 Production Art Pack — Stake's Huff & Puff: Piggy Richies
 
-Everything you need to generate **Stake-quality art**. The game already ships
-with clean built-in **SVG vector art**, so it looks finished today — but for a
-premium, submission-ready look, generate the images below (Midjourney v6 /
-DALL·E 3 / SDXL / Ideogram all work) and drop them in. The game uses them
-automatically; anything you skip falls back to the SVG.
+Everything needed to give the game **AAA, submission-ready art** (Pragmatic
+Play / Hacksaw Gaming quality). The client already ships with built-in
+**premium gold SVG symbols**, so it looks finished now — but to match a
+top-tier slot, generate the images below and drop them in. The game swaps them
+in automatically; anything you skip keeps its SVG.
 
-> **Goal style (from the concept):** *minimalist Stake-Originals look + charming,
-> action-packed comic.* Think clean, modern, slightly 2.5D "vector-3D", bold
-> readable shapes, premium soft studio lighting — friendly but high-end.
+> **Reference look:** polished **3D-rendered, black-and-gold premium** symbols
+> with **red gemstone accents**, glossy specular highlights, beveled edges and
+> dramatic studio lighting — exactly the style of high-end real-money slots.
+
+**Best tools:** Midjourney v6.1 (characters/scenes), DALL·E 3, **SDXL +
+Juggernaut/RealCartoon** (symbols, with a background-removal node), Ideogram
+(text/logo). Generate the **whole set in one session with one style reference**
+so it's consistent.
 
 ---
 
-## 0 · How to install generated art
+## 0 · Install (no code changes)
 
-1. Export each file with the **exact filename** below (transparent **WebP** or **PNG**).
-2. Put symbols in `frontend/assets/symbols/`, the rest in `frontend/assets/`.
-3. List what you added in `frontend/assets/manifest.js`, e.g.:
+1. Export each file with the **exact name** below as transparent **WebP/PNG**.
+2. Symbols → `frontend/assets/symbols/`; the rest → `frontend/assets/`.
+3. List what you added in `frontend/assets/manifest.js`:
    ```js
    window.PIGGY_ASSETS = {
-     symbols: { W:"assets/symbols/W.webp", S:"assets/symbols/S.webp", P1:"assets/symbols/P1.webp", /* … */ },
+     symbols: { W:"assets/symbols/W.webp", S:"assets/symbols/S.webp", P1:"assets/symbols/P1.webp",
+                P2:"assets/symbols/P2.webp", P3:"assets/symbols/P3.webp", M1:"assets/symbols/M1.webp",
+                M2:"assets/symbols/M2.webp", M3:"assets/symbols/M3.webp", A:"assets/symbols/A.webp",
+                K:"assets/symbols/K.webp", Q:"assets/symbols/Q.webp", J:"assets/symbols/J.webp",
+                BR:"assets/symbols/BR.webp" },
      background: "assets/background.webp",
      logo: "assets/logo.webp",
    };
    ```
-4. Reload. Done — no code changes.
+4. Reload.
 
-**Technical specs**
-
-| Asset type | Size | Format | Background |
+| Asset | Size | Format | Background |
 |---|---|---|---|
-| Symbols (13) | 1024×1024 (square) | WebP/PNG | **transparent** |
-| Background | 1920×1080 | WebP/JPG | full-bleed |
-| Logo/wordmark | 1200×400 | WebP/PNG | **transparent** |
+| Symbols (13) | 1024×1024 | WebP/PNG | **transparent** |
+| Background | 1920×1080 (landscape) | WebP/JPG | full-bleed |
+| Logo | 1400×500 | WebP/PNG | **transparent** |
 
 ---
 
-## 1 · Master style guide — prepend to EVERY symbol prompt
-
-> Copy this block in front of each symbol prompt so the whole set is consistent.
+## 1 · MASTER STYLE — prepend to every SYMBOL prompt
 
 ```
-Premium online-slot game symbol, single icon centered, "Stake Originals"
-minimalist style mixed with charming Pixar-like comic appeal, clean vector-3D
-look, bold rounded shapes, thick soft outline, smooth gradients, glossy but
-tasteful highlights, soft top-down studio lighting, subtle ambient occlusion,
-vibrant yet slightly desaturated premium palette, fairytale "Three Little Pigs"
-theme, high detail, crisp, centered, fills ~85% of frame, isolated on a fully
-transparent background, no scene, no ground, no text, no border.
+Premium 3D-rendered online slot game symbol, single icon, centered, isolated on
+a fully transparent background. AAA mobile-casino quality (Pragmatic Play /
+Hacksaw Gaming level). Polished black-and-gold luxury style: rich beveled gold
+with warm gradients, deep red ruby gemstone accents, glossy specular highlights,
+soft rim light, subtle ambient occlusion, gentle contact shadow under the
+object only. Charming fairytale "Three Little Pigs" theme. Bold, instantly
+readable silhouette that fills ~85% of the frame, crisp edges, no scene, no
+text label, no border, no card frame.
 ```
 
-**Master negative prompt (SDXL/where supported):**
+**Master negative:**
 ```
-photorealistic, realistic photo, text, watermark, signature, logo, frame,
-border, drop shadow on ground, background scenery, multiple objects, cropped,
-blurry, low-res, harsh contrast, gritty, horror, gore, extra limbs, deformed
+flat, 2d clipart, sticker, photo of real animal, realistic photograph, text,
+watermark, signature, frame, border, background scenery, busy, multiple objects,
+cropped, blurry, low-res, muddy colors, gore, horror, extra limbs, deformed,
+plastic toy
 ```
 
-**Consistency tips**
-- Generate the **whole set in one session**; reuse the **same seed / `--sref`
-  style reference** so lighting and outline weight match across all 13.
-- Keep one **light direction** (top, slightly left) for every symbol.
-- Palette anchors: pig pink `#F7ADC4`, wolf grey `#8A93A6`, gold `#FFD23F`,
-  scatter orange `#FF9D4D`, brick `#D8693F`, wood `#C08A4E`, straw `#F0C95D`.
+**Consistency:** render `W` (wolf) first, then use it as the `--sref` /
+style-reference image (or fixed SDXL seed) for all 12 others. One light
+direction (top, slightly left) everywhere. Palette: gold `#FFD23F→#B8860B`,
+ruby `#E01B2E`, pig pink `#F7ADC4`, wolf grey `#8A93A6`, scatter orange
+`#FF9D4D`, brick `#D8693F`.
 
 ---
 
-## 2 · Symbol prompts (13) — each = master block + the line below
+## 2 · Symbols (13) — master block **+** the line below
 
-### 🐺 `W.webp` — The Big Bad Wolf (WILD · most important)
+### 🐺 `W.webp` — Big Bad Wolf · WILD *(render first → style reference)*
 ```
-…the Big Bad Wolf head as the WILD symbol: a charismatic cartoon grey wolf,
-sly confident grin baring white fangs, glowing golden eyes, pointed ears,
-fluffy cheek tufts, faint magical purple rim-light, villain charm but
-family-friendly, the hero icon of the game.
-```
-
-### 🍲 `S.webp` — Boiling Soup Pot (SCATTER)
-```
-…a black cast-iron cauldron full of bubbling orange soup, rising wisps of
-steam, a wooden spoon resting on the rim, warm inviting glow, glossy metal,
-slightly magical — the scatter that summons the bonus.
+…a charismatic 3D cartoon Big Bad Wolf head, sleek grey fur with gold-rimmed
+glowing eyes, a sly confident fanged grin, pointed ears, faint purple magical
+rim-light, sitting on a subtle ornate gold medallion; the premium hero WILD
+icon — villainous but charming, ultra-polished.
 ```
 
-### 🐷 `P1.webp` — Brick Pig (PREMIUM — top symbol)
+### 🍲 `S.webp` — Boiling Soup Pot · SCATTER
 ```
-…a cool wealthy pig wearing sleek black sunglasses and a thick gold chain,
-confident smirk, faint brick-red accent, "crypto-rich" vibe, the most premium
-and valuable pig — looks expensive and self-assured.
-```
-
-### 🐽 `P2.webp` — Wood Pig (PREMIUM)
-```
-…a hard-working carpenter pig wearing a yellow hard hat, a pencil tucked behind
-the ear, a friendly determined smile, a hint of wood-brown and sawdust, capable
-and cheerful.
+…a glossy black cast-iron cauldron brimming with glowing golden-orange soup,
+gentle magical steam, a wooden ladle, warm light from within, ornate gold rim,
+the special SCATTER icon — inviting and slightly enchanted.
 ```
 
-### 🐖 `P3.webp` — Straw Pig (PREMIUM)
+### 🐷 `P1.webp` — Brick Pig · PREMIUM (top)
 ```
-…a shy nervous pig with big worried eyes and a slight sweat drop, a single
-straw stalk in its mouth, a wisp of a straw hat, soft pastel tones, timid and
-endearing — builds fastest, worries most.
-```
-
-### 🪓 `M1.webp` — Axe (MID)
-```
-…a sturdy woodcutter's axe, polished steel blade with a bright highlight,
-worn wooden handle with grain, leaning at a dynamic angle, clean game-icon look.
+…a cool wealthy 3D cartoon pig wearing sleek black sunglasses and a chunky gold
+chain, a confident smirk, brick-red accents, faint gold sparkle, on a subtle
+gold medallion; the most premium and valuable symbol — looks rich and self-assured.
 ```
 
-### 🧱 `M2.webp` — Trowel / Kelle (MID)
+### 🐽 `P2.webp` — Wood Pig · PREMIUM
 ```
-…a bricklayer's pointed trowel with a wooden handle and a small dollop of fresh
-grey mortar on the blade, steel shine, tidy and iconic.
-```
-
-### 🔱 `M3.webp` — Pitchfork / Gabel (MID)
-```
-…a rustic three-tine farmer's pitchfork, weathered wooden shaft, polished metal
-tines, simple bold silhouette, readable at small size.
+…a hard-working 3D cartoon carpenter pig in a golden-yellow hard hat, pencil
+behind the ear, friendly determined smile, warm wood-brown accents, on a subtle
+gold medallion; capable and cheerful, premium quality.
 ```
 
-### 🅰️ `A.webp` — Ace card (LOW · premium card)
+### 🐖 `P3.webp` — Straw Pig · PREMIUM
 ```
-…an ornate playing card showing a large letter "A", premium teal-and-gold royal
-styling, a tiny golden pig-snout motif as the suit pip, glossy card face, clean
-rounded corners.
-```
-
-### 🇰 `K.webp` — King card (LOW · brick-themed)
-```
-…an ornate playing card showing a large letter "K" in brick-red, decorated with
-a small brick motif as the suit pip, warm red-orange royal styling, glossy face,
-rounded corners.
+…a shy nervous 3D cartoon pig with big worried eyes, a single straw stalk in its
+mouth, soft pastel-pink with golden straw accents, on a subtle gold medallion;
+endearing and timid, premium quality.
 ```
 
-### 🇶 `Q.webp` — Queen card (LOW · wood-themed)
+### 🪓 `M1.webp` — Axe · MID
 ```
-…an ornate playing card showing a large letter "Q" in wood-brown, decorated with
-a small wooden-plank motif as the suit pip, cozy brown royal styling, glossy
-face, rounded corners.
-```
-
-### 🇯 `J.webp` — Jack card (LOW · straw-themed)
-```
-…an ornate playing card showing a large letter "J" in golden straw-yellow,
-decorated with a small straw-bundle motif as the suit pip, warm wheat royal
-styling, glossy face, rounded corners.
+…a 3D-rendered woodcutter's axe, polished steel blade with bright specular
+highlights and gold inlay on a rich wooden handle, dynamic angle, premium and
+glossy.
 ```
 
-### 🧱 `BR.webp` — Brick token (COLLECTIBLE)
+### 🧱 `M2.webp` — Trowel (Kelle) · MID
 ```
-…a single glossy red building brick with neat grey mortar edges, one small
-golden sparkle highlight, collectible "token" feel, slight bevel, premium and
-clean — the brick you collect to upgrade the houses.
+…a 3D-rendered bricklayer's pointed trowel, mirror-polished steel blade with
+gold trim and a varnished wooden handle, a small dab of mortar, premium glossy
+finish.
+```
+
+### 🔱 `M3.webp` — Pitchfork (Gabel) · MID
+```
+…a 3D-rendered three-tine pitchfork, polished metal tines with gold accents on
+a rich wooden shaft, bold readable silhouette, premium glossy finish.
+```
+
+### 🔟 `A.webp` `K.webp` `Q.webp` `J.webp` — Royal letters · LOW
+> Generate as a matched set; only the letter and gem color change.
+```
+…the ornate 3D-rendered golden letter "{A|K|Q|J}", elegant serif, thick beveled
+polished gold with warm gradient and strong specular highlights, a faceted deep
+red ruby gemstone embedded at the top, subtle dark outline so it pops on a navy
+reel, AAA slot royal-card-symbol style; just the gem-letter, no card, no background.
+```
+
+### 🧱 `BR.webp` — Brick token · COLLECTIBLE
+```
+…a single glossy red building brick with crisp grey mortar and polished gold
+trim/edges, one bright golden sparkle, premium collectible "token" look, gentle
+bevel and specular highlight.
 ```
 
 ---
 
-## 3 · Background — `background.webp` (1920×1080, full-bleed)
-
+## 3 · `background.webp` — 1920×1080 immersive scene
 ```
-Atmospheric fairytale night scene for an online slot background, "Three Little
-Pigs" theme, Stake-Originals minimalist style: rolling moonlit hills, a huge
-glowing moon, soft stars, in the far distance three tiny houses (straw hut,
-wooden cabin, brick fortress) as gentle silhouettes, deep blue-teal palette
-(#0D2236 to #123048), cinematic, calm, slightly mysterious. IMPORTANT: keep the
-CENTER darker and uncluttered so a game board sits on top; detail and interest
-only around the edges. No characters, no text, no UI.
+Cinematic 3D fairytale night scene for a premium slot background, "Three Little
+Pigs" theme: a moonlit countryside, huge glowing moon, soft star field, rolling
+hills, and in the mid-distance three charming houses — a straw hut, a wooden
+cabin and a grand brick fortress — with warm glowing windows, faint magical
+fireflies, deep blue-teal palette with warm golden accents, atmospheric haze,
+premium AAA game-art quality. IMPORTANT: keep the CENTER darker and uncluttered
+so the reels sit on top; place detail and light toward the edges. No characters
+in front, no text, no UI.
 ```
-Negative: `busy center, bright center, text, ui, characters, watermark`
+Negative: `bright center, busy center, text, ui, watermark, people, daytime`
 
 ---
 
-## 4 · Logo / wordmark — `logo.webp` (1200×400, transparent)
-
+## 4 · `logo.webp` — 1400×500 transparent
 ```
-Game logo for "HUFF & PUFF" with subtitle "PIGGY RICHIES", bold playful 3D
-comic lettering, glossy gold and emerald-green with thick dark outline and a
-subtle bevel, a small sly grey wolf silhouette peeking around the letters, a few
-gold-coin sparkles, fairytale-meets-crypto premium casino vibe, isolated on a
-fully transparent background, no scene.
-```
-> The top-left brand mark can also use just a wolf bust — if you prefer, generate
-> a square `logo.webp` of only the wolf head (same as `W` but more detailed).
-
----
-
-## 5 · Optional extras (not auto-wired — for splash / marketing / store)
-
-These aren't loaded automatically (the game uses emoji/SVG for them), but they
-polish a store listing or a future splash screen.
-
-### `hero-wolf.png` — bonus splash character
-```
-Full-body dynamic Big Bad Wolf mid-"huff and puff", cheeks puffed out blowing a
-strong cartoon wind gust, exaggerated action pose, charming villain, grey fur,
-purple magical accents, comic energy, transparent background.
-```
-
-### `house-straw.png` / `house-wood.png` / `house-brick.png` — level icons
-```
-Cute isometric game icon of a {straw hut | wooden cabin | sturdy brick fortress},
-"Three Little Pigs" theme, clean vector-3D, soft lighting, transparent
-background, matching the symbol set's style — used for the free-spins house
-levels (Stroh-Haus / Holz-Haus / Ziegel-Festung).
+Premium 3D game logo: the title "HUFF & PUFF" big with a smaller ribbon
+subtitle "PIGGY RICHIES" beneath, bold playful beveled 3D lettering in polished
+gold with red-ruby gem accents and a thick dark outline, a sly grey wolf
+silhouette and a tiny golden soccer-ball-free coin sparkle integrated, fairytale
+luxury casino vibe, dramatic lighting, isolated on a fully transparent
+background, no scene.
 ```
 
 ---
 
-## 6 · Quick tool recipes
+## 5 · Optional polish (not auto-wired — for store / splash / future)
 
-- **Midjourney v6:** `<master block> <symbol line> --style raw --ar 1:1 --s 250`.
-  Lock the look with `--sref <url-of-your-first-good-symbol>` for the rest, and
-  reuse `--seed`. Export, then remove background (MJ has no alpha — use
-  `rembg`/Photoroom/Canva to cut to transparent).
-- **DALL·E 3 (ChatGPT):** paste the master block + symbol line, add *"transparent
-  background, single centered icon, game asset sheet style."*
-- **SDXL / ComfyUI:** master block as positive, master negative as negative,
-  1024×1024, fixed seed across the set; use an "isnet/rembg" node for alpha.
-- **Batch consistency:** generate `W` first, pick the best, then use it as the
-  style reference for all others so the set matches.
+- **`frame.webp`** (square, transparent center): *Ornate gold slot reel frame,
+  baroque corners with red gems, premium black-and-gold, empty transparent
+  center for a 5×4 grid, AAA casino UI.*
+- **`hero-wolf.png`** (splash): *Full-body 3D Big Bad Wolf mid-"huff & puff",
+  cheeks puffed, blowing a strong cartoon wind gust, dynamic villain pose,
+  transparent background.*
+- **House icons `house-straw/wood/brick.png`:** *Cute isometric 3D {straw hut |
+  wooden cabin | brick fortress}, premium game-icon, gold accents, transparent.*
+- **Button icons `btn-spin/auto/turbo/buy.png`:** *Glossy gold-and-green circular
+  casino UI button icon for {spin arrows | autoplay | turbo lightning | bonus
+  buy}, transparent.*
 
-After generating, optimize: `cwebp -q 90 in.png -o out.webp` (or squoosh.app),
-then list the files in `frontend/assets/manifest.js` (section 0).
+---
+
+## 6 · Tool recipes
+
+- **Midjourney v6.1:** `<master> <symbol line> --style raw --ar 1:1 --s 200`.
+  Make `W` first, then add `--sref <W-image-url>` to every other symbol for a
+  matched set; remove background with Photoroom / `rembg` (MJ has no alpha).
+- **SDXL / ComfyUI:** master as positive, master-negative as negative,
+  1024×1024, **fixed seed** across the set, add an `isnet/rembg` node for alpha.
+- **DALL·E 3:** master + symbol line + *"single centered icon, transparent
+  background, premium game asset."*
+- **Optimize:** `cwebp -q 90 in.png -o out.webp` (or squoosh.app), then list the
+  files in `frontend/assets/manifest.js`.
+
+The result: drop the 13 symbols + background + logo into `frontend/assets/`,
+update the manifest, reload — and the game matches a top-tier production slot
+with no code changes.

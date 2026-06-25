@@ -11,6 +11,13 @@ replays those books with full cascade / free-spin animation.
 > House Upgrade free spins (Straw → Wood → Brick Fortress) · feature buy ·
 > **96.55 % RTP** · **15 000× max win** · provably-fair ready.
 
+### ▶️ Play it live → **https://sparths.github.io/Piggy-Richies/**
+
+[![Deploy to GitHub Pages](https://github.com/Sparths/Piggy-Richies/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Sparths/Piggy-Richies/actions/workflows/deploy-pages.yml)
+
+The web client is auto-published to GitHub Pages on every push to `main`
+(see `.github/workflows/deploy-pages.yml`).
+
 ```
 ┌─────────────────────────────┐         ┌──────────────────────────────┐
 │  math/  (Stake math-sdk)    │  books  │  frontend/  (Stake web-sdk)  │

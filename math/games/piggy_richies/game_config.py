@@ -24,10 +24,12 @@ REELS_DIR = os.path.join(os.path.dirname(__file__), "reels")
 
 
 class GameConfig(Config):
-    # Solved by the optimiser in run.py so the simulated RTP hits the 96.55 %
-    # target (8 M-spin calibration; see library/config/optimisation.json).
-    # 1.0 = raw designed pays.
-    PAYTABLE_SCALE = 0.31602
+    # Solved by `run.py calibrate` against the **capped** mean so the real
+    # (15,000x-capped) RTP lands on 96.55 % -- the bonus has a heavy tail beyond
+    # the cap, so calibrating uncapped would set RTP a few points low. The
+    # lookup-table tilt in build() then pins the published RTP exactly.
+    # (2.5 M-spin calibration; see library/config/optimisation.json.)
+    PAYTABLE_SCALE = 0.21952
 
     def __init__(self) -> None:
         super().__init__()
@@ -84,7 +86,11 @@ class GameConfig(Config):
         # -- Reel-strip compositions --------------------------------------
         # symbol -> count, per reel. Premiums rare on early reels; the wolf
         # (wild) sits on the middle reels in the base game and spreads across
-        # all reels in the feature; brick tokens (BR) live only on reel 5.
+        # all reels in the feature. One soup-pot (S) per reel: because pots now
+        # accumulate across tumbles (gamestate counts the settled board), this
+        # already lands the bonus ~1 in 110-130 -- denser scatters made it far
+        # too loose. Brick tokens (BR) are seeded on *every* free reel (one each)
+        # so the House-Upgrade collectible can land anywhere on the grid.
         base_comp = [
             {"P1": 2, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 5, "A": 6, "K": 6, "Q": 7, "J": 7, "S": 1},
             {"P1": 2, "P2": 2, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 6, "K": 6, "Q": 6, "J": 6, "W": 2, "S": 1},
@@ -93,15 +99,15 @@ class GameConfig(Config):
             {"P1": 2, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 5, "A": 6, "K": 6, "Q": 7, "J": 7, "S": 1},
         ]
         free_comp = [
-            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 1, "S": 1},
-            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 3, "S": 1},
-            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 4, "K": 4, "Q": 5, "J": 5, "W": 4, "S": 1},
-            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 3, "S": 1},
-            # Reel 5 is the "build" reel: brick tokens (BR) are collected here to
-            # level up the houses. Bricks are common enough that the Wood house
-            # (5 bricks) is reached often, but the Brick Fortress (10) stays a
-            # rare, marquee event.
-            {"P1": 3, "P2": 3, "P3": 3, "M1": 3, "M2": 3, "M3": 3, "A": 3, "K": 3, "Q": 3, "J": 3, "W": 1, "S": 1, "BR": 4},
+            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 1, "S": 1, "BR": 1},
+            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 3, "S": 1, "BR": 1},
+            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 4, "K": 4, "Q": 5, "J": 5, "W": 4, "S": 1, "BR": 1},
+            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 3, "S": 1, "BR": 1},
+            # Bricks (BR) collect toward the House Upgrade. One brick token per
+            # reel keeps the average ~0.44 bricks/spin (Wood at 5 reached often,
+            # the Brick Fortress at 10 a rare marquee) -- identical pacing to the
+            # old reel-5-only "build reel", now visible anywhere on the board.
+            {"P1": 3, "P2": 3, "P3": 3, "M1": 4, "M2": 4, "M3": 4, "A": 5, "K": 5, "Q": 5, "J": 5, "W": 1, "S": 1, "BR": 1},
         ]
         self.reels = {
             "BR0": self._build_strips(base_comp, seed=101),

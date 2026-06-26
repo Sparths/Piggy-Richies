@@ -60,10 +60,15 @@
   <!-- ===== reels ===== -->
   <main class="stage">
     <div id="house-panel" class="house-panel hidden">
-      <div class="house-build"><span class="house-emoji" id="house-emoji">🌾</span></div>
+      <div class="house-ring" id="house-ring" style="--p:0">
+        <div class="house-build"><span class="house-emoji" id="house-emoji">🌾</span></div>
+      </div>
       <div class="house-info">
         <div class="house-name" id="house-name">Stroh-Haus</div>
-        <div class="brick-track"><div class="brick-fill" id="brick-fill"></div><span class="brick-label" id="brick-label">🧱 0 / 5</span></div>
+        <div class="house-levels" id="house-levels">
+          <span class="hl on" data-l="1">🌾</span><span class="hl-arrow">›</span><span class="hl" data-l="2">🪵</span><span class="hl-arrow">›</span><span class="hl" data-l="3">🏰</span>
+        </div>
+        <div class="house-bricks" id="brick-label">🧱 0 / 5</div>
       </div>
       <div class="fs-counter"><label>FREISPIEL</label><span id="fs-count">0 / 0</span></div>
     </div>
@@ -151,8 +156,8 @@
         <li><b>5×4 Walzen, 1024 Wege.</b> Gleiche Symbole auf benachbarten Walzen von links zahlen.</li>
         <li><b>Huff &amp; Puff Kaskaden.</b> Der Wolf pustet Gewinn­symbole weg, neue fallen nach — Gewinne in Serie!</li>
         <li><b>Wolf-Multiplikator.</b> Jede Kaskade in Folge erhöht den Multiplikator (bis ×5, in Freispielen ×8).</li>
-        <li><b>3× 🍲 Suppentopf</b> startet die <b>House-Upgrade-Freispiele</b> (selten — nutze „Bonus kaufen", um sie sofort zu sehen).</li>
-        <li><b>Häuser aufleveln.</b> Sammle 🧱 auf Walze 5: Stroh → Holz (Wild-Multis) → Ziegel-Festung (Sticky Wilds).</li>
+        <li><b>3× 🍲 Suppentopf</b> startet die <b>House-Upgrade-Freispiele</b> — Töpfe zählen auch, wenn sie per Kaskade nachfallen!</li>
+        <li><b>Häuser aufleveln.</b> Sammle 🧱 (fällt überall): Stroh → Holz (Wild-Multis) → Ziegel-Festung (Sticky Wilds).</li>
       </ul>
       <button class="cta" data-close>Los geht's!</button>
     </div>

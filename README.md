@@ -115,24 +115,24 @@ job Stake's optimiser does.
 |--------|------:|
 | Target RTP | **96.55 %** |
 | Published RTP (lookup-tilted) | **96.55 %** — exact on every book set |
-| Modelled RTP (8 M-spin calibration) | 96.55 % (point), 95 % CI ±1.9 % |
-| `PAYTABLE_SCALE` solved | `0.31602` |
+| Modelled RTP (2.5 M-spin **capped** calibration) | 96.55 % (capped mean) |
+| `PAYTABLE_SCALE` solved | `0.21952` |
 | Grid / ways | 5×4 / **1 024** |
 | Hit rate | ≈ 57 % |
-| Free-spins trigger | ≈ 1 in 180 |
-| Feature share of RTP | ≈ 41 % |
-| Feature-buy cost (A / VIP) | ≈ **70× / 235×** (fair, solved per build) |
+| Free-spins trigger | ≈ **1 in 96** (pots accumulate across tumbles) |
+| Feature share of RTP | ≈ 55–60 % |
+| Feature-buy cost (A / VIP) | fair, solved per build from a large EV sim |
 | Wood House reached | ≈ 48 % of bonuses |
 | Brick Fortress reached | ≈ 6 % of bonuses |
 | Max win | **15 000×** (enforced cap, ≈ 1 in 8 M) |
 | Volatility | **very high** |
 
 > Because the game is *very high volatility*, the RTP mean is dominated by rare
-> Brick-Fortress runs — a naive 200k-spin average swings ±6 %. That is exactly
-> why Stake uses weighted lookup tables; here the scale is calibrated over
-> **8 million** rounds (95 % CI ±1.9 %) and the exponential-tilt lookup weights
-> pin the published RTP to **exactly 96.55 %** (`optimisation.json` reports
-> `weighted_rtp = 0.9655` for all three modes).
+> Brick-Fortress runs, and the bonus tail runs **past** the 15 000× cap (so
+> uncapped vs capped RTP differ ~7 %). The scale is therefore calibrated against
+> the **capped** mean over millions of rounds, and the exponential-tilt lookup
+> weights pin the published RTP to **exactly 96.55 %** (`optimisation.json`
+> reports `weighted_rtp = 0.9655` for all three modes).
 
 ---
 
@@ -144,7 +144,7 @@ job Stake's optimiser does.
 | 3 · Symbol catalogue | `symbols.py` + catalogue in `game_config.py` (Wolf wild, Soup-pot scatter, 3 pigs, 3 tools, 4 cards, brick token) |
 | 4.1 · Huff & Puff cascade | `gamestate._play_cascades` + `board.collapse` (winning tiles blown away, gravity refills) |
 | 4.2 · Progressive Wolf multiplier 1→5× | `base_mult_ladder` `[1,2,3,5]`, resets after a win-less spin |
-| 5 · House Upgrade free spins | `gamestate.run_freespin` — brick collection on reel 5, levels Straw→Wood→Brick |
+| 5 · House Upgrade free spins | `gamestate.run_freespin` — bricks collect from **any reel**, levels Straw→Wood→Brick |
 | 5 · Wood (≥5 bricks) wild mults 2×/3× | `wild_mult_values`, applied from level 2 |
 | 5 · Brick Fortress (≥10) sticky wilds + persistent mult | sticky re-stamping + non-resetting cascade index, free ladder up to 8× |
 | 6 · Feature buy A / VIP B | bet-modes `bonus` (Straw) & `bonus_vip` (Wood, +bricks) |

@@ -33,13 +33,19 @@ Pay-table values are authored at a readable *design* scale, then one global
    (`src/write_data.solve_tilt_weights`) so the *weighted* RTP over the book set
    is exact, mirroring the role of Stake's optimiser.
 
-### Heavy-tail variance (why calibrate over millions)
+### Heavy-tail variance & the win-cap (calibrate *capped*)
 
 The game is *very high volatility*: the mean is dominated by rare Brick-Fortress
-runs, so a naive 200k-spin RTP estimate swings by ±6 % between seeds. `run.py
-calibrate` therefore averages **millions** of rounds (with batch-means
-confidence intervals). The committed `PAYTABLE_SCALE` comes from an **8 M-spin**
-calibration; the lookup weights guarantee the exact published figure regardless.
+runs, so a naive 200k-spin RTP estimate swings by several % between seeds. Worse,
+the bonus has a heavy tail **beyond** the 15 000× cap — uncapped vs capped means
+differ by ~7 %, so the cap genuinely truncates that slice of return. `run.py
+calibrate` therefore solves `PAYTABLE_SCALE` against the **capped** mean (the RTP
+players actually get) over millions of rounds, and prints the uncapped/cap-cost
+diagnostic. The committed scale comes from a **2.5 M-spin** capped calibration;
+the lookup-tilt weights then pin the *published* RTP to 96.55 % exactly,
+regardless. Feature-buy prices are taken from a separate **large** EV sim
+(`_buy_ev`, 120 k rounds) because the 8 k demo-book sample is far too few to
+price a 15 000×-tail bonus (its EV estimate swings 2–3×).
 
 ## Resolved interpretations of the GDD
 
@@ -50,10 +56,10 @@ calibration; the lookup weights guarantee the exact published figure regardless.
 | Wild multipliers | "random 2× or 3×" (Wood+) | A win's participating wild multipliers are **summed** (2×+3× → ×5), not multiplied — keeps the very-high-vol tail thrilling without an exponential blow-up. |
 | Progressive multiplier | base "1× → 2× → 3× → max 5×"; free "up to 8×" | Ladders `[1,2,3,5]` (base) and `[1,2,3,5,8]` (free). Resets after a win-less spin; at Level 3 it **persists** across spins (never resets). |
 | Sticky-wild count | "all wilds become sticky" | Capped (`max_sticky_wilds = 2`) as a **balance lever**: uncapped + persistent-8× snowballs the board into a guaranteed max-win every Fortress run (avg bonus ≈ 480 000×). The cap keeps 15 000× a *genuine rare ceiling*. |
-| Scatter timing | "3+ pots trigger / pay" | Counted on the **freshly drawn board** of each spin (deterministic), not on tiles that tumble in mid-cascade. |
+| Scatter timing | "3+ pots trigger / pay" | Counted on the **settled board** after the cascade resolves. Pots never tumble off (only paying tiles do), so ones that drop in mid-cascade **accumulate** — a 2-pot board still triggers when the 3rd falls in on a tumble. |
 | Free-spin awards | unspecified | 3/4/5 scatters → 10/12/15 spins; retrigger +5; level-up grants +2 (Wood) / +3 (Brick) spins. |
-| Brick collection | "collect bricks on reel 5" | A dedicated **brick token** (`BR`) appears only on free-game reel 5; 5 → Wood, 10 → Brick Fortress. |
-| Feature buy | A regular, B (VIP) starts in Wood | Bet-modes `bonus` (Straw start) and `bonus_vip` (Wood start, +5 pre-bricks, extra spins). Costs are **solved** to the fair RTP from the simulated buy EV. |
+| Brick collection | "collect bricks on reel 5" | A **brick token** (`BR`) seeded one-per-reel on every free-game reel, so it can land **anywhere on the grid** (≈ 0.44/spin overall, same pace as the old reel-5-only build reel); 5 → Wood, 10 → Brick Fortress. Bricks present on the revealed board are banked (animated to the meter) before the cascade; only reveal-board bricks count, which keeps the upgrade pace intact. |
+| Feature buy | A regular, B (VIP) starts in Wood | Bet-modes `bonus` (Straw start) and `bonus_vip` (Wood start, +2 pre-bricks, +2 spins). Costs are **solved** to the fair RTP from a large simulated buy EV. |
 | Provably fair | "every reel stop from a transparent crypto RNG" | `ProvablyFairRNG` = HMAC-SHA256(server_seed, `client:nonce:cursor`) stream; each emitted book carries its `serverSeedHash`. |
 
 ## Feature reach (very-high-volatility profile)

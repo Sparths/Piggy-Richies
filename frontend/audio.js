@@ -41,11 +41,26 @@
     toggle() { muted = !muted; if (!muted) ensure(); if (master) master.gain.value = muted ? 0 : 0.9; return muted; },
 
     spin() { if (muted || !ensure()) return; const t = now(); tone(440, t, 0.13, "triangle", 0.1, 240); noise(t, 0.2, 0.05, 1400); },
-    reelStop() { if (muted || !ensure()) return; const t = now(); tone(150, t, 0.08, "sine", 0.13, 90); noise(t, 0.05, 0.06, 500); },
+    // col -> a descending pitch across reels 1..5; anticip stops land heavier
+    reelStop(col = 0, anticip = false) {
+      if (muted || !ensure()) return; const t = now();
+      const f = anticip ? 92 : 178 - col * 13;
+      tone(f, t, anticip ? 0.17 : 0.08, "sine", anticip ? 0.18 : 0.12, f * 0.62);
+      noise(t, 0.05, 0.06, anticip ? 360 : 520);
+      if (anticip) tone(f * 2.2, t, 0.12, "triangle", 0.05);
+    },
     puff() { if (muted || !ensure()) return; noise(now(), 0.34, 0.17, 650, 0.5); noise(now() + 0.02, 0.28, 0.08, 1500); },
     drop() { if (muted || !ensure()) return; const t = now(); tone(190, t, 0.09, "sine", 0.09, 120); },
 
     win(step = 0) { if (muted || !ensure()) return; const t = now(); const base = [523, 587, 659, 784, 880, 988, 1175, 1319][Math.min(step, 7)]; tone(base, t, 0.16, "triangle", 0.16); tone(base * 1.5, t + 0.04, 0.16, "sine", 0.08); },
+    // wolf multiplier stepped up -> a chime that brightens with the multiplier
+    multUp(m = 2) {
+      if (muted || !ensure()) return; const t = now();
+      const base = 520 + Math.min(7, m) * 64;
+      tone(base, t, 0.16, "triangle", 0.16, base * 1.5);
+      tone(base * 1.5, t + 0.05, 0.15, "sine", 0.08);
+      noise(t, 0.12, 0.035, 2600);
+    },
     brick() { if (muted || !ensure()) return; const t = now(); tone(330, t, 0.09, "square", 0.1); tone(494, t + 0.06, 0.1, "square", 0.09); },
 
     scatter() { if (muted || !ensure()) return; const t = now(); tone(660, t, 0.18, "sine", 0.18); tone(990, t + 0.06, 0.2, "triangle", 0.12); noise(t, 0.3, 0.05, 2000); },

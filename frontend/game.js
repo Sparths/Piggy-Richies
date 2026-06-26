@@ -12,15 +12,15 @@
 
   const $ = (id) => document.getElementById(id);
   const boardEl = $("board"), wolfEl = $("wolf"), overlay = $("overlay"), glow = $("board-glow");
-  const phaseEl = $("phase"), winEl = $("win-amount"), multBadge = $("mult-badge");
+  const phaseEl = $("phase"), winEl = $("win-amount"), multBadge = $("mult-badge"), multTab = $("mult-tab");
   const balanceEl = $("balance"), betEl = $("bet"), spinBtn = $("spin");
   const housePanel = $("house-panel"), houseName = $("house-name"), houseEmoji = $("house-emoji");
-  const brickFill = $("brick-fill"), brickLabel = $("brick-label"), fsCount = $("fs-count");
+  const brickLabel = $("brick-label"), fsCount = $("fs-count");
   const toastEl = $("toast"), fsFlash = $("fs-flash"), autoNEl = $("auto-n");
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
@@ -39,7 +39,11 @@
     }
   }
   const cellAt = (col, row) => cells[row * REELS + col];
-  const DROP_DUR = 330, COL_STAGGER = 58, DROP_EASE = "cubic-bezier(.3,1.03,.43,1)";
+  const DROP_DUR = 300, DROP_EASE = "cubic-bezier(.3,1.03,.43,1)";
+  // full reel-spin slide (reveal): a rigid per-column strip with the incoming
+  // symbols stacked directly above the outgoing ones -> one motion, no blink.
+  const SPIN_DUR = 340, SPIN_STAG = 84, SPIN_EASE = "cubic-bezier(.16,.74,.28,1)";
+  const ANTICIP_DUR = 560, ANTICIP_GAP = 300; // "2 pots showing -> chase" crawl
   const rowPitch = () => { const a = cellAt(0, 0), b = cellAt(0, 1); return a && b ? b.getBoundingClientRect().top - a.getBoundingClientRect().top : (a ? a.offsetHeight : 60); };
 
   // Reuse the <img> and just swap src (no element recreation -> no flicker).
@@ -55,10 +59,14 @@
   }
   function paintCell(col, row, id) {
     const c = cellAt(col, row), s = SYM[id] || { kind: "low" };
-    c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky");
-    c.querySelectorAll(".wmult,.brick-pop").forEach((e) => e.remove());
-    const sym = c.querySelector(".sym"); sym.style.transition = "none"; sym.style.transform = "none";
+    c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky", "scat-hot", "collected");
+    c.querySelectorAll(".wmult").forEach((e) => e.remove());
+    const sym = c.querySelector(".sym"); sym.style.transition = "none"; sym.style.transform = "none"; sym.style.animationDuration = "";
     if (c.dataset.sym !== id) { setSym(sym, id); c.dataset.sym = id; }  // only re-render on actual change
+  }
+  // wipe per-cell win/scatter FX from the previous spin (called at each reveal)
+  function clearCellFx() {
+    cells.forEach((c) => { c.classList.remove("win", "dim", "explode", "scat-hot", "collected"); const s = c.querySelector(".sym"); if (s) s.style.animationDuration = ""; });
   }
   // instant repaint (no motion) for changed cells
   function setStatic(b) {
@@ -66,51 +74,86 @@
       if (!curBoard[col] || curBoard[col][row] !== b[col][row]) paintCell(col, row, b[col][row]);
     curBoard = b.map((c) => c.slice());
   }
-  // Position-based gravity: every symbol slides from where it came to its final
-  // cell -- survivors visibly slide DOWN into the gaps, new symbols fall from
-  // above -- so you clearly see what falls. `removed` is 'all' (whole reels, for
-  // the spin) or {col: Set(rows)} (the cells the wolf blew away).
-  function animateColumns(b, removed, opts = {}) {
-    const { colStagger = 0 } = opts, pitch = rowPitch(), anims = [], sp = SPD(), dur = DROP_DUR * sp;
-    if (removed === "all") reelExit(colStagger * sp, dur, pitch); // old board scrolls out (no blink)
+  // Cascade gravity (partial removal only): survivors slide DOWN into the gaps,
+  // new symbols fall from above -- you clearly see what falls. `removed` is a
+  // {col: Set(rows)} map of the cells the wolf just blew away.
+  function animateColumns(b, removed) {
+    const pitch = rowPitch(), anims = [], sp = SPD(), dur = DROP_DUR * sp;
     for (let col = 0; col < REELS; col++) {
-      const rem = removed === "all" ? new Set([0, 1, 2, 3]) : (removed[col] || new Set());
+      const rem = removed[col] || new Set();
       if (!rem.size) { for (let row = 0; row < ROWS; row++) if (!curBoard[col] || curBoard[col][row] !== b[col][row]) paintCell(col, row, b[col][row]); continue; }
       const missing = rem.size, oldKept = [];
       for (let r = 0; r < ROWS; r++) if (!rem.has(r)) oldKept.push(r);
       for (let row = 0; row < ROWS; row++) {
         paintCell(col, row, b[col][row]);
         const sym = cellAt(col, row).querySelector(".sym");
-        const startRows = removed === "all" ? ROWS + 0.5 : (row >= missing ? row - oldKept[row - missing] : missing);
+        const startRows = row >= missing ? row - oldKept[row - missing] : missing;
         sym.style.transition = "none"; sym.style.transform = `translateY(${-startRows * pitch}px)`;
-        anims.push({ sym, delay: col * colStagger * sp });
+        anims.push({ sym });
       }
     }
     void boardEl.offsetHeight; // one reflow, then release them all together
-    let end = 0;
-    anims.forEach(({ sym, delay }) => { sym.style.transition = `transform ${dur}ms ${DROP_EASE} ${delay}ms`; sym.style.transform = "translateY(0)"; end = Math.max(end, delay + dur); });
+    anims.forEach(({ sym }) => { sym.style.transition = `transform ${dur}ms ${DROP_EASE}`; sym.style.transform = "translateY(0)"; });
     curBoard = b.map((c) => c.slice());
-    setTimeout(() => anims.forEach(({ sym }) => { sym.style.transition = ""; sym.style.transform = ""; }), end + 80);
-    return end;
+    setTimeout(() => anims.forEach(({ sym }) => { sym.style.transition = ""; sym.style.transform = ""; }), dur + 80);
+    return dur;
   }
-  // clone current symbols and scroll them down out of the board while the new
-  // ones drop in -> a continuous reel spin, never an empty/blinking board.
-  function reelExit(colStaggerScaled, dur, pitch) {
-    const layer = document.createElement("div"); layer.className = "exit-layer";
-    const d = (ROWS + 1) * pitch;
-    for (let col = 0; col < REELS; col++) for (let row = 0; row < ROWS; row++) {
-      const cell = cellAt(col, row), sc = cell.querySelector(".sym");
-      if (!sc || !sc.firstChild) continue;
-      const c = document.createElement("div"); c.className = "exit-cell";
-      c.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px;`;
-      const inner = document.createElement("div"); inner.className = "exit-sym"; inner.innerHTML = sc.innerHTML;
-      c.appendChild(inner); layer.appendChild(c);
-      const delay = col * colStaggerScaled;
-      inner.style.transition = `transform ${dur}ms ${DROP_EASE} ${delay}ms, opacity ${dur}ms linear ${delay}ms`;
-      requestAnimationFrame(() => { inner.style.transform = `translateY(${d}px)`; inner.style.opacity = "0"; });
-    }
-    boardEl.appendChild(layer);
-    setTimeout(() => layer.remove(), dur + REELS * colStaggerScaled + 160);
+
+  // Full reel replacement (a fresh spin). Each column becomes ONE rigid strip
+  // holding the incoming symbols stacked directly above the outgoing ones;
+  // sliding the strip down by exactly ROWS rows lands the new board and ejects
+  // the old in a single motion -- never a blank frame, never an overlap flicker
+  // (the user's "blinkt zwischen symbolen" bug). Columns stop left->right; once
+  // two soup-pots are showing, the remaining reels drop into a slow anticipation
+  // crawl. Resolves only after the LAST column has fully settled.
+  function makeSpinCell(id, top, w, h) {
+    const d = document.createElement("div"); d.className = "spin-cell";
+    d.style.cssText = `top:${top}px;width:${w}px;height:${h}px;`;
+    d.innerHTML = `<span class="sym">${symInner(id)}</span>`;
+    return d;
+  }
+  function markScatterCol(col, b) {
+    for (let row = 0; row < ROWS; row++) if (SYM[b[col][row]] && SYM[b[col][row]].scatter) cellAt(col, row).classList.add("scat-hot");
+  }
+  function spinReels(b) {
+    return new Promise((resolve) => {
+      const sp = SPD(), pitch = rowPitch();
+      const layer = document.createElement("div"); layer.className = "spin-layer";
+      const scatterCols = [];
+      for (let c = 0; c < REELS; c++) if (b[c].some((id) => SYM[id] && SYM[id].scatter)) scatterCols.push(c);
+      const antiFrom = scatterCols.length >= 2 ? scatterCols[1] + 1 : REELS; // first reel of the "chase"
+      const strips = [];
+      for (let col = 0; col < REELS; col++) {
+        const base = cellAt(col, 0), x = base.offsetLeft, w = base.offsetWidth, h = base.offsetHeight;
+        const strip = document.createElement("div"); strip.className = "spin-strip"; strip.style.cssText = `left:${x}px;width:${w}px;`;
+        for (let row = 0; row < ROWS; row++) {
+          const top = cellAt(col, row).offsetTop;
+          strip.appendChild(makeSpinCell(curBoard[col] ? curBoard[col][row] : b[col][row], top, w, h)); // outgoing
+          strip.appendChild(makeSpinCell(b[col][row], top - ROWS * pitch, w, h));                        // incoming (above)
+        }
+        layer.appendChild(strip); strips.push(strip);
+      }
+      boardEl.appendChild(layer); void boardEl.offsetHeight;
+
+      let maxEnd = 0;
+      for (let col = 0; col < REELS; col++) {
+        let delay, dur;
+        if (col < antiFrom) { delay = col * SPIN_STAG * sp; dur = SPIN_DUR * sp; }
+        else { delay = (antiFrom * SPIN_STAG + (col - antiFrom + 1) * ANTICIP_GAP) * sp; dur = ANTICIP_DUR * sp; }
+        strips[col].style.transition = `transform ${dur}ms ${SPIN_EASE} ${delay}ms`;
+        strips[col].style.transform = `translateY(${ROWS * pitch}px)`;
+        const end = delay + dur; maxEnd = Math.max(maxEnd, end);
+        setTimeout(() => {
+          for (let row = 0; row < ROWS; row++) paintCell(col, row, b[col][row]); // real cells now hold the new board
+          strips[col].remove();                                                  // reveal them (identical, seamless)
+          SND.reelStop(col, col >= antiFrom);
+          if (b[col].some((id) => SYM[id] && SYM[id].scatter)) markScatterCol(col, b);
+          if (col === antiFrom) { boardEl.classList.add("anticip"); SND.riser(0.9); } // chase begins
+        }, end);
+      }
+      curBoard = b.map((c) => c.slice());
+      setTimeout(() => { layer.remove(); boardEl.classList.remove("anticip"); resolve(); }, maxEnd + 70);
+    });
   }
 
   // ---- HUD ----------------------------------------------------------------
@@ -118,7 +161,17 @@
     phaseEl.textContent = extra || (curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · ${houseLabel.toUpperCase()}` : "BASISSPIEL");
     phaseEl.classList.toggle("bonus", curGametype === "freegame");
   }
-  function setMult(m) { multBadge.textContent = "×" + m; multBadge.classList.remove("bump"); void multBadge.offsetWidth; multBadge.classList.add("bump"); }
+  let lastMult = 1;
+  function setMult(m, celebrate = false) {
+    multBadge.textContent = "×" + m;
+    multBadge.classList.remove("bump"); multTab.classList.remove("pump"); void multBadge.offsetWidth;
+    multBadge.classList.add("bump");
+    if (celebrate && m > 1) {
+      multTab.classList.add("pump");
+      if (FX) { const r = multTab.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; FX.sparkle(cx, cy); FX.burst(cx, cy, 7, 0.55); }
+      SND.multUp(m);
+    }
+  }
   function burst(t, cls = "") { const b = document.createElement("div"); b.className = "burst " + cls; b.textContent = t; overlay.appendChild(b); setTimeout(() => b.remove(), 1000); }
   let toastT;
   function toast(t, bonus = false) { toastEl.innerHTML = t; toastEl.className = "toast show" + (bonus ? " bonus" : ""); clearTimeout(toastT); toastT = setTimeout(() => (toastEl.className = "toast hidden"), 1600); }
@@ -130,29 +183,36 @@
 
   // ---- event player -------------------------------------------------------
   async function play(book, mode) {
-    let roundWin = 0; dispWin = 0; winEl.textContent = "0.00"; casc = 0;
+    let roundWin = 0; dispWin = 0; winEl.textContent = "0.00"; casc = 0; lastMult = 1;
     curGametype = mode === "base" ? "basegame" : "freegame"; setMult(1); setPhase();
     for (const ev of book.events) {
       switch (ev.type) {
         case "reveal": {
-          curGametype = ev.gametype; explodeMap = null; animateColumns(ev.board, "all", { colStagger: COL_STAGGER });
+          curGametype = ev.gametype; explodeMap = null; clearCellFx();
           glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin();
-          for (let c = 0; c < REELS; c++) setTimeout(() => SND.reelStop(), c * COL_STAGGER + DROP_DUR - 40);
-          let sc = 0; ev.board.forEach((cA) => cA.forEach((id) => { if (SYM[id] && SYM[id].scatter) sc++; }));
-          if (sc >= 2) { SND.riser(0.7); cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; if (SYM[ev.board[col][row]] && SYM[ev.board[col][row]].scatter) c.classList.add("scat-hot"); }); setTimeout(() => cells.forEach((c) => c.classList.remove("scat-hot")), 2400); }
-          await sleep(600); break;
-        }
-        case "updateGlobalMult":
-          setMult(ev.globalMult);
-          if (ev.globalMult > 1) setPhase(curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · KASKADE ×${ev.globalMult}` : `KASKADE ×${ev.globalMult}`);
+          await spinReels(ev.board);                 // reel-strip slide: reel-stops + anticipation built in
+          const sc = ev.board.reduce((a, cA) => a + cA.filter((id) => SYM[id] && SYM[id].scatter).length, 0);
+          if (sc >= 2) await sleep(300);             // let a 2+ pot board breathe before the next event
           break;
+        }
+        case "updateGlobalMult": {
+          const up = ev.globalMult > lastMult; lastMult = ev.globalMult;
+          setMult(ev.globalMult, up);
+          if (ev.globalMult > 1) setPhase(curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · WOLF ×${ev.globalMult}` : `WOLF ×${ev.globalMult}`);
+          break;
+        }
         case "wildLand":
           ev.wilds.forEach((w) => { if (w.multiplier > 1) { const c = cellAt(w.position[0], w.position[1]); const t = document.createElement("span"); t.className = "wmult"; t.textContent = "×" + w.multiplier; c.appendChild(t); c.classList.add("sticky"); } }); break;
         case "winInfo": {
           const ks = new Set(); ev.wins.forEach((w) => w.positions.forEach((p) => ks.add(p[0] + "," + p[1])));
           const wd = 0.55 * SPD() + "s";
           cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); if (w) { const s = c.querySelector(".sym"); if (s) s.style.animationDuration = wd; } c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
-          if (FX) { let n = 0; ks.forEach((key) => { if (n++ > 7) return; const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); }); if (ev.stepWin >= 4) FX.shake(3 + Math.min(7, ev.stepWin / 3), 0.25); }
+          if (FX) {
+            // a sparkle dead-centre on EVERY winning tile (no 8-cell cap -> no lopsided gaps)
+            ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); });
+            const amp = Math.min(15, ev.stepWin * 0.7 + (lastMult - 1) * 2); // shake scales with win size AND wolf mult
+            if (amp > 2.5) FX.shake(amp, 0.28);
+          }
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
         case "tumbleBoard":
@@ -160,13 +220,47 @@
           explodeMap = {};
           { const bd = 0.42 * SPD() + "s"; ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); const cell = cellAt(c, r); const s = cell.querySelector(".sym"); if (s) s.style.animationDuration = bd; cell.classList.add("explode"); if (FX) { const p = cellCenter(c, r); FX.explode(p.x, p.y); } }); }
           await sleep(430); wolfEl.classList.remove("blow"); break;
-        case "dropBoard": animateColumns(ev.board, explodeMap || "all"); explodeMap = null; SND.drop(); await sleep(400); break;
+        case "dropBoard": {
+          if (explodeMap) animateColumns(ev.board, explodeMap); else setStatic(ev.board);
+          explodeMap = null; SND.drop();
+          // a soup-pot may have tumbled in -> glow every pot now showing (chase the 3rd)
+          let sc = 0; for (let c = 0; c < REELS; c++) for (let r = 0; r < ROWS; r++) if (SYM[ev.board[c][r]] && SYM[ev.board[c][r]].scatter) { cellAt(c, r).classList.add("scat-hot"); sc++; }
+          if (sc >= 2) SND.scatter();
+          await sleep(400); break;
+        }
         case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
-        case "freeSpinTrigger": if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); await sleep(800); } break;
+        case "freeSpinTrigger":
+          if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
+          else { // base-game trigger: celebrate the pots before the bonus intro
+            ev.positions.forEach((p) => { cellAt(p[0], p[1]).classList.add("scat-hot"); if (FX) { const c = cellCenter(p[0], p[1]); FX.sparkle(c.x, c.y); FX.burst(c.x, c.y, 8, 0.6); } });
+            burst(`${ev.scatters}× 🍲`, "scatter"); SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
+            await sleep(750);
+          }
+          break;
         case "enterFreeGame": { await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1; setHouse(lvl, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break; }
         case "updateFreeSpin": fsNow = ev.current; fsTot = ev.total; fsCount.textContent = `${ev.current} / ${ev.total}`; setPhase(); break;
-        case "collectBrick": { const c = cellAt(ev.position[0], ev.position[1]); const p = document.createElement("span"); p.className = "brick-pop"; p.textContent = "🧱"; c.appendChild(p); setTimeout(() => p.remove(), 1000); updateBricks(ev.bricks); SND.brick(); await sleep(220); break; }
-        case "houseUpgrade": setHouse(ev.level, ev.house, ev.bricks); glow.className = "board-glow bonus"; burst("🏠 " + ev.house.toUpperCase()); toast(`HAUS-UPGRADE: ${ev.house} · +${ev.extraSpins} Freispiele`, true); SND.upgrade(); await sleep(1250); break;
+        case "collectBrick": {
+          const c = cellAt(ev.position[0], ev.position[1]);
+          flyBrickToHouse(c); c.classList.add("collected");     // brick arcs to the meter; the cell dims (banked)
+          if (FX) { const p = cellCenter(ev.position[0], ev.position[1]); FX.sparkle(p.x, p.y); }
+          updateBricks(ev.bricks); pulseRing(); SND.brick();
+          await sleep(260); break;
+        }
+        case "houseUpgrade": {
+          const ring = $("house-ring"), build = ring ? ring.querySelector(".house-build") : null;
+          if (build) build.classList.add("crumble");            // old house shakes apart
+          if (FX) { const r = ring.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; FX.explode(cx, cy, "#ffcaa0"); FX.shake(10, 0.5); }
+          SND.upgrade(); await sleep(360);
+          setHouse(ev.level, ev.house, ev.bricks);               // swap to the new house
+          if (build) { build.classList.remove("crumble"); void build.offsetWidth; build.classList.add("smash"); }
+          if (ring) { ring.classList.remove("near"); ring.classList.add("flash"); }
+          if (FX) { const r = ring.getBoundingClientRect(); FX.confetti(r.left + r.width / 2, r.top + r.height / 2, 28); }
+          glow.className = "board-glow bonus"; burst("🏠 " + ev.house.toUpperCase(), "scatter");
+          toast(`HAUS-UPGRADE: <b>${ev.house}</b> · +${ev.extraSpins} Freispiele`, true);
+          await sleep(1000);
+          if (build) build.classList.remove("smash"); if (ring) ring.classList.remove("flash");
+          break;
+        }
         case "exitFreeGame": housePanel.classList.add("hidden"); glow.className = "board-glow"; curGametype = "basegame"; if (ev.totalWin > 0) { burst("🐷 " + fmt(ev.totalWin * bet())); await sleep(900); } break;
         case "setTotalWin": roundWin = ev.amount; countWin(roundWin); break;
         case "finalWin": await settle(ev); break;
@@ -174,12 +268,36 @@
     }
     return roundWin;
   }
+  // ---- house upgrade meter (organic ring + level chips, no progress bar) ----
   function setHouse(level, name, bricks) {
-    houseLabel = name; houseName.textContent = name; houseEmoji.textContent = { 1: "🌾", 2: "🪵", 3: "🏰" }[level] || "🏠";
-    const L = CFG.features.houseLevels, nx = L.find((l) => l.level === level + 1); bricksTarget = nx ? nx.bricks : L[L.length - 1].bricks; updateBricks(bricks);
+    houseLabel = name; houseName.textContent = name;
+    houseEmoji.textContent = { 1: "🌾", 2: "🪵", 3: "🏰" }[level] || "🏠";
+    const L = CFG.features.houseLevels;
+    const cur = L.find((l) => l.level === level) || L[0], nx = L.find((l) => l.level === level + 1);
+    bricksFloor = cur.bricks || 0;
+    bricksTarget = nx ? nx.bricks : cur.bricks;
+    const chips = $("house-levels"); if (chips) chips.querySelectorAll(".hl").forEach((el) => el.classList.toggle("on", +el.dataset.l <= level));
+    updateBricks(bricks);
   }
-  function updateBricks(b) { brickFill.style.width = Math.min(100, (b / bricksTarget) * 100) + "%"; brickLabel.textContent = `🧱 ${b} / ${bricksTarget}`; }
-  async function freeIntro(ev) { fsFlash.innerHTML = `<div class="big">🍲🐺</div><h1>HOUSE&nbsp;UPGRADE<br>FREE&nbsp;SPINS</h1><p>${ev.totalSpins} Freispiele · sammle 🧱 auf Walze 5</p>`; fsFlash.className = "fs-flash"; SND.trigger(); await sleep(1900); fsFlash.className = "fs-flash hidden"; }
+  function updateBricks(b) {
+    const ring = $("house-ring"); if (!ring) return;
+    const span = bricksTarget - bricksFloor, p = span > 0 ? Math.min(1, (b - bricksFloor) / span) : 1;
+    ring.style.setProperty("--p", p);
+    ring.classList.toggle("near", span > 0 && p >= 0.6);   // glow intensifies near an upgrade
+    brickLabel.textContent = span > 0 ? `🧱 ${b - bricksFloor} / ${span}` : "🧱 MAX";
+  }
+  function pulseRing() { const r = $("house-ring"); if (!r) return; r.classList.remove("tick"); void r.offsetWidth; r.classList.add("tick"); }
+  function flyBrickToHouse(cell) {
+    const ring = $("house-ring"); if (!ring || !cell) return;
+    const a = cell.getBoundingClientRect(), b = ring.getBoundingClientRect();
+    const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+    const fly = document.createElement("div"); fly.className = "brick-fly"; fly.textContent = "🧱";
+    fly.style.left = ax + "px"; fly.style.top = ay + "px"; document.body.appendChild(fly);
+    const dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay;
+    requestAnimationFrame(() => { fly.style.transform = `translate(${dx}px,${dy}px) scale(.45)`; fly.style.opacity = "0"; });
+    setTimeout(() => fly.remove(), 720);
+  }
+  async function freeIntro(ev) { fsFlash.innerHTML = `<div class="big">🍲🐺</div><h1>HOUSE&nbsp;UPGRADE<br>FREE&nbsp;SPINS</h1><p>${ev.totalSpins} Freispiele · sammle 🧱 überall auf den Walzen</p>`; fsFlash.className = "fs-flash"; SND.trigger(); await sleep(1900); fsFlash.className = "fs-flash hidden"; }
   async function settle(ev) {
     const m = ev.amount;
     balance += m * bet(); balanceEl.textContent = fmt(balance); countWin(m);
@@ -188,10 +306,10 @@
     else if (m >= 50) await showBigWin(2, m);
     else if (m >= 15) await showBigWin(1, m);
     else {
-      if (m > 0 && FX) { const c = winBarCenter(); FX.burst(c.x, c.y, 9, 0.7); SND.win(2); }
+      if (m > 0 && FX) { const c = winBarCenter(); FX.burst(c.x, c.y, 9, 0.7); if (m >= 4) FX.shake(Math.min(8, m * 0.5), 0.25); SND.win(2); }
       await sleep(m > 0 ? 420 : 90);
     }
-    setMult(1); setPhase();
+    setMult(1); lastMult = 1; setPhase();
   }
 
   // ---- spin / auto --------------------------------------------------------
@@ -272,13 +390,15 @@
     aEl.textContent = fmt(0); ov.classList.remove("hidden"); skipBig = false;
     SND.winTier(tier); FX.shake(6 + tier * 4, 0.5); FX.coinShower(1.4 + tier * 0.7, 16 + tier * 10);
     const target = mult * bet(), dur = 850 + tier * 650, t0 = performance.now();
-    let coinT = 0;
+    let coinT = 0, shT = 0;
     await new Promise((res) => {
       function step(t) {
         const k = skipBig ? 1 : Math.min(1, (t - t0) / dur), v = target * easeOut(k);
         aEl.textContent = fmt(v);
         if (t - coinT > 95) { coinT = t; SND.coinTick(); }
-        if (k < 1) requestAnimationFrame(step); else { aEl.textContent = fmt(target); res(); }
+        // count-up coupled to a rumble that GROWS as the number climbs (∝ tier)
+        if (t - shT > 170) { shT = t; FX.shake(2.5 + tier * 1.5 + k * (3 + tier * 2.5), 0.2); }
+        if (k < 1) requestAnimationFrame(step); else { aEl.textContent = fmt(target); aEl.classList.remove("land"); void aEl.offsetWidth; aEl.classList.add("land"); res(); }
       }
       requestAnimationFrame(step);
     });

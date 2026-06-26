@@ -1,42 +1,42 @@
 {
   "target_rtp": 0.9655,
-  "paytable_scale": 0.31602,
+  "paytable_scale": 0.21952,
   "modes": {
     "base": {
       "cost": 1.0,
       "fair_cost": 1.0,
       "weighted_rtp": 0.9655,
       "rounds": 20000,
-      "rtp_books": 1.0026,
-      "hit_rate": 0.5767,
-      "max": 1191.65,
-      "p50": 0.0506,
-      "p90": 1.6275,
-      "p99": 9.4806
+      "rtp_books": 0.9691,
+      "hit_rate": 0.5753,
+      "max": 2594.77,
+      "p50": 0.0351,
+      "p90": 1.1239,
+      "p99": 7.2639
     },
     "bonus": {
       "cost": 70.0,
-      "fair_cost": 69.98,
-      "weighted_rtp": 0.965568,
+      "fair_cost": 53.36,
+      "weighted_rtp": 0.965433,
       "rounds": 8000,
-      "rtp_books": 67.5705,
+      "rtp_books": 53.8324,
       "hit_rate": 1.0,
-      "max": 15000.0,
-      "p50": 13.3202,
-      "p90": 64.1204,
-      "p99": 1339.8361
+      "max": 7134.7,
+      "p50": 8.5635,
+      "p90": 44.2113,
+      "p99": 1259.9542
     },
     "bonus_vip": {
       "cost": 220.0,
-      "fair_cost": 233.73,
-      "weighted_rtp": 0.965496,
+      "fair_cost": 151.78,
+      "weighted_rtp": 0.965497,
       "rounds": 8000,
-      "rtp_books": 225.6654,
+      "rtp_books": 142.6608,
       "hit_rate": 1.0,
-      "max": 15000.0,
-      "p50": 51.5681,
-      "p90": 549.6598,
-      "p99": 2909.9182
+      "max": 9454.64,
+      "p50": 31.2377,
+      "p90": 309.398,
+      "p99": 2015.6545
     }
   }
 }

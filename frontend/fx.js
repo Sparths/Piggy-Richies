@@ -13,7 +13,8 @@
 
   function resize() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
-    W = cv.clientWidth; H = cv.clientHeight;
+    // use the viewport (clientWidth can be 0 before layout -> coins clustered in a corner)
+    W = window.innerWidth || cv.clientWidth; H = window.innerHeight || cv.clientHeight;
     cv.width = W * dpr; cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }

@@ -65,7 +65,11 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background
 .mult-tab span{font-size:18px;font-weight:900;color:var(--green);text-shadow:0 0 12px rgba(34,224,106,.5);transition:transform .18s,color .18s;}
 .mult-tab span.bump{transform:scale(1.4);color:var(--gold);}
 
-.board{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:6px;aspect-ratio:5/4;height:100%;overflow:hidden;}
+.board{position:relative;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:6px;aspect-ratio:5/4;height:100%;overflow:hidden;}
+.exit-layer{position:absolute;inset:0;pointer-events:none;z-index:4;}
+.exit-cell{position:absolute;display:flex;align-items:center;justify-content:center;}
+.exit-sym{width:88%;height:88%;}
+.exit-sym img,.exit-sym svg{width:100%;height:100%;object-fit:contain;}
 .cell{position:relative;display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:visible;
   background:linear-gradient(160deg,#1a3046,#0e2032);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),inset 0 -3px 9px rgba(0,0,0,.5);}
 .cell::after{content:"";position:absolute;inset:0;border-radius:10px;border:1px solid rgba(255,210,63,.1);pointer-events:none;}
@@ -80,11 +84,10 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background
 .cell.explode{z-index:6;}
 .cell.explode .sym{animation:symburst .42s cubic-bezier(.3,.9,.5,1) forwards;}
 @keyframes symburst{0%{transform:scale(1);}32%{transform:scale(1.32);filter:brightness(1.7) drop-shadow(0 0 14px #ffe27a);}100%{transform:scale(.1);opacity:0;}}
-/* scatters quietly pulse so they're easy to spot */
-.cell[data-kind="scatter"] .sym{animation:scatGlow 1.4s ease-in-out infinite;}
+/* scatters already glow via their kind; add a stronger "hot" pulse when 2+ land */
+.cell.scat-hot{box-shadow:0 0 0 2px var(--scatter),inset 0 0 26px rgba(255,157,77,.9),0 0 22px rgba(255,157,77,.8)!important;z-index:4;}
 .cell.scat-hot .sym{animation:scatHot .6s ease-in-out infinite;}
-@keyframes scatGlow{50%{filter:drop-shadow(0 0 8px rgba(255,157,77,.85));}}
-@keyframes scatHot{50%{filter:drop-shadow(0 0 16px rgba(255,157,77,1)) brightness(1.2);transform:scale(1.08);}}
+@keyframes scatHot{50%{filter:drop-shadow(0 0 16px rgba(255,157,77,1)) brightness(1.15);transform:scale(1.07);}}
 .cell .wmult{position:absolute;top:2px;right:4px;font-size:13px;font-weight:900;color:var(--gold);text-shadow:0 1px 3px #000;z-index:4;}
 .cell.sticky{box-shadow:0 0 0 2px var(--wild),0 0 16px rgba(154,134,255,.7);}
 .brick-pop{position:absolute;font-size:22px;pointer-events:none;z-index:8;animation:brickPop 1s ease forwards;}

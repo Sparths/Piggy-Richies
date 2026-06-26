@@ -39,10 +39,11 @@
     }
   }
   const cellAt = (col, row) => cells[row * REELS + col];
-  const DROP_DUR = 300, DROP_EASE = "cubic-bezier(.3,1.03,.43,1)";
+  const DROP_DUR = 320, DROP_EASE = "cubic-bezier(.3,1.42,.5,1)";   // overshoot = bounce on impact
   // full reel-spin slide (reveal): a rigid per-column strip with the incoming
   // symbols stacked directly above the outgoing ones -> one motion, no blink.
-  const SPIN_DUR = 340, SPIN_STAG = 84, SPIN_EASE = "cubic-bezier(.16,.74,.28,1)";
+  // SPIN_EASE overshoots slightly so each reel "bounces" as it settles.
+  const SPIN_DUR = 360, SPIN_STAG = 88, SPIN_EASE = "cubic-bezier(.22,1.34,.42,1)";
   const ANTICIP_DUR = 560, ANTICIP_GAP = 300; // "2 pots showing -> chase" crawl
   const rowPitch = () => { const a = cellAt(0, 0), b = cellAt(0, 1); return a && b ? b.getBoundingClientRect().top - a.getBoundingClientRect().top : (a ? a.offsetHeight : 60); };
 
@@ -172,7 +173,7 @@
       SND.multUp(m);
     }
   }
-  function burst(t, cls = "") { const b = document.createElement("div"); b.className = "burst " + cls; b.textContent = t; overlay.appendChild(b); setTimeout(() => b.remove(), 1000); }
+  function burst(t, cls = "") { const b = document.createElement("div"); b.className = "burst " + cls; b.innerHTML = t; overlay.appendChild(b); setTimeout(() => b.remove(), 1000); }
   let toastT;
   function toast(t, bonus = false) { toastEl.innerHTML = t; toastEl.className = "toast show" + (bonus ? " bonus" : ""); clearTimeout(toastT); toastT = setTimeout(() => (toastEl.className = "toast hidden"), 1600); }
   function countWin(toMult) {
@@ -189,7 +190,7 @@
       switch (ev.type) {
         case "reveal": {
           curGametype = ev.gametype; explodeMap = null; clearCellFx();
-          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setPhase(); SND.spin();
+          glow.className = "board-glow" + (ev.gametype === "freegame" ? " bonus" : ""); setStorm(ev.gametype === "freegame"); setPhase(); SND.spin();
           await spinReels(ev.board);                 // reel-strip slide: reel-stops + anticipation built in
           const sc = ev.board.reduce((a, cA) => a + cA.filter((id) => SYM[id] && SYM[id].scatter).length, 0);
           if (sc >= 2) await sleep(300);             // let a 2+ pot board breathe before the next event
@@ -228,12 +229,12 @@
           if (sc >= 2) SND.scatter();
           await sleep(400); break;
         }
-        case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
+        case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}× ${chip("pot")} zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger":
-          if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} 🍲`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
+          if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} ${chip("pot")}`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
           else { // base-game trigger: celebrate the pots before the bonus intro
             ev.positions.forEach((p) => { cellAt(p[0], p[1]).classList.add("scat-hot"); if (FX) { const c = cellCenter(p[0], p[1]); FX.sparkle(c.x, c.y); FX.burst(c.x, c.y, 8, 0.6); } });
-            burst(`${ev.scatters}× 🍲`, "scatter"); SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
+            burst(`${ev.scatters}× ${chip("pot")}`, "scatter"); SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
             await sleep(750);
           }
           break;
@@ -255,13 +256,13 @@
           if (build) { build.classList.remove("crumble"); void build.offsetWidth; build.classList.add("smash"); }
           if (ring) { ring.classList.remove("near"); ring.classList.add("flash"); }
           if (FX) { const r = ring.getBoundingClientRect(); FX.confetti(r.left + r.width / 2, r.top + r.height / 2, 28); }
-          glow.className = "board-glow bonus"; burst("🏠 " + ev.house.toUpperCase(), "scatter");
+          glow.className = "board-glow bonus"; burst(chip("house" + ev.level) + " " + ev.house.toUpperCase(), "scatter");
           toast(`HAUS-UPGRADE: <b>${ev.house}</b> · +${ev.extraSpins} Freispiele`, true);
           await sleep(1000);
           if (build) build.classList.remove("smash"); if (ring) ring.classList.remove("flash");
           break;
         }
-        case "exitFreeGame": housePanel.classList.add("hidden"); glow.className = "board-glow"; curGametype = "basegame"; if (ev.totalWin > 0) { burst("🐷 " + fmt(ev.totalWin * bet())); await sleep(900); } break;
+        case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
         case "setTotalWin": roundWin = ev.amount; countWin(roundWin); break;
         case "finalWin": await settle(ev); break;
       }
@@ -271,7 +272,7 @@
   // ---- house upgrade meter (organic ring + level chips, no progress bar) ----
   function setHouse(level, name, bricks) {
     houseLabel = name; houseName.textContent = name;
-    houseEmoji.textContent = { 1: "🌾", 2: "🪵", 3: "🏰" }[level] || "🏠";
+    houseEmoji.innerHTML = icoHTML("house" + level);
     const L = CFG.features.houseLevels;
     const cur = L.find((l) => l.level === level) || L[0], nx = L.find((l) => l.level === level + 1);
     bricksFloor = cur.bricks || 0;
@@ -284,20 +285,47 @@
     const span = bricksTarget - bricksFloor, p = span > 0 ? Math.min(1, (b - bricksFloor) / span) : 1;
     ring.style.setProperty("--p", p);
     ring.classList.toggle("near", span > 0 && p >= 0.6);   // glow intensifies near an upgrade
-    brickLabel.textContent = span > 0 ? `🧱 ${b - bricksFloor} / ${span}` : "🧱 MAX";
+    brickLabel.innerHTML = span > 0 ? `${chip("brick")} ${b - bricksFloor} / ${span}` : `${chip("brick")} MAX`;
   }
   function pulseRing() { const r = $("house-ring"); if (!r) return; r.classList.remove("tick"); void r.offsetWidth; r.classList.add("tick"); }
   function flyBrickToHouse(cell) {
     const ring = $("house-ring"); if (!ring || !cell) return;
     const a = cell.getBoundingClientRect(), b = ring.getBoundingClientRect();
     const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
-    const fly = document.createElement("div"); fly.className = "brick-fly"; fly.textContent = "🧱";
+    const fly = document.createElement("div"); fly.className = "brick-fly"; fly.innerHTML = icoHTML("brick");
     fly.style.left = ax + "px"; fly.style.top = ay + "px"; document.body.appendChild(fly);
     const dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay;
     requestAnimationFrame(() => { fly.style.transform = `translate(${dx}px,${dy}px) scale(.45)`; fly.style.opacity = "0"; });
     setTimeout(() => fly.remove(), 720);
   }
-  async function freeIntro(ev) { fsFlash.innerHTML = `<div class="big">🍲🐺</div><h1>HOUSE&nbsp;UPGRADE<br>FREE&nbsp;SPINS</h1><p>${ev.totalSpins} Freispiele · sammle 🧱 überall auf den Walzen</p>`; fsFlash.className = "fs-flash"; SND.trigger(); await sleep(1900); fsFlash.className = "fs-flash hidden"; }
+  // cinematic free-spin trigger: pot + wolf burst in, screen shake, confetti,
+  // crossfade, then the storm rolls in for the bonus.
+  async function freeIntro(ev) {
+    fsFlash.innerHTML =
+      `<div class="fi-chars"><span class="fi-ico pot">${icoHTML("pot")}</span><span class="fi-ico wolf">${icoHTML("wolf")}</span></div>` +
+      `<h1>HOUSE&nbsp;UPGRADE<br>FREE&nbsp;SPINS</h1>` +
+      `<p>${ev.totalSpins} Freispiele · sammle ${chip("brick")} überall auf den Walzen</p>`;
+    fsFlash.className = "fs-flash zoom";
+    SND.trigger();
+    if (FX) { FX.shake(10, 0.6); const cx = innerWidth / 2, cy = innerHeight * 0.42; FX.confetti(cx, cy, 44); FX.coinShower(1.7, 18); }
+    setStorm(true);
+    await sleep(1950);
+    fsFlash.className = "fs-flash hidden";
+  }
+  // ---- free-spins environment (storm tint + lightning) -------------------
+  let ltTimer = null;
+  function setStorm(on) {
+    const s = $("fs-storm"); if (s) s.classList.toggle("on", on);
+    clearTimeout(ltTimer);
+    if (on) ltTimer = setTimeout(lightning, 1600 + Math.random() * 2600);
+  }
+  function lightning() {
+    const s = $("fs-storm"), el = $("fs-lightning");
+    if (!s || !el || !s.classList.contains("on")) return;
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    if (SND.thunder) SND.thunder();
+    ltTimer = setTimeout(lightning, 4500 + Math.random() * 6500);
+  }
   async function settle(ev) {
     const m = ev.amount;
     balance += m * bet(); balanceEl.textContent = fmt(balance); countWin(m);
@@ -366,7 +394,7 @@
       const a = b.dataset.act;
       if (a === "help") openModal("modal-help");
       else if (a === "paytable") openModal("modal-paytable");
-      else if (a === "sound") { muted = SND.toggle(); $("sound-state").textContent = muted ? "aus" : "an"; }
+      else if (a === "sound") { muted = SND.toggle(); $("sound-state").textContent = muted ? "aus" : "an"; const si = $("sound-ico"); if (si) si.innerHTML = icoHTML(muted ? "soundOff" : "sound"); }
     }));
     $("buy-pop").querySelectorAll("button").forEach((b) => (b.onclick = () => { closePops(); doSpin(b.dataset.buy); }));
     document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => b.closest(".modal").classList.add("hidden")));
@@ -377,6 +405,20 @@
 
   // ---- juice helpers ------------------------------------------------------
   const FX = window.PIGGY_FX;
+  // ---- UI icons (no emoji) ------------------------------------------------
+  const IC = window.PIGGY_ICONS || {};
+  function icoHTML(name) {
+    if (!name) return "";
+    if (name.indexOf("house") === 0) return IC.house ? IC.house(+name.slice(5) || 1) : "";
+    const v = IC[name]; return typeof v === "function" ? v() : (v || "");
+  }
+  const chip = (name) => `<span class="ui-ico">${icoHTML(name)}</span>`;
+  function paintIcons(root) {
+    (root || document).querySelectorAll("[data-ico]").forEach((el) => {
+      if (el.dataset.painted) return; el.dataset.painted = "1"; el.innerHTML = icoHTML(el.dataset.ico);
+    });
+    const lv = $("house-levels"); if (lv) lv.querySelectorAll(".hl").forEach((el) => { if (!el.firstChild) el.innerHTML = icoHTML("house" + el.dataset.l); });
+  }
   const easeOut = (k) => 1 - Math.pow(1 - k, 3);
   function cellCenter(col, row) { const r = cellAt(col, row).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
   function winBarCenter() { const r = winEl.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
@@ -411,8 +453,9 @@
   let started = false;
   function boot() {
     $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "×";
-    buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire();
+    buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire(); paintIcons();
     if (FX) FX.init($("fx"), document.querySelector(".stage"));
+    if (FX && FX.ambient) FX.ambient($("ambient"));   // drifting fireflies behind the reels
     $("bigwin").addEventListener("click", () => (skipBig = true));
     preloadThenStart();
   }

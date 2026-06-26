@@ -35,6 +35,12 @@
       <stop offset="0" stop-color="rgba(255,210,63,.45)"/><stop offset=".7" stop-color="rgba(255,170,40,.12)"/><stop offset="1" stop-color="rgba(255,170,40,0)"/></radialGradient>
     <linearGradient id="ggBrick" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#e7855a"/><stop offset="1" stop-color="#a23c1f"/></linearGradient>
+    <linearGradient id="icoWood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c98a4e"/><stop offset="1" stop-color="#7a4a22"/></linearGradient>
+    <linearGradient id="icoStone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9aa6b5"/><stop offset="1" stop-color="#566070"/></linearGradient>
+    <linearGradient id="icoStraw" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8c878"/><stop offset="1" stop-color="#b9893a"/></linearGradient>
     <filter id="ggSh" x="-25%" y="-25%" width="150%" height="150%">
       <feDropShadow dx="0" dy="2.5" stdDeviation="2.2" flood-color="#000" flood-opacity=".45"/></filter>`;
 
@@ -155,9 +161,38 @@
     ids.forEach((id) => { const im = new Image(); im.onload = () => { IMG[id] = map[id]; if (--pending === 0) done && done(); }; im.onerror = () => { if (--pending === 0) done && done(); }; im.src = map[id]; });
   }
 
+  // ---- UI icons (replace emoji in HUD/menus so nothing reads "AI-generated") --
+  const door = `<rect x="27" y="40" width="10" height="14" rx="1.5" fill="#3a2414" stroke="#1c130a" stroke-width="1.4"/><circle cx="34.3" cy="47.5" r="1" fill="#ffd23f"/>`;
+  const win = `<rect x="18" y="34" width="8" height="7" rx="1" fill="#ffcf6b"/><rect x="38" y="34" width="8" height="7" rx="1" fill="#ffcf6b"/>`;
+  const houseSvg = (inner) => `<svg viewBox="0 0 64 64" class="ico-house"><g filter="url(#ggSh)">${inner}</g></svg>`;
+  const HOUSE = {
+    1: houseSvg(`<path d="M9 31 Q32 5 55 31 Q44 25 32 25 Q20 25 9 31Z" fill="url(#icoStraw)" stroke="#7a5a1e" stroke-width="2"/>
+        <path d="M14 29q18 -13 36 0M17 25q15 -9 30 0" stroke="#8a6526" stroke-width="1.4" fill="none" opacity=".6"/>
+        <rect x="15" y="31" width="34" height="23" rx="1.5" fill="#c9a256" stroke="#7a5a1e" stroke-width="2"/>${door}`),
+    2: houseSvg(`<path d="M7 31 L32 12 L57 31 Z" fill="url(#icoWood)" stroke="#5a3413" stroke-width="2"/>
+        <rect x="14" y="31" width="36" height="23" rx="1" fill="url(#icoWood)" stroke="#5a3413" stroke-width="2"/>
+        <path d="M14 38H50M14 46H50M26 31V54M38 31V54" stroke="#5a3413" stroke-width="1.2" opacity=".5"/>${door}`),
+    3: houseSvg(`<path d="M11 30V21h6v5h6v-5h6v5h6v-5h6v5h6v-5h6v9Z" fill="url(#icoStone)" stroke="#3a3f48" stroke-width="2"/>
+        <rect x="12" y="30" width="40" height="24" fill="url(#icoStone)" stroke="#3a3f48" stroke-width="2"/>
+        <path d="M12 38H52M12 46H52M24 30V38M40 30V38M18 46V54M32 46V54M46 46V54" stroke="#3a3f48" stroke-width="1.1" opacity=".55"/>${door}`),
+  };
+  const LINE = (d) => `<svg viewBox="0 0 24 24" class="ico-line">${d}</svg>`;
+  const ICONS = {
+    house: (lvl) => HOUSE[lvl] || HOUSE[1],
+    wolf: () => ART.W(), pot: () => ART.S(), brick: () => ART.BR(), pig: () => ART.P1(),
+    info: LINE('<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.4" r="1.15" fill="currentColor" stroke="none"/>'),
+    table: LINE('<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9 4.5v15"/>'),
+    sound: LINE('<path d="M4 9.5v5h3.5L13 18V6L7.5 9.5H4z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path d="M18.5 7a7 7 0 0 1 0 10"/>'),
+    soundOff: LINE('<path d="M4 9.5v5h3.5L13 18V6L7.5 9.5H4z"/><path d="M16.5 10l5 4M21.5 10l-5 4"/>'),
+    bolt: `<svg viewBox="0 0 24 24" class="ico-line" style="fill:currentColor;stroke:none"><path d="M13 2 4 13.5h6L11 22l9-12h-6z"/></svg>`,
+    menu: LINE('<path d="M4 7h16M4 12h16M4 17h16"/>'),
+    lock: LINE('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+  };
+
   injectDefs();
   window.PIGGY_ART = {
     svg: (id) => (ART[id] ? ART[id]() : `<svg viewBox="0 0 100 100"><text x="50" y="60" text-anchor="middle">${id}</text></svg>`),
     hasImage: (id) => !!IMG[id], imageUrl: (id) => IMG[id], loadImages,
   };
+  window.PIGGY_ICONS = ICONS;
 })();

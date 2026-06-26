@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Stake's Huff &amp; Puff: Piggy Richies</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <!-- ===== immersive themed scene (replaced by assets/background.* if present) ===== -->
@@ -61,14 +61,14 @@
   <main class="stage">
     <div id="house-panel" class="house-panel hidden">
       <div class="house-ring" id="house-ring" style="--p:0">
-        <div class="house-build"><span class="house-emoji" id="house-emoji">🌾</span></div>
+        <div class="house-build"><span class="house-emoji" id="house-emoji" data-ico="house1"></span></div>
       </div>
       <div class="house-info">
         <div class="house-name" id="house-name">Stroh-Haus</div>
         <div class="house-levels" id="house-levels">
-          <span class="hl on" data-l="1">🌾</span><span class="hl-arrow">›</span><span class="hl" data-l="2">🪵</span><span class="hl-arrow">›</span><span class="hl" data-l="3">🏰</span>
+          <span class="hl on" data-l="1"></span><span class="hl-arrow">›</span><span class="hl" data-l="2"></span><span class="hl-arrow">›</span><span class="hl" data-l="3"></span>
         </div>
-        <div class="house-bricks" id="brick-label">🧱 0 / 5</div>
+        <div class="house-bricks" id="brick-label"></div>
       </div>
       <div class="fs-counter"><label>FREISPIEL</label><span id="fs-count">0 / 0</span></div>
     </div>
@@ -86,8 +86,8 @@
   <!-- ===== control bar ===== -->
   <footer class="bar">
     <div class="bar-group left">
-      <button id="btn-turbo" class="bar-icon" title="Turbo-Spin">⚡</button>
-      <button id="btn-menu" class="bar-icon" title="Menü">☰</button>
+      <button id="btn-turbo" class="bar-icon" title="Turbo-Spin"><span class="ui-ico" data-ico="bolt"></span></button>
+      <button id="btn-menu" class="bar-icon" title="Menü"><span class="ui-ico" data-ico="menu"></span></button>
     </div>
 
     <div class="bar-stat"><label>GUTHABEN</label><span id="balance">1000.00</span></div>
@@ -113,22 +113,25 @@
 
   <!-- ===== menu popover ===== -->
   <div class="pop hidden" id="menu-pop">
-    <button data-act="help">ℹ️ So funktioniert's</button>
-    <button data-act="paytable">📊 Auszahlungen</button>
-    <button data-act="sound">🔊 Ton: <span id="sound-state">an</span></button>
+    <button data-act="help"><span class="ui-ico" data-ico="info"></span> So funktioniert's</button>
+    <button data-act="paytable"><span class="ui-ico" data-ico="table"></span> Auszahlungen</button>
+    <button data-act="sound"><span class="ui-ico" data-ico="sound" id="sound-ico"></span> Ton: <span id="sound-state">an</span></button>
     <div class="pop-info">RTP <b id="meta-rtp">96.55%</b> · Max <b id="meta-max">15.000×</b> · Volatilität <b>sehr hoch</b></div>
-    <div class="pop-info small">🔒 Provably Fair · <span id="seed-hash">—</span></div>
+    <div class="pop-info small"><span class="ui-ico" data-ico="lock"></span> Provably Fair · <span id="seed-hash">—</span></div>
   </div>
 
   <!-- ===== bonus-buy popover ===== -->
   <div class="pop hidden" id="buy-pop">
     <div class="pop-title">Bonus kaufen</div>
-    <button data-buy="bonus"><span>🌾 Stroh-Haus</span><b id="buy-a-cost">70×</b></button>
-    <button data-buy="bonus_vip" class="vip"><span>🪵 Holz-Haus (VIP)</span><b id="buy-b-cost">234×</b></button>
+    <button data-buy="bonus"><span><span class="ui-ico" data-ico="house1"></span> Stroh-Haus</span><b id="buy-a-cost">70×</b></button>
+    <button data-buy="bonus_vip" class="vip"><span><span class="ui-ico" data-ico="house2"></span> Holz-Haus (VIP)</span><b id="buy-b-cost">234×</b></button>
     <div class="pop-info small">Springt direkt in die House-Upgrade-Freispiele.</div>
   </div>
 
   <!-- ===== overlays ===== -->
+  <div id="fs-storm" class="fs-storm"></div>
+  <div id="fs-lightning" class="fs-lightning"></div>
+  <canvas id="ambient" class="ambient"></canvas>
   <canvas id="fx" class="fx"></canvas>
 
   <div id="bigwin" class="bigwin hidden">
@@ -151,13 +154,13 @@
   <div class="modal hidden" id="modal-help">
     <div class="modal-card">
       <button class="modal-x" data-close>×</button>
-      <h2>🐺 So funktioniert's</h2>
+      <h2><span class="ui-ico" data-ico="wolf"></span> So funktioniert's</h2>
       <ul class="how">
         <li><b>5×4 Walzen, 1024 Wege.</b> Gleiche Symbole auf benachbarten Walzen von links zahlen.</li>
         <li><b>Huff &amp; Puff Kaskaden.</b> Der Wolf pustet Gewinn­symbole weg, neue fallen nach — Gewinne in Serie!</li>
         <li><b>Wolf-Multiplikator.</b> Jede Kaskade in Folge erhöht den Multiplikator (bis ×5, in Freispielen ×8).</li>
-        <li><b>3× 🍲 Suppentopf</b> startet die <b>House-Upgrade-Freispiele</b> — Töpfe zählen auch, wenn sie per Kaskade nachfallen!</li>
-        <li><b>Häuser aufleveln.</b> Sammle 🧱 (fällt überall): Stroh → Holz (Wild-Multis) → Ziegel-Festung (Sticky Wilds).</li>
+        <li><b>3× <span class="ui-ico" data-ico="pot"></span> Suppentopf</b> startet die <b>House-Upgrade-Freispiele</b> — Töpfe zählen auch, wenn sie per Kaskade nachfallen!</li>
+        <li><b>Häuser aufleveln.</b> Sammle <span class="ui-ico" data-ico="brick"></span> (fällt überall): Stroh → Holz (Wild-Multis) → Ziegel-Festung (Sticky Wilds).</li>
       </ul>
       <button class="cta" data-close>Los geht's!</button>
     </div>
@@ -166,19 +169,19 @@
   <div class="modal hidden" id="modal-paytable">
     <div class="modal-card">
       <button class="modal-x" data-close>×</button>
-      <h2>📊 Auszahlungen <small>(× Einsatz, pro Gewinnweg)</small></h2>
+      <h2><span class="ui-ico" data-ico="table"></span> Auszahlungen <small>(× Einsatz, pro Gewinnweg)</small></h2>
       <div class="paytable" id="paytable-grid"></div>
-      <p class="paytable-note">Wild 🐺 ersetzt alle Symbole außer Scatter 🍲. Scatter zahlt überall.</p>
+      <p class="paytable-note">Wild <span class="ui-ico" data-ico="wolf"></span> ersetzt alle Symbole außer Scatter <span class="ui-ico" data-ico="pot"></span>. Scatter zahlt überall.</p>
       <button class="cta" data-close>Schließen</button>
     </div>
   </div>
 
-  <script src="art.js"></script>
-  <script src="audio.js"></script>
-  <script src="fx.js"></script>
-  <script src="assets/manifest.js"></script>
-  <script src="game-config.js"></script>
-  <script src="game-books.js"></script>
-  <script src="game.js"></script>
+  <script src="art.js?v=3"></script>
+  <script src="audio.js?v=3"></script>
+  <script src="fx.js?v=3"></script>
+  <script src="assets/manifest.js?v=3"></script>
+  <script src="game-config.js?v=3"></script>
+  <script src="game-books.js?v=3"></script>
+  <script src="game.js?v=3"></script>
 </body>
 </html>

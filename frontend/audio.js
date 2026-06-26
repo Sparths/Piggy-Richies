@@ -69,6 +69,7 @@
     coinTick() { if (muted || !ensure()) return; const t = now(); tone(1320 + Math.random() * 220, t, 0.07, "triangle", 0.09); tone(1980, t + 0.01, 0.05, "sine", 0.04); },
     trigger() { if (muted || !ensure()) return; const t = now(); [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.11, 0.32, "triangle", 0.18)); noise(t, 0.5, 0.07, 1600); },
     upgrade() { if (muted || !ensure()) return; const t = now(); [392, 523, 659, 880, 1047].forEach((f, i) => tone(f, t + i * 0.08, 0.28, "sawtooth", 0.12)); },
+    thunder() { if (muted || !ensure()) return; const t = now(); noise(t, 0.75, 0.11, 130, 0.4, "lowpass"); noise(t + 0.06, 0.5, 0.07, 320, 0.6); tone(58, t, 0.6, "sine", 0.1, 38); },
 
     // tier: 0 nice, 1 big, 2 mega, 3 epic/max -- ascending fanfare, brighter & longer with tier
     winTier(tier = 0) {

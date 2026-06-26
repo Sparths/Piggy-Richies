@@ -25,7 +25,8 @@
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
   const bet = () => BETS[betIdx];
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms * (turbo ? 0.4 : 1)));
+  const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
   const fmt = (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // ---- art / board --------------------------------------------------------
@@ -70,7 +71,8 @@
   // above -- so you clearly see what falls. `removed` is 'all' (whole reels, for
   // the spin) or {col: Set(rows)} (the cells the wolf blew away).
   function animateColumns(b, removed, opts = {}) {
-    const { colStagger = 0 } = opts, pitch = rowPitch(), anims = [];
+    const { colStagger = 0 } = opts, pitch = rowPitch(), anims = [], sp = SPD(), dur = DROP_DUR * sp;
+    if (removed === "all") reelExit(colStagger * sp, dur, pitch); // old board scrolls out (no blink)
     for (let col = 0; col < REELS; col++) {
       const rem = removed === "all" ? new Set([0, 1, 2, 3]) : (removed[col] || new Set());
       if (!rem.size) { for (let row = 0; row < ROWS; row++) if (!curBoard[col] || curBoard[col][row] !== b[col][row]) paintCell(col, row, b[col][row]); continue; }
@@ -79,18 +81,36 @@
       for (let row = 0; row < ROWS; row++) {
         paintCell(col, row, b[col][row]);
         const sym = cellAt(col, row).querySelector(".sym");
-        // how many rows above its final slot this symbol starts
         const startRows = removed === "all" ? ROWS + 0.5 : (row >= missing ? row - oldKept[row - missing] : missing);
         sym.style.transition = "none"; sym.style.transform = `translateY(${-startRows * pitch}px)`;
-        anims.push({ sym, delay: col * colStagger });
+        anims.push({ sym, delay: col * colStagger * sp });
       }
     }
     void boardEl.offsetHeight; // one reflow, then release them all together
     let end = 0;
-    anims.forEach(({ sym, delay }) => { sym.style.transition = `transform ${DROP_DUR}ms ${DROP_EASE} ${delay}ms`; sym.style.transform = "translateY(0)"; end = Math.max(end, delay + DROP_DUR); });
+    anims.forEach(({ sym, delay }) => { sym.style.transition = `transform ${dur}ms ${DROP_EASE} ${delay}ms`; sym.style.transform = "translateY(0)"; end = Math.max(end, delay + dur); });
     curBoard = b.map((c) => c.slice());
     setTimeout(() => anims.forEach(({ sym }) => { sym.style.transition = ""; sym.style.transform = ""; }), end + 80);
     return end;
+  }
+  // clone current symbols and scroll them down out of the board while the new
+  // ones drop in -> a continuous reel spin, never an empty/blinking board.
+  function reelExit(colStaggerScaled, dur, pitch) {
+    const layer = document.createElement("div"); layer.className = "exit-layer";
+    const d = (ROWS + 1) * pitch;
+    for (let col = 0; col < REELS; col++) for (let row = 0; row < ROWS; row++) {
+      const cell = cellAt(col, row), sc = cell.querySelector(".sym");
+      if (!sc || !sc.firstChild) continue;
+      const c = document.createElement("div"); c.className = "exit-cell";
+      c.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px;`;
+      const inner = document.createElement("div"); inner.className = "exit-sym"; inner.innerHTML = sc.innerHTML;
+      c.appendChild(inner); layer.appendChild(c);
+      const delay = col * colStaggerScaled;
+      inner.style.transition = `transform ${dur}ms ${DROP_EASE} ${delay}ms, opacity ${dur}ms linear ${delay}ms`;
+      requestAnimationFrame(() => { inner.style.transform = `translateY(${d}px)`; inner.style.opacity = "0"; });
+    }
+    boardEl.appendChild(layer);
+    setTimeout(() => layer.remove(), dur + REELS * colStaggerScaled + 160);
   }
 
   // ---- HUD ----------------------------------------------------------------
@@ -120,7 +140,7 @@
           for (let c = 0; c < REELS; c++) setTimeout(() => SND.reelStop(), c * COL_STAGGER + DROP_DUR - 40);
           let sc = 0; ev.board.forEach((cA) => cA.forEach((id) => { if (SYM[id] && SYM[id].scatter) sc++; }));
           if (sc >= 2) { SND.riser(0.7); cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; if (SYM[ev.board[col][row]] && SYM[ev.board[col][row]].scatter) c.classList.add("scat-hot"); }); setTimeout(() => cells.forEach((c) => c.classList.remove("scat-hot")), 2400); }
-          await sleep(460); break;
+          await sleep(600); break;
         }
         case "updateGlobalMult":
           setMult(ev.globalMult);
@@ -130,14 +150,15 @@
           ev.wilds.forEach((w) => { if (w.multiplier > 1) { const c = cellAt(w.position[0], w.position[1]); const t = document.createElement("span"); t.className = "wmult"; t.textContent = "×" + w.multiplier; c.appendChild(t); c.classList.add("sticky"); } }); break;
         case "winInfo": {
           const ks = new Set(); ev.wins.forEach((w) => w.positions.forEach((p) => ks.add(p[0] + "," + p[1])));
-          cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
-          if (FX) { ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); }); if (ev.stepWin >= 4) FX.shake(3 + Math.min(7, ev.stepWin / 3), 0.25); }
+          const wd = 0.55 * SPD() + "s";
+          cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); if (w) { const s = c.querySelector(".sym"); if (s) s.style.animationDuration = wd; } c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
+          if (FX) { let n = 0; ks.forEach((key) => { if (n++ > 7) return; const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); }); if (ev.stepWin >= 4) FX.shake(3 + Math.min(7, ev.stepWin / 3), 0.25); }
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
         case "tumbleBoard":
           wolfEl.classList.add("blow"); SND.puff();
           explodeMap = {};
-          ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); cellAt(c, r).classList.add("explode"); if (FX) { const p = cellCenter(c, r); FX.explode(p.x, p.y); } });
+          { const bd = 0.42 * SPD() + "s"; ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); const cell = cellAt(c, r); const s = cell.querySelector(".sym"); if (s) s.style.animationDuration = bd; cell.classList.add("explode"); if (FX) { const p = cellCenter(c, r); FX.explode(p.x, p.y); } }); }
           await sleep(430); wolfEl.classList.remove("blow"); break;
         case "dropBoard": animateColumns(ev.board, explodeMap || "all"); explodeMap = null; SND.drop(); await sleep(400); break;
         case "scatterPay": burst("🍲 SCATTER"); toast(`${ev.scatters}× 🍲 zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;

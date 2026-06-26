@@ -116,19 +116,25 @@
   function markScatterCol(col, b) {
     for (let row = 0; row < ROWS; row++) if (SYM[b[col][row]] && SYM[b[col][row]].scatter) cellAt(col, row).classList.add("scat-hot");
   }
+  const showSym = (c, on) => { const s = c.querySelector(".sym"); if (s) s.style.visibility = on ? "" : "hidden"; };
   function spinReels(b) {
     return new Promise((resolve) => {
       const sp = SPD(), pitch = rowPitch();
+      // Hide the real cell symbols for the duration of the spin: the strip tiles
+      // are transparent, so the static old symbols underneath would otherwise
+      // show THROUGH the moving strip (the "new over old" double-vision, worst on
+      // fractional mobile layouts). Each column is revealed again as it settles.
+      cells.forEach((c) => showSym(c, false));
       const layer = document.createElement("div"); layer.className = "spin-layer";
       const scatterCols = [];
       for (let c = 0; c < REELS; c++) if (b[c].some((id) => SYM[id] && SYM[id].scatter)) scatterCols.push(c);
       const antiFrom = scatterCols.length >= 2 ? scatterCols[1] + 1 : REELS; // first reel of the "chase"
       const strips = [];
       for (let col = 0; col < REELS; col++) {
-        const base = cellAt(col, 0), x = base.offsetLeft, w = base.offsetWidth, h = base.offsetHeight;
+        const base = cellAt(col, 0), x = base.offsetLeft, w = base.offsetWidth, h = base.offsetHeight, top0 = base.offsetTop;
         const strip = document.createElement("div"); strip.className = "spin-strip"; strip.style.cssText = `left:${x}px;width:${w}px;`;
         for (let row = 0; row < ROWS; row++) {
-          const top = cellAt(col, row).offsetTop;
+          const top = top0 + row * pitch;   // UNIFORM pitch -> tiles stay contiguous (no per-cell offsetTop rounding gaps)
           strip.appendChild(makeSpinCell(curBoard[col] ? curBoard[col][row] : b[col][row], top, w, h)); // outgoing
           strip.appendChild(makeSpinCell(b[col][row], top - ROWS * pitch, w, h));                        // incoming (above)
         }
@@ -136,6 +142,7 @@
       }
       boardEl.appendChild(layer); void boardEl.offsetHeight;
 
+      const reveal = (col) => { for (let row = 0; row < ROWS; row++) paintCell(col, row, b[col][row]); for (let row = 0; row < ROWS; row++) showSym(cellAt(col, row), true); };
       let maxEnd = 0;
       for (let col = 0; col < REELS; col++) {
         let delay, dur;
@@ -145,15 +152,15 @@
         strips[col].style.transform = `translateY(${ROWS * pitch}px)`;
         const end = delay + dur; maxEnd = Math.max(maxEnd, end);
         setTimeout(() => {
-          for (let row = 0; row < ROWS; row++) paintCell(col, row, b[col][row]); // real cells now hold the new board
-          strips[col].remove();                                                  // reveal them (identical, seamless)
+          reveal(col);              // paint the real cells with the new board + make them visible
+          strips[col].remove();     // drop the strip (real cells now show, seamless)
           SND.reelStop(col, col >= antiFrom);
           if (b[col].some((id) => SYM[id] && SYM[id].scatter)) markScatterCol(col, b);
           if (col === antiFrom) { boardEl.classList.add("anticip"); SND.riser(0.9); } // chase begins
         }, end);
       }
       curBoard = b.map((c) => c.slice());
-      setTimeout(() => { layer.remove(); boardEl.classList.remove("anticip"); resolve(); }, maxEnd + 70);
+      setTimeout(() => { layer.remove(); cells.forEach((c) => showSym(c, true)); boardEl.classList.remove("anticip"); resolve(); }, maxEnd + 70);
     });
   }
 

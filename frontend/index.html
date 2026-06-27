@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Stake's Huff &amp; Puff: Piggy Richies</title>
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Outfit:wght@600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
   <!-- ===== immersive themed scene (replaced by assets/background.* if present) ===== -->
@@ -75,7 +78,7 @@
 
     <div class="reel-panel">
       <div class="phase-banner" id="phase">BASISSPIEL</div>
-      <div class="mult-tab" id="mult-tab"><label>WOLF</label><span id="mult-badge">×1</span></div>
+      <div class="mult-tab" id="mult-tab"><span class="mult-wolf" data-ico="wolf"></span><span class="mult-col"><label>WOLF&nbsp;MULTI</label><span id="mult-badge">×1</span></span></div>
       <div class="board" id="board"></div>
       <div class="board-glow" id="board-glow"></div>
       <div class="overlay" id="overlay"></div>
@@ -140,6 +143,14 @@
     <div class="bigwin-amount" id="bigwin-amount">0.00</div>
   </div>
 
+  <div id="house-cine" class="house-cine hidden">
+    <div class="hc-rays"></div>
+    <div class="hc-burst" id="hc-burst"></div>
+    <div class="hc-house" id="hc-house"></div>
+    <div class="hc-title" id="hc-title">HOLZ-HAUS</div>
+    <div class="hc-sub" id="hc-sub">+2 Freispiele</div>
+  </div>
+
   <div id="loader" class="loader">
     <div class="loader-logo" id="loader-logo">
       <strong>HUFF&nbsp;&amp;&nbsp;PUFF</strong><small>PIGGY&nbsp;RICHIES</small>
@@ -176,12 +187,12 @@
     </div>
   </div>
 
-  <script src="art.js?v=4"></script>
-  <script src="audio.js?v=4"></script>
-  <script src="fx.js?v=4"></script>
-  <script src="assets/manifest.js?v=4"></script>
-  <script src="game-config.js?v=4"></script>
-  <script src="game-books.js?v=4"></script>
-  <script src="game.js?v=4"></script>
+  <script src="art.js?v=5"></script>
+  <script src="audio.js?v=5"></script>
+  <script src="fx.js?v=5"></script>
+  <script src="assets/manifest.js?v=5"></script>
+  <script src="game-config.js?v=5"></script>
+  <script src="game-books.js?v=5"></script>
+  <script src="game.js?v=5"></script>
 </body>
 </html>

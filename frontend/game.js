@@ -166,19 +166,31 @@
 
   // ---- HUD ----------------------------------------------------------------
   function setPhase(extra) {
-    phaseEl.textContent = extra || (curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · ${houseLabel.toUpperCase()}` : "BASISSPIEL");
+    phaseEl.textContent = extra || (curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot}` : "BASISSPIEL");
     phaseEl.classList.toggle("bonus", curGametype === "freegame");
   }
   let lastMult = 1;
   function setMult(m, celebrate = false) {
     multBadge.textContent = "×" + m;
+    multTab.classList.toggle("active", m > 1);
     multBadge.classList.remove("bump"); multTab.classList.remove("pump"); void multBadge.offsetWidth;
     multBadge.classList.add("bump");
     if (celebrate && m > 1) {
       multTab.classList.add("pump");
-      if (FX) { const r = multTab.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; FX.sparkle(cx, cy); FX.burst(cx, cy, 7, 0.55); }
+      if (FX) { const r = multTab.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; FX.sparkle(cx, cy); FX.burst(cx, cy, 8, 0.55); FX.shake(4, 0.2); }
       SND.multUp(m);
     }
+  }
+  function multBadgeCenter() { const r = multTab.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  // a floating "×N" readout: rises and fades, or flies to the Wolf badge
+  function floatMult(x, y, text, cls, toBadge) {
+    const el = document.createElement("div"); el.className = "mfloat " + cls; el.textContent = text;
+    el.style.left = x + "px"; el.style.top = y + "px"; document.body.appendChild(el);
+    requestAnimationFrame(() => {
+      if (toBadge) { const b = multBadgeCenter(); el.style.transform = `translate(calc(-50% + ${Math.round(b.x - x)}px),calc(-50% + ${Math.round(b.y - y)}px)) scale(.55)`; el.style.opacity = "0"; }
+      else { el.style.transform = "translate(-50%,-150%) scale(1.12)"; el.style.opacity = "0"; }
+    });
+    setTimeout(() => el.remove(), 760);
   }
   function burst(t, cls = "") { const b = document.createElement("div"); b.className = "burst " + cls; b.innerHTML = t; overlay.appendChild(b); setTimeout(() => b.remove(), 1000); }
   let toastT;
@@ -205,8 +217,7 @@
         }
         case "updateGlobalMult": {
           const up = ev.globalMult > lastMult; lastMult = ev.globalMult;
-          setMult(ev.globalMult, up);
-          if (ev.globalMult > 1) setPhase(curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot} · WOLF ×${ev.globalMult}` : `WOLF ×${ev.globalMult}`);
+          setMult(ev.globalMult, up);   // the prominent Wolf badge IS the multiplier display now
           break;
         }
         case "wildLand":
@@ -217,9 +228,16 @@
           cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); if (w) { const s = c.querySelector(".sym"); if (s) s.style.animationDuration = wd; } c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
           if (FX) {
             // a sparkle dead-centre on EVERY winning tile (no 8-cell cap -> no lopsided gaps)
-            ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); });
+            let sx = 0, sy = 0, n = 0;
+            ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); sx += p.x; sy += p.y; n++; });
             const amp = Math.min(15, ev.stepWin * 0.7 + (lastMult - 1) * 2); // shake scales with win size AND wolf mult
             if (amp > 2.5) FX.shake(amp, 0.28);
+            // show EXACTLY what multiplied what: each win's summed wild ×N pops on its tiles,
+            // and the Wolf cascade ×N flies up to the multiplier badge.
+            ev.wins.forEach((w) => {
+              if (w.wildMult > 1) { let wx = 0, wy = 0; w.positions.forEach(([c, r]) => { const p = cellCenter(c, r); wx += p.x; wy += p.y; }); floatMult(wx / w.positions.length, wy / w.positions.length - 6, "×" + w.wildMult, "wild", false); }
+            });
+            if (ev.multiplier > 1 && n) floatMult(sx / n, sy / n, "×" + ev.multiplier, "wolf", true);
           }
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
@@ -255,18 +273,10 @@
           await sleep(260); break;
         }
         case "houseUpgrade": {
-          const ring = $("house-ring"), build = ring ? ring.querySelector(".house-build") : null;
-          if (build) build.classList.add("crumble");            // old house shakes apart
-          if (FX) { const r = ring.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; FX.explode(cx, cy, "#ffcaa0"); FX.shake(10, 0.5); }
-          SND.upgrade(); await sleep(360);
-          setHouse(ev.level, ev.house, ev.bricks);               // swap to the new house
-          if (build) { build.classList.remove("crumble"); void build.offsetWidth; build.classList.add("smash"); }
-          if (ring) { ring.classList.remove("near"); ring.classList.add("flash"); }
-          if (FX) { const r = ring.getBoundingClientRect(); FX.confetti(r.left + r.width / 2, r.top + r.height / 2, 28); }
-          glow.className = "board-glow bonus"; burst(chip("house" + ev.level) + " " + ev.house.toUpperCase(), "scatter");
-          toast(`HAUS-UPGRADE: <b>${ev.house}</b> · +${ev.extraSpins} Freispiele`, true);
-          await sleep(1000);
-          if (build) build.classList.remove("smash"); if (ring) ring.classList.remove("flash");
+          await houseCine(ev);                                   // full cinematic: house art slams in
+          setHouse(ev.level, ev.house, ev.bricks);               // update the panel ring to the new level
+          const ring = $("house-ring"); if (ring) { ring.classList.remove("near"); ring.classList.add("flash"); setTimeout(() => ring.classList.remove("flash"), 900); }
+          glow.className = "board-glow bonus";
           break;
         }
         case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
@@ -319,19 +329,33 @@
     await sleep(1950);
     fsFlash.className = "fs-flash hidden";
   }
-  // ---- free-spins environment (storm tint + lightning) -------------------
+  // ---- free-spins environment (warm glow + occasional flash) -------------
   let ltTimer = null;
   function setStorm(on) {
     const s = $("fs-storm"); if (s) s.classList.toggle("on", on);
+    document.body.classList.toggle("fs-active", on);   // warm glowing reel frame etc.
     clearTimeout(ltTimer);
-    if (on) ltTimer = setTimeout(lightning, 1600 + Math.random() * 2600);
+    if (on) ltTimer = setTimeout(lightning, 2200 + Math.random() * 3500);
   }
   function lightning() {
     const s = $("fs-storm"), el = $("fs-lightning");
     if (!s || !el || !s.classList.contains("on")) return;
     el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
     if (SND.thunder) SND.thunder();
-    ltTimer = setTimeout(lightning, 4500 + Math.random() * 6500);
+    ltTimer = setTimeout(lightning, 6000 + Math.random() * 8000);
+  }
+  // cinematic house upgrade: rays + the new house art slams in + bold title
+  async function houseCine(ev) {
+    const ov = $("house-cine"); if (!ov) return;
+    $("hc-house").innerHTML = icoHTML("house" + ev.level);
+    $("hc-title").textContent = ev.house;
+    $("hc-sub").textContent = "+" + ev.extraSpins + " FREISPIELE";
+    ov.classList.remove("hidden");
+    const h = $("hc-house"); h.classList.remove("smash"); void h.offsetWidth; h.classList.add("smash");
+    SND.upgrade();
+    if (FX) { FX.shake(12, 0.6); const cx = innerWidth / 2, cy = innerHeight * 0.45; setTimeout(() => { FX.explode(cx, cy, "#ffcaa0"); FX.confetti(cx, cy, 50); FX.coinShower(1.5, 16); SND.winTier(1); }, 260); }
+    await sleep(1850);
+    ov.classList.add("hidden");
   }
   async function settle(ev) {
     const m = ev.amount;

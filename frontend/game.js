@@ -492,7 +492,12 @@
   }
   function preloadThenStart() {
     const A = window.PIGGY_ASSETS || {};
-    const urls = [...(A.symbols ? Object.values(A.symbols) : []), ...(A.background ? [A.background] : []), ...(A.logo ? [A.logo] : [])];
+    const urls = [
+      ...(A.symbols ? Object.values(A.symbols) : []),
+      ...(A.ui ? Object.values(A.ui) : []),
+      ...(A.background ? [A.background] : []),
+      ...(A.logo ? [A.logo] : []),
+    ];
     const fill = $("loader-fill"), pct = $("loader-pct");
     if (!urls.length) { afterPreload(); return; }
     let loaded = 0;
@@ -507,11 +512,13 @@
   function finishLoad() {
     if (started) return; started = true;
     const A = window.PIGGY_ASSETS || {};
+    if (A.ui) Object.entries(A.ui).forEach(([name, url]) => {
+      document.documentElement.style.setProperty(`--ui-${name}`, `url("${url}")`);
+    });
     if (A.background) { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }
     if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
     setStatic(randomBoard()); buildPaytable();
     const ld = $("loader"); ld.classList.add("gone"); setTimeout(() => (ld.style.display = "none"), 600);
-    if (!localStorage.getItem("piggy_seen3")) { setTimeout(() => openModal("modal-help"), 400); localStorage.setItem("piggy_seen3", "1"); }
   }
 
   // ---- fallbacks ----------------------------------------------------------

@@ -14,6 +14,11 @@ package-lock.json
 # The small lookup tables + config + the curated frontend sample ARE committed.
 math/library/books/*.jsonl
 math/library/books/*.json.zst
+math/library/configs/
+math/library/forces/
+math/library/index.json
+math/library/publish_files/
+math/stake_engine_upload/
 
 # OS / editor
 .DS_Store

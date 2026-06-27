@@ -22,4 +22,17 @@ window.PIGGY_ASSETS = {
   },
   background: "assets/background.webp",
   logo: "assets/logo.webp",
+  ui: {
+    reelFrame: "assets/ui/reel-frame.png",
+    reelCell: "assets/ui/reel-cell.webp",
+    reelBed: "assets/ui/reel-bed.webp",
+    housePanel: "assets/ui/house-panel.png",
+    multBadge: "assets/ui/mult-badge.png",
+    spinButton: "assets/ui/spin-button.png",
+    bonusButton: "assets/ui/bonus-button.png",
+    controlConsole: "assets/ui/control-console.webp",
+    iconButton: "assets/ui/icon-button.webp",
+    stepper: "assets/ui/stepper.webp",
+    phasePill: "assets/ui/phase-pill.webp",
+  },
 };

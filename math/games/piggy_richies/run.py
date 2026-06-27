@@ -24,8 +24,11 @@ extremely high-variance (see solve_tilt_weights in src/write_data).
 from __future__ import annotations
 
 import json
+import hashlib
+import math
 import os
 import random
+import shutil
 import sys
 import time
 
@@ -177,6 +180,7 @@ def build() -> None:
 
     _write_fe_config(cfg, optimisation, fair_costs)
     write_json(os.path.join(LIB, "config", "optimisation.json"), optimisation)
+    _write_stake_publish(cfg, generated, fair_costs)
     _write_frontend(cfg, generated, fair_costs)
     print(f"\nlibrary written to {LIB}")
 
@@ -218,6 +222,237 @@ def _write_fe_config(cfg: GameConfig, optimisation: dict, fair_costs: dict) -> N
         "optimisation": optimisation,
     }
     write_json(os.path.join(LIB, "config", "config.json"), config)
+
+
+def _sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _stake_weight(weight: float) -> int:
+    # Stake lookup tooling expects numeric/integer weights. Scale the solved
+    # tilt weights so precision survives while keeping every row selectable.
+    return max(1, int(round(weight * 1_000_000)))
+
+
+def _weighted_std(payouts: list[float], weights: list[int], cost: float) -> float:
+    total = sum(weights)
+    if not payouts or total <= 0:
+        return 0.0
+    mean = sum(w * p for w, p in zip(weights, payouts)) / total
+    var = sum(w * (p - mean) ** 2 for w, p in zip(weights, payouts)) / total
+    return round(math.sqrt(var) / cost, 2)
+
+
+_MONEY_KEYS = {
+    "amount",
+    "baseGameWins",
+    "freeGameWins",
+    "payoutMultiplier",
+    "stepWin",
+    "totalWin",
+    "win",
+}
+
+
+def _stake_money(value: float | int) -> int:
+    return int(round(float(value) * 100))
+
+
+def _stake_event_value(key: str, value):
+    if key in _MONEY_KEYS and isinstance(value, (int, float)) and not isinstance(value, bool):
+        return _stake_money(value)
+    if isinstance(value, dict):
+        return {k: _stake_event_value(k, v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_stake_event_value("", v) for v in value]
+    return value
+
+
+def _stake_book(book: dict, mode: str) -> dict:
+    converted = {
+        "id": int(book["id"]),
+        "payoutMultiplier": _stake_money(book["payoutMultiplier"]),
+        "events": [_stake_event_value("", ev) for ev in book["events"]],
+        "criteria": mode,
+        "baseGameWins": _stake_money(book["payoutMultiplier"]) if mode == "base" else 0,
+        "freeGameWins": 0 if mode == "base" else _stake_money(book["payoutMultiplier"]),
+    }
+    return converted
+
+
+def _write_stake_books_jsonl(path: str, books: list[dict], mode: str) -> None:
+    with open(path, "w", encoding="UTF-8", newline="\n") as fh:
+        for book in books:
+            fh.write(json.dumps(_stake_book(book, mode), separators=(",", ":")) + "\n")
+
+
+def _write_stake_publish(cfg: GameConfig, generated: dict, fair_costs: dict) -> None:
+    """Emit Stake Engine upload artefacts.
+
+    The vanilla demo lookup tables store payout multipliers directly and include
+    a CSV header. Stake's RGS/upload helpers read lookup payouts as cents
+    (``payout / 100``) and locate files from ``publish_files/index.json``. Keep
+    both formats: demo files stay untouched, upload files are written separately.
+    """
+    publish_dir = os.path.join(LIB, "publish_files")
+    config_dir = os.path.join(LIB, "configs")
+    force_dir = os.path.join(LIB, "forces")
+    upload_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "stake_engine_upload"))
+
+    for path in (publish_dir, config_dir, force_dir, upload_dir):
+        os.makedirs(path, exist_ok=True)
+
+    fe_config_name = f"config_fe_{cfg.game_id}.json"
+    fe_config_path = os.path.join(config_dir, fe_config_name)
+    fe_symbols = []
+    for sym in cfg.symbols.to_json():
+        details = {}
+        if sym["id"] in cfg.paytable:
+            details["paytable"] = cfg.paytable[sym["id"]]
+        props = []
+        if sym.get("wild"):
+            props.append("wild")
+        if sym.get("scatter"):
+            props.append("scatter")
+        if sym.get("collectible"):
+            props.append("collectible")
+        if props:
+            details["special_properties"] = props
+        fe_symbols.append({sym["id"]: details})
+
+    fe_config = {
+        "providerName": cfg.provider,
+        "gameName": cfg.game_name,
+        "gameID": cfg.game_id,
+        "rtp": cfg.rtp,
+        "numReels": cfg.num_reels,
+        "numRows": cfg.num_rows,
+        "betModes": {
+            m.name: {
+                "cost": fair_costs.get(m.name, m.cost),
+                "feature": not m.feature_buy,
+                "buyBonus": m.feature_buy,
+                "rtp": m.rtp,
+                "max_win": m.max_win,
+            }
+            for m in cfg.bet_modes
+        },
+        "symbols": fe_symbols,
+        "paddingReels": {
+            name: [[{"name": sym} for sym in reel] for reel in strips]
+            for name, strips in cfg.reels.items()
+        },
+    }
+    with open(fe_config_path, "w", encoding="UTF-8") as fh:
+        json.dump(fe_config, fh, indent=2)
+
+    force_index = {}
+    book_shelf = []
+    manifest = {"modes": []}
+    math_config = {"game_id": cfg.game_id, "bet_modes": []}
+
+    for name, (books, payouts, kind, weights) in generated.items():
+        mode = cfg.get_bet_mode(name)
+        cost = fair_costs.get(name, mode.cost)
+        int_weights = [_stake_weight(w) for w in (weights or [1.0] * len(payouts))]
+
+        pub_books_name = f"books_{name}.jsonl"
+        pub_books_path = os.path.join(publish_dir, pub_books_name)
+        _write_stake_books_jsonl(pub_books_path, books, name)
+        shutil.copy2(pub_books_path, os.path.join(upload_dir, pub_books_name))
+
+        pub_lut_name = f"lookUpTable_{name}_0.csv"
+        pub_lut_path = os.path.join(publish_dir, pub_lut_name)
+        book_payouts = [_stake_money(book["payoutMultiplier"]) for book in books]
+        with open(pub_lut_path, "w", encoding="UTF-8") as fh:
+            for book, weight, payout in zip(books, int_weights, book_payouts):
+                fh.write(f"{book['id']},{weight},{payout}\n")
+        shutil.copy2(pub_lut_path, os.path.join(upload_dir, pub_lut_name))
+
+        force_record_name = f"force_record_{name}.json"
+        force_record_path = os.path.join(force_dir, force_record_name)
+        with open(force_record_path, "w", encoding="UTF-8") as fh:
+            json.dump(
+                [
+                    {
+                        "search": [{"name": "betMode", "value": name}],
+                        "timesTriggered": len(books),
+                        "bookIds": [],
+                    }
+                ],
+                fh,
+                indent=2,
+            )
+
+        book_shelf.append(
+            {
+                "name": name,
+                "tables": [{"file": pub_lut_name, "sha256": _sha256(pub_lut_path)}],
+                "cost": cost,
+                "rtp": mode.rtp,
+                "std": _weighted_std(payouts, int_weights, cost),
+                "bookLength": len(payouts),
+                "feature": not mode.feature_buy,
+                "autoEndRoundDisabled": mode.auto_close_disabled,
+                "buyBonus": mode.feature_buy,
+                "maxWin": mode.max_win,
+                "booksFile": {"file": pub_books_name, "sha256": _sha256(pub_books_path)},
+                "forceFile": {"file": force_record_name, "sha256": _sha256(force_record_path)},
+            }
+        )
+        manifest["modes"].append(
+            {
+                "name": name,
+                "cost": cost,
+                "events": pub_books_name,
+                "weights": pub_lut_name,
+            }
+        )
+        math_config["bet_modes"].append(
+            {
+                "bet_mode": name,
+                "cost": cost,
+                "rtp": mode.rtp,
+                "max_win": mode.max_win,
+            }
+        )
+        force_index[name] = {"betMode": [name]}
+
+    force_path = os.path.join(force_dir, "force.json")
+    with open(force_path, "w", encoding="UTF-8") as fh:
+        json.dump(force_index, fh, indent=2)
+
+    backend_config = {
+        "workingName": cfg.game_name,
+        "frontendConfig": {"file": fe_config_name, "sha256": _sha256(fe_config_path)},
+        "gameID": cfg.game_id,
+        "rtp": round(cfg.rtp * 100, 4),
+        "betDenomination": 100,
+        "minDenomination": 1,
+        "providerNumber": 0,
+        "standardForceFile": {"file": "force.json", "sha256": _sha256(force_path)},
+        "bookShelfConfig": book_shelf,
+    }
+    backend_path = os.path.join(config_dir, "config.json")
+    with open(backend_path, "w", encoding="UTF-8") as fh:
+        json.dump(backend_config, fh, indent=2)
+
+    with open(os.path.join(config_dir, "math_config.json"), "w", encoding="UTF-8") as fh:
+        json.dump(math_config, fh, indent=2)
+
+    index_path = os.path.join(publish_dir, "index.json")
+    with open(index_path, "w", encoding="UTF-8") as fh:
+        json.dump(manifest, fh, indent=2)
+    shutil.copy2(index_path, os.path.join(LIB, "index.json"))
+    shutil.copy2(index_path, os.path.join(upload_dir, "index.json"))
+    shutil.copy2(backend_path, os.path.join(upload_dir, "config.json"))
+    shutil.copy2(fe_config_path, os.path.join(upload_dir, fe_config_name))
+    print(f"stake upload manifest written to {index_path}")
+    print(f"stake upload folder written to {upload_dir}")
 
 
 def _curate_indices(n_books: int, cap: int) -> list[int]:

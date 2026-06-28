@@ -20,7 +20,7 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
@@ -28,9 +28,10 @@
   const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
   const fmt = (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function uiAsset(name) { const A = window.PIGGY_ASSETS || {}; return (A.ui || {})[name] || ""; }
 
   // ---- art / board --------------------------------------------------------
-  const symInner = (id) => (ART.hasImage(id) ? `<img src="${ART.imageUrl(id)}" alt="${id}">` : ART.svg(id));
+  const symInner = (id) => (ART.hasImage(id) ? `<img src="${ART.imageUrl(id)}" alt="${id}">` : `<span class="sym-fallback">${id}</span>`);
   function buildBoard() {
     boardEl.innerHTML = ""; cells = [];
     for (let row = 0; row < ROWS; row++) for (let col = 0; col < REELS; col++) {
@@ -55,7 +56,7 @@
       const url = ART.imageUrl(id);
       if (img.getAttribute("src") !== url) img.setAttribute("src", url);
     } else {
-      sym.innerHTML = ART.svg(id);
+      sym.innerHTML = `<span class="sym-fallback">${id}</span>`;
     }
   }
   function paintCell(col, row, id) {
@@ -171,7 +172,9 @@
   }
   let lastMult = 1;
   function setMult(m, celebrate = false) {
-    multBadge.textContent = "×" + m;
+    multBadge.textContent = "x" + m;
+    const multUrl = uiAsset("multX" + m) || uiAsset("multX1");
+    if (multUrl) multTab.style.setProperty("--mult-img", `url("${multUrl}")`);
     multTab.classList.toggle("active", m > 1);
     multBadge.classList.remove("bump"); multTab.classList.remove("pump"); void multBadge.offsetWidth;
     multBadge.classList.add("bump");
@@ -182,7 +185,7 @@
     }
   }
   function multBadgeCenter() { const r = multTab.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
-  // a floating "×N" readout: rises and fades, or flies to the Wolf badge
+  // a floating "xN" readout: rises and fades, or flies to the Wolf badge
   function floatMult(x, y, text, cls, toBadge) {
     const el = document.createElement("div"); el.className = "mfloat " + cls; el.textContent = text;
     el.style.left = x + "px"; el.style.top = y + "px"; document.body.appendChild(el);
@@ -221,7 +224,7 @@
           break;
         }
         case "wildLand":
-          ev.wilds.forEach((w) => { if (w.multiplier > 1) { const c = cellAt(w.position[0], w.position[1]); const t = document.createElement("span"); t.className = "wmult"; t.textContent = "×" + w.multiplier; c.appendChild(t); c.classList.add("sticky"); } }); break;
+          ev.wilds.forEach((w) => { if (w.multiplier > 1) { const c = cellAt(w.position[0], w.position[1]); const t = document.createElement("span"); t.className = "wmult"; t.textContent = "x" + w.multiplier; c.appendChild(t); c.classList.add("sticky"); } }); break;
         case "winInfo": {
           const ks = new Set(); ev.wins.forEach((w) => w.positions.forEach((p) => ks.add(p[0] + "," + p[1])));
           const wd = 0.55 * SPD() + "s";
@@ -232,12 +235,12 @@
             ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); sx += p.x; sy += p.y; n++; });
             const amp = Math.min(15, ev.stepWin * 0.7 + (lastMult - 1) * 2); // shake scales with win size AND wolf mult
             if (amp > 2.5) FX.shake(amp, 0.28);
-            // show EXACTLY what multiplied what: each win's summed wild ×N pops on its tiles,
-            // and the Wolf cascade ×N flies up to the multiplier badge.
+            // show EXACTLY what multiplied what: each win's summed wild xN pops on its tiles,
+            // and the Wolf cascade xN flies up to the multiplier badge.
             ev.wins.forEach((w) => {
-              if (w.wildMult > 1) { let wx = 0, wy = 0; w.positions.forEach(([c, r]) => { const p = cellCenter(c, r); wx += p.x; wy += p.y; }); floatMult(wx / w.positions.length, wy / w.positions.length - 6, "×" + w.wildMult, "wild", false); }
+              if (w.wildMult > 1) { let wx = 0, wy = 0; w.positions.forEach(([c, r]) => { const p = cellCenter(c, r); wx += p.x; wy += p.y; }); floatMult(wx / w.positions.length, wy / w.positions.length - 6, "x" + w.wildMult, "wild", false); }
             });
-            if (ev.multiplier > 1 && n) floatMult(sx / n, sy / n, "×" + ev.multiplier, "wolf", true);
+            if (ev.multiplier > 1 && n) floatMult(sx / n, sy / n, "x" + ev.multiplier, "wolf", true);
           }
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
@@ -254,12 +257,12 @@
           if (sc >= 2) SND.scatter();
           await sleep(400); break;
         }
-        case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}× ${chip("pot")} zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
+        case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}x ${chip("pot")} zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger":
-          if (curGametype === "freegame") { toast(`RETRIGGER · +${ev.spinsAwarded} ${chip("pot")}`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
+          if (curGametype === "freegame") { toast(`RETRIGGER &middot; +${ev.spinsAwarded} ${chip("pot")}`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
           else { // base-game trigger: celebrate the pots before the bonus intro
             ev.positions.forEach((p) => { cellAt(p[0], p[1]).classList.add("scat-hot"); if (FX) { const c = cellCenter(p[0], p[1]); FX.sparkle(c.x, c.y); FX.burst(c.x, c.y, 8, 0.6); } });
-            burst(`${ev.scatters}× ${chip("pot")}`, "scatter"); SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
+            burst(`${ev.scatters}x ${chip("pot")}`, "scatter"); SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
             await sleep(750);
           }
           break;
@@ -267,10 +270,11 @@
         case "updateFreeSpin": fsNow = ev.current; fsTot = ev.total; fsCount.textContent = `${ev.current} / ${ev.total}`; setPhase(); break;
         case "collectBrick": {
           const c = cellAt(ev.position[0], ev.position[1]);
-          flyBrickToHouse(c); c.classList.add("collected");     // brick arcs to the meter; the cell dims (banked)
+          flyBrickToHouse(c, ev.bricks); c.classList.add("collected");
           if (FX) { const p = cellCenter(ev.position[0], ev.position[1]); FX.sparkle(p.x, p.y); }
+          await sleep(420);
           updateBricks(ev.bricks); pulseRing(); SND.brick();
-          await sleep(260); break;
+          await sleep(170); break;
         }
         case "houseUpgrade": {
           await houseCine(ev);                                   // full cinematic: house art slams in
@@ -288,26 +292,55 @@
   }
   // ---- house upgrade meter (organic ring + level chips, no progress bar) ----
   function setHouse(level, name, bricks) {
+    currentHouseLevel = level;
     houseLabel = name; houseName.textContent = name;
     houseEmoji.innerHTML = icoHTML("house" + level);
+    housePanel.dataset.level = String(level);
     const L = CFG.features.houseLevels;
     const cur = L.find((l) => l.level === level) || L[0], nx = L.find((l) => l.level === level + 1);
     bricksFloor = cur.bricks || 0;
     bricksTarget = nx ? nx.bricks : cur.bricks;
     const chips = $("house-levels"); if (chips) chips.querySelectorAll(".hl").forEach((el) => el.classList.toggle("on", +el.dataset.l <= level));
+    paintHouseStages(level);
     updateBricks(bricks);
   }
   function updateBricks(b) {
-    const ring = $("house-ring"); if (!ring) return;
+    currentBricks = b;
     const span = bricksTarget - bricksFloor, p = span > 0 ? Math.min(1, (b - bricksFloor) / span) : 1;
-    ring.style.setProperty("--p", p);
-    ring.classList.toggle("near", span > 0 && p >= 0.6);   // glow intensifies near an upgrade
+    const ring = $("house-ring");
+    if (ring) {
+      ring.style.setProperty("--p", p);
+      ring.classList.toggle("near", span > 0 && p >= 0.6);
+    }
     brickLabel.innerHTML = span > 0 ? `${chip("brick")} ${b - bricksFloor} / ${span}` : `${chip("brick")} MAX`;
+    paintBrickRack(b);
   }
-  function pulseRing() { const r = $("house-ring"); if (!r) return; r.classList.remove("tick"); void r.offsetWidth; r.classList.add("tick"); }
-  function flyBrickToHouse(cell) {
-    const ring = $("house-ring"); if (!ring || !cell) return;
-    const a = cell.getBoundingClientRect(), b = ring.getBoundingClientRect();
+  function paintHouseStages(level) {
+    housePanel.querySelectorAll("[data-house-stage]").forEach((el) => {
+      const l = +el.dataset.houseStage;
+      el.classList.toggle("active", l === level);
+      el.classList.toggle("complete", l < level);
+      if (!el.dataset.painted) { el.dataset.painted = "1"; el.innerHTML = icoHTML("house" + l); }
+    });
+  }
+  function paintBrickRack(bricks) {
+    const slots = [...document.querySelectorAll("#brick-rack span")];
+    slots.forEach((slot, i) => slot.classList.toggle("filled", i < Math.min(10, Math.max(0, bricks))));
+  }
+  function pulseRing() {
+    const target = getBrickSlot(currentBricks) || $("house-panel");
+    if (!target) return;
+    target.classList.remove("tick"); void target.offsetWidth; target.classList.add("tick");
+  }
+  function getBrickSlot(bricksAfter) {
+    const slots = document.querySelectorAll("#brick-rack span");
+    if (!slots.length) return null;
+    return slots[Math.max(0, Math.min(slots.length - 1, bricksAfter - 1))];
+  }
+  function flyBrickToHouse(cell, bricksAfter) {
+    const target = getBrickSlot(bricksAfter) || $("house-panel");
+    if (!target || !cell) return;
+    const a = cell.getBoundingClientRect(), b = target.getBoundingClientRect();
     const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
     const fly = document.createElement("div"); fly.className = "brick-fly"; fly.innerHTML = icoHTML("brick");
     fly.style.left = ax + "px"; fly.style.top = ay + "px"; document.body.appendChild(fly);
@@ -320,8 +353,8 @@
   async function freeIntro(ev) {
     fsFlash.innerHTML =
       `<div class="fi-chars"><span class="fi-ico pot">${icoHTML("pot")}</span><span class="fi-ico wolf">${icoHTML("wolf")}</span></div>` +
-      `<h1>HOUSE&nbsp;UPGRADE<br>FREE&nbsp;SPINS</h1>` +
-      `<p>${ev.totalSpins} Freispiele · sammle ${chip("brick")} überall auf den Walzen</p>`;
+      `<h1>HAUSBAU<br>FREISPIELE</h1>` +
+      `<p>${ev.totalSpins} Freispiele &middot; sammle ${chip("brick")} auf den Walzen</p>`;
     fsFlash.className = "fs-flash zoom";
     SND.trigger();
     if (FX) { FX.shake(10, 0.6); const cx = innerWidth / 2, cy = innerHeight * 0.42; FX.confetti(cx, cy, 44); FX.coinShower(1.7, 18); }
@@ -379,7 +412,7 @@
     if (balance < cost) { toast("Nicht genug Guthaben"); autoLeft = 0; return; }
     busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
     balance -= cost; balanceEl.textContent = fmt(balance); overlay.innerHTML = ""; setMult(1);
-    const book = pickBook(mode); if (book.serverSeedHash) $("seed-hash").textContent = book.serverSeedHash.slice(0, 22) + "…";
+    const book = pickBook(mode); if (book.serverSeedHash) $("seed-hash").textContent = book.serverSeedHash.slice(0, 22) + "...";
     await play(book, mode);
     busy = false; spinBtn.disabled = false; spinBtn.classList.remove("spinning"); ctlEnable(true);
   }
@@ -397,10 +430,10 @@
     const order = ["W", "S", "P1", "P2", "P3", "M1", "M2", "M3", "A", "K", "Q", "J", "BR"], grid = $("paytable-grid"); grid.innerHTML = "";
     order.forEach((id) => {
       const s = SYM[id]; if (!s) return; let pay = "";
-      if (CFG.paytable[id]) { const t = CFG.paytable[id]; pay = `5× <b>${t[5]}</b> · 4× ${t[4]} · 3× ${t[3]}`; }
-      else if (s.scatter) { const sp = CFG.scatterPays; pay = `5× <b>${sp[5]}</b> · 4× ${sp[4]} · 3× ${sp[3]}`; }
-      else if (s.wild) pay = "<small>Wild — ersetzt alle Symbole</small>";
-      else if (s.collectible) pay = "<small>Ziegel — Haus-Upgrade</small>";
+      if (CFG.paytable[id]) { const t = CFG.paytable[id]; pay = `5x <b>${t[5]}</b> &middot; 4x ${t[4]} &middot; 3x ${t[3]}`; }
+      else if (s.scatter) { const sp = CFG.scatterPays; pay = `5x <b>${sp[5]}</b> &middot; 4x ${sp[4]} &middot; 3x ${sp[3]}`; }
+      else if (s.wild) pay = "<small>Wild - ersetzt alle Symbole</small>";
+      else if (s.collectible) pay = "<small>Ziegel - Haus-Upgrade</small>";
       grid.insertAdjacentHTML("beforeend", `<div class="pt-row"><div class="pt-ico">${symInner(id)}</div><div class="pt-vals"><span class="pt-name">${s.name || id}</span><span class="pt-pay">${pay}</span></div></div>`);
     });
   }
@@ -409,7 +442,7 @@
   function closePops() { $("menu-pop").classList.add("hidden"); $("buy-pop").classList.add("hidden"); }
   function togglePop(id) { const p = $(id), open = p.classList.contains("hidden"); closePops(); if (open) p.classList.remove("hidden"); }
   function openModal(id) { closePops(); $(id).classList.remove("hidden"); }
-  function refreshBet() { betEl.textContent = fmt(bet()); $("buy-a-cost").textContent = buyA + "×"; $("buy-b-cost").textContent = buyB + "×"; }
+  function refreshBet() { betEl.textContent = fmt(bet()); $("buy-a-cost").textContent = buyA + "x"; $("buy-b-cost").textContent = buyB + "x"; }
 
   function wire() {
     spinBtn.onclick = () => doSpin("base");
@@ -440,7 +473,19 @@
   const IC = window.PIGGY_ICONS || {};
   function icoHTML(name) {
     if (!name) return "";
-    if (name.indexOf("house") === 0) return IC.house ? IC.house(+name.slice(5) || 1) : "";
+    const A = window.PIGGY_ASSETS || {}, ui = A.ui || {}, symbols = A.symbols || {};
+    const img = (src, cls = "ico-img") => `<img class="${cls}" src="${src}" alt="">`;
+    if (name.indexOf("house") === 0) {
+      const lvl = +name.slice(5) || 1, url = ui["house" + lvl];
+      return url ? img(url, "ico-img house-img") : (IC.house ? IC.house(lvl) : "");
+    }
+    const uiName = { bolt: "iconBolt", menu: "iconMenu", auto: "iconAuto", info: "iconInfo", table: "iconTable", sound: "iconSound", lock: "iconLock" }[name];
+    if (uiName && ui[uiName]) return img(ui[uiName]);
+    if (name === "brick" && ui.brickToken) return img(ui.brickToken);
+    const symName = { wolf: "W", pot: "S", brick: "BR", pig: "P1" }[name];
+    if (symName && symbols[symName]) return img(symbols[symName]);
+    if (name === "coin" && ui.coin) return img(ui.coin);
+    if (name === "wind" && ui.wind) return img(ui.wind);
     const v = IC[name]; return typeof v === "function" ? v() : (v || "");
   }
   const chip = (name) => `<span class="ui-ico">${icoHTML(name)}</span>`;
@@ -469,7 +514,7 @@
         const k = skipBig ? 1 : Math.min(1, (t - t0) / dur), v = target * easeOut(k);
         aEl.textContent = fmt(v);
         if (t - coinT > 95) { coinT = t; SND.coinTick(); }
-        // count-up coupled to a rumble that GROWS as the number climbs (∝ tier)
+        // count-up coupled to a rumble that GROWS as the number climbs (proportional to tier)
         if (t - shT > 170) { shT = t; FX.shake(2.5 + tier * 1.5 + k * (3 + tier * 2.5), 0.2); }
         if (k < 1) requestAnimationFrame(step); else { aEl.textContent = fmt(target); aEl.classList.remove("land"); void aEl.offsetWidth; aEl.classList.add("land"); res(); }
       }
@@ -483,7 +528,7 @@
   // ---- boot / loading -----------------------------------------------------
   let started = false;
   function boot() {
-    $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "×";
+    $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "x";
     buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire(); paintIcons();
     if (FX) FX.init($("fx"), document.querySelector(".stage"));
     if (FX && FX.ambient) FX.ambient($("ambient"));   // drifting fireflies behind the reels
@@ -530,7 +575,7 @@
   function demoBook() { return { payoutMultiplier: 0, events: [{ type: "reveal", gametype: "basegame", board: randomBoard() }, { type: "setTotalWin", amount: 0 }, { type: "finalWin", amount: 0, wincapReached: false }] }; }
   function fallbackConfig() {
     return { gameName: "Piggy Richies", rtp: 0.9655, wincap: 15000, numReels: 5, numRows: 4, reels: null, paytable: {}, scatterPays: {},
-      symbols: [{ id: "W", kind: "wild", wild: true, name: "Wolf" }, { id: "S", kind: "scatter", scatter: true, name: "Topf" }, { id: "P1", kind: "premium", name: "Ziegel-Schwein" }, { id: "P2", kind: "premium", name: "Holz-Schwein" }, { id: "P3", kind: "premium", name: "Stroh-Schwein" }, { id: "M1", kind: "mid", name: "Axt" }, { id: "M2", kind: "mid", name: "Kelle" }, { id: "M3", kind: "mid", name: "Gabel" }, { id: "A", kind: "low", name: "Ass" }, { id: "K", kind: "low", name: "König" }, { id: "Q", kind: "low", name: "Dame" }, { id: "J", kind: "low", name: "Bube" }, { id: "BR", kind: "collect", collectible: true, name: "Ziegel" }],
+      symbols: [{ id: "W", kind: "wild", wild: true, name: "Wolf" }, { id: "S", kind: "scatter", scatter: true, name: "Topf" }, { id: "P1", kind: "premium", name: "Ziegel-Schwein" }, { id: "P2", kind: "premium", name: "Holz-Schwein" }, { id: "P3", kind: "premium", name: "Stroh-Schwein" }, { id: "M1", kind: "mid", name: "Axt" }, { id: "M2", kind: "mid", name: "Kelle" }, { id: "M3", kind: "mid", name: "Gabel" }, { id: "A", kind: "low", name: "Ass" }, { id: "K", kind: "low", name: "Koenig" }, { id: "Q", kind: "low", name: "Dame" }, { id: "J", kind: "low", name: "Bube" }, { id: "BR", kind: "collect", collectible: true, name: "Ziegel" }],
       betModes: [{ name: "bonus", cost: 70 }, { name: "bonus_vip", cost: 234 }],
       features: { baseMultLadder: [1, 2, 3, 5], freeMultLadder: [1, 2, 3, 5, 8], houseLevels: [{ level: 1, bricks: 0 }, { level: 2, bricks: 5 }, { level: 3, bricks: 10 }] } };
   }

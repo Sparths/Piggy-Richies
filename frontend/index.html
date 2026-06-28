@@ -3,65 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Stake's Huff &amp; Puff: Piggy Richies</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6" />
+  <title>Huff &amp; Puff: Piggy Richies</title>
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
-  <!-- ===== immersive themed scene (replaced by assets/background.* if present) ===== -->
-  <div class="bg" id="bg">
-    <svg class="bg-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#070f1e"/><stop offset=".5" stop-color="#0d2238"/><stop offset="1" stop-color="#16466c"/>
-        </linearGradient>
-        <radialGradient id="horizon" cx=".5" cy="1" r=".8">
-          <stop offset="0" stop-color="#3a6ea5" stop-opacity=".55"/><stop offset="1" stop-color="#3a6ea5" stop-opacity="0"/>
-        </radialGradient>
-        <radialGradient id="moon" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#e9e4c8"/><stop offset="1" stop-color="#bdb084"/>
-        </radialGradient>
-        <radialGradient id="moonGlow" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stop-color="#fff7d6" stop-opacity=".5"/><stop offset="1" stop-color="#fff7d6" stop-opacity="0"/>
-        </radialGradient>
-        <radialGradient id="vig" cx=".5" cy=".48" r=".75">
-          <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".72"/>
-        </radialGradient>
-      </defs>
-      <rect width="1600" height="900" fill="url(#sky)"/>
-      <circle cx="1320" cy="170" r="180" fill="url(#moonGlow)"/>
-      <circle cx="1320" cy="170" r="74" fill="url(#moon)"/>
-      <g fill="#fff" opacity=".8">
-        <circle cx="180" cy="120" r="2"/><circle cx="320" cy="80" r="1.5"/><circle cx="520" cy="150" r="1.6"/>
-        <circle cx="760" cy="90" r="1.4"/><circle cx="980" cy="140" r="1.8"/><circle cx="1140" cy="70" r="1.4"/>
-        <circle cx="240" cy="220" r="1.3"/><circle cx="640" cy="210" r="1.3"/><circle cx="1060" cy="240" r="1.2"/>
-      </g>
-      <rect width="1600" height="900" fill="url(#horizon)"/>
-      <!-- distant hills -->
-      <path d="M0 640 Q300 560 620 620 T1180 600 T1600 640 V900 H0 Z" fill="#0c2236"/>
-      <path d="M0 700 Q360 620 720 690 T1340 670 T1600 700 V900 H0 Z" fill="#0a1a2b"/>
-      <!-- three little houses (silhouettes with warm windows) -->
-      <g opacity=".96">
-        <!-- straw hut -->
-        <g transform="translate(360 612)"><path d="M-34 36 L0 -30 L34 36 Z" fill="#15263a"/><rect x="-26" y="14" width="52" height="34" fill="#101d2e"/><rect x="-8" y="22" width="16" height="16" fill="#ffcf6b" opacity=".85"/></g>
-        <!-- wood cabin -->
-        <g transform="translate(800 596)"><rect x="-40" y="-6" width="80" height="56" fill="#13202f"/><path d="M-48 -6 L0 -42 L48 -6 Z" fill="#1a2c3f"/><rect x="-12" y="14" width="24" height="30" fill="#ffcf6b" opacity=".85"/><rect x="20" y="2" width="14" height="14" fill="#ffcf6b" opacity=".6"/></g>
-        <!-- brick fortress -->
-        <g transform="translate(1230 600)"><rect x="-44" y="-30" width="88" height="80" fill="#14202e"/><rect x="-44" y="-46" width="20" height="20" fill="#14202e"/><rect x="-6" y="-46" width="20" height="20" fill="#14202e"/><rect x="28" y="-46" width="16" height="20" fill="#14202e"/><rect x="-10" y="16" width="22" height="34" fill="#ffcf6b" opacity=".8"/></g>
-      </g>
-      <!-- foreground -->
-      <path d="M0 770 Q800 720 1600 770 V900 H0 Z" fill="#06101d"/>
-      <rect width="1600" height="900" fill="url(#vig)"/>
-    </svg>
+  <div class="bg" id="bg"></div>
+
+  <div class="logo" id="logo">
+    <span id="logo-mark"></span>
+    <span class="logo-txt"><b>HUFF&nbsp;&amp;&nbsp;PUFF</b><i>PIGGY&nbsp;RICHIES</i></span>
   </div>
 
-  <!-- ===== logo ===== -->
-  <div class="logo" id="logo"><span id="logo-mark"></span><span class="logo-txt"><b>HUFF&nbsp;&amp;&nbsp;PUFF</b><i>PIGGY&nbsp;RICHIES</i></span></div>
-
-  <!-- ===== reels ===== -->
   <main class="stage">
+    <div class="reel-panel">
+      <div class="jackpots" aria-hidden="true">
+        <div class="jackpot minor"><span>MINOR</span><b>$100.00</b></div>
+        <div class="jackpot grand"><span>GRAND</span><b>$5,000.00</b></div>
+        <div class="jackpot major"><span>MAJOR</span><b>$1,000.00</b></div>
+        <div class="jackpot mini"><span>MINI</span><b>$20.00</b></div>
+      </div>
     <div id="house-panel" class="house-panel hidden">
       <div class="house-ring" id="house-ring" style="--p:0">
         <div class="house-build"><span class="house-emoji" id="house-emoji" data-ico="house1"></span></div>
@@ -69,69 +29,71 @@
       <div class="house-info">
         <div class="house-name" id="house-name">Stroh-Haus</div>
         <div class="house-levels" id="house-levels">
-          <span class="hl on" data-l="1"></span><span class="hl-arrow">›</span><span class="hl" data-l="2"></span><span class="hl-arrow">›</span><span class="hl" data-l="3"></span>
+          <span class="hl on" data-l="1"></span><span class="hl-arrow">&gt;</span><span class="hl" data-l="2"></span><span class="hl-arrow">&gt;</span><span class="hl" data-l="3"></span>
         </div>
         <div class="house-bricks" id="brick-label"></div>
+      </div>
+      <div class="house-stage-slots" aria-hidden="true">
+        <span class="house-stage-slot" data-house-stage="1"></span>
+        <span class="house-stage-slot" data-house-stage="2"></span>
+        <span class="house-stage-slot" data-house-stage="3"></span>
+      </div>
+      <div class="brick-rack" id="brick-rack" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
       <div class="fs-counter"><label>FREISPIEL</label><span id="fs-count">0 / 0</span></div>
     </div>
 
-    <div class="reel-panel">
       <div class="phase-banner" id="phase">BASISSPIEL</div>
-      <div class="mult-tab" id="mult-tab"><span class="mult-wolf" data-ico="wolf"></span><span class="mult-col"><label>WOLF&nbsp;MULTI</label><span id="mult-badge">×1</span></span></div>
+      <div class="mult-tab" id="mult-tab">
+        <span class="mult-wolf" data-ico="wolf"></span>
+        <span class="mult-col"><label>WOLF MULTI</label><span id="mult-badge">x1</span></span>
+      </div>
       <div class="board" id="board"></div>
       <div class="board-glow" id="board-glow"></div>
       <div class="overlay" id="overlay"></div>
       <div class="wolf" id="wolf"></div>
-    </div>
-  </main>
 
-  <!-- ===== control bar ===== -->
-  <footer class="bar">
+      <footer class="bar">
     <div class="bar-group left">
-      <button id="btn-turbo" class="bar-icon" title="Turbo-Spin"><span class="ui-ico" data-ico="bolt"></span></button>
-      <button id="btn-menu" class="bar-icon" title="Menü"><span class="ui-ico" data-ico="menu"></span></button>
+      <button id="btn-turbo" class="bar-icon" title="Turbo"><span class="ui-ico" data-ico="bolt"></span></button>
+      <button id="btn-menu" class="bar-icon" title="Menu"><span class="ui-ico" data-ico="menu"></span></button>
     </div>
-
     <div class="bar-stat"><label>GUTHABEN</label><span id="balance">1000.00</span></div>
     <div class="bar-flex"></div>
     <div class="bar-stat center"><label>GEWINN</label><span id="win-amount" class="win-amount">0.00</span></div>
-
     <div class="bar-bet">
-      <div class="bet-steppers"><button id="bet-up" aria-label="Einsatz hoch">▲</button><button id="bet-down" aria-label="Einsatz runter">▼</button></div>
+      <div class="bet-steppers"><button id="bet-up" aria-label="Einsatz hoch">^</button><button id="bet-down" aria-label="Einsatz runter">v</button></div>
       <div class="bar-stat"><label>EINSATZ</label><span id="bet">2.00</span></div>
     </div>
-
     <div class="bar-group right">
       <button id="btn-auto" class="bar-icon round" title="Autoplay">
-        <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-7 4.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 1.5 16 5l-4 3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="ui-ico" data-ico="auto"></span>
         <b class="auto-a">A</b><span class="auto-n" id="auto-n"></span>
       </button>
-      <button id="spin" class="spin-btn" title="Spin (Leertaste)">
-        <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <button id="spin" class="spin-btn" title="Spin"><span class="spin-label">SPIN</span></button>
       <button id="btn-buy" class="bar-icon buy" title="Bonus kaufen"><b>BONUS</b><small>KAUFEN</small></button>
     </div>
-  </footer>
+      </footer>
+    </div>
+  </main>
 
-  <!-- ===== menu popover ===== -->
   <div class="pop hidden" id="menu-pop">
     <button data-act="help"><span class="ui-ico" data-ico="info"></span> So funktioniert's</button>
     <button data-act="paytable"><span class="ui-ico" data-ico="table"></span> Auszahlungen</button>
     <button data-act="sound"><span class="ui-ico" data-ico="sound" id="sound-ico"></span> Ton: <span id="sound-state">an</span></button>
-    <div class="pop-info">RTP <b id="meta-rtp">96.55%</b> · Max <b id="meta-max">15.000×</b> · Volatilität <b>sehr hoch</b></div>
-    <div class="pop-info small"><span class="ui-ico" data-ico="lock"></span> Provably Fair · <span id="seed-hash">—</span></div>
+    <div class="pop-info">RTP <b id="meta-rtp">96.55%</b> &middot; Max <b id="meta-max">15.000x</b> &middot; Volatilitaet <b>sehr hoch</b></div>
+    <div class="pop-info small"><span class="ui-ico" data-ico="lock"></span> Provably Fair &middot; <span id="seed-hash">-</span></div>
   </div>
 
-  <!-- ===== bonus-buy popover ===== -->
   <div class="pop hidden" id="buy-pop">
     <div class="pop-title">Bonus kaufen</div>
-    <button data-buy="bonus"><span><span class="ui-ico" data-ico="house1"></span> Stroh-Haus</span><b id="buy-a-cost">70×</b></button>
-    <button data-buy="bonus_vip" class="vip"><span><span class="ui-ico" data-ico="house2"></span> Holz-Haus (VIP)</span><b id="buy-b-cost">234×</b></button>
-    <div class="pop-info small">Springt direkt in die House-Upgrade-Freispiele.</div>
+    <button data-buy="bonus"><span><span class="ui-ico" data-ico="house1"></span> Stroh-Haus</span><b id="buy-a-cost">70x</b></button>
+    <button data-buy="bonus_vip" class="vip"><span><span class="ui-ico" data-ico="house2"></span> Holz-Haus VIP</span><b id="buy-b-cost">234x</b></button>
+    <div class="pop-info small">Startet direkt die Hausbau-Freispiele.</div>
   </div>
 
-  <!-- ===== overlays ===== -->
   <div id="fs-storm" class="fs-storm"></div>
   <div id="fs-lightning" class="fs-lightning"></div>
   <canvas id="ambient" class="ambient"></canvas>
@@ -148,7 +110,7 @@
     <div class="hc-burst" id="hc-burst"></div>
     <div class="hc-house" id="hc-house"></div>
     <div class="hc-title" id="hc-title">HOLZ-HAUS</div>
-    <div class="hc-sub" id="hc-sub">+2 Freispiele</div>
+    <div class="hc-sub" id="hc-sub">+2 FREISPIELE</div>
   </div>
 
   <div id="loader" class="loader">
@@ -164,35 +126,35 @@
 
   <div class="modal hidden" id="modal-help">
     <div class="modal-card">
-      <button class="modal-x" data-close>×</button>
+      <button class="modal-x" data-close>x</button>
       <h2><span class="ui-ico" data-ico="wolf"></span> So funktioniert's</h2>
       <ul class="how">
-        <li><b>5×4 Walzen, 1024 Wege.</b> Gleiche Symbole auf benachbarten Walzen von links zahlen.</li>
-        <li><b>Huff &amp; Puff Kaskaden.</b> Der Wolf pustet Gewinn­symbole weg, neue fallen nach — Gewinne in Serie!</li>
-        <li><b>Wolf-Multiplikator.</b> Jede Kaskade in Folge erhöht den Multiplikator (bis ×5, in Freispielen ×8).</li>
-        <li><b>3× <span class="ui-ico" data-ico="pot"></span> Suppentopf</b> startet die <b>House-Upgrade-Freispiele</b> — Töpfe zählen auch, wenn sie per Kaskade nachfallen!</li>
-        <li><b>Häuser aufleveln.</b> Sammle <span class="ui-ico" data-ico="brick"></span> (fällt überall): Stroh → Holz (Wild-Multis) → Ziegel-Festung (Sticky Wilds).</li>
+        <li><b>5x4 Walzen, 1024 Wege.</b> Gleiche Symbole auf benachbarten Walzen von links zahlen.</li>
+        <li><b>Huff &amp; Puff Kaskaden.</b> Der Wolf pustet Gewinnsymbole weg, neue fallen nach.</li>
+        <li><b>Wolf-Multiplikator.</b> Jede Kaskade in Folge erhoeht den Multiplikator.</li>
+        <li><b>3x <span class="ui-ico" data-ico="pot"></span> Suppentopf</b> startet die Hausbau-Freispiele.</li>
+        <li><b>Haeuser aufleveln.</b> Sammle <span class="ui-ico" data-ico="brick"></span>: Stroh -> Holz -> Ziegel-Festung.</li>
       </ul>
-      <button class="cta" data-close>Los geht's!</button>
+      <button class="cta" data-close>Los geht's</button>
     </div>
   </div>
 
   <div class="modal hidden" id="modal-paytable">
     <div class="modal-card">
-      <button class="modal-x" data-close>×</button>
-      <h2><span class="ui-ico" data-ico="table"></span> Auszahlungen <small>(× Einsatz, pro Gewinnweg)</small></h2>
+      <button class="modal-x" data-close>x</button>
+      <h2><span class="ui-ico" data-ico="table"></span> Auszahlungen <small>(x Einsatz, pro Gewinnweg)</small></h2>
       <div class="paytable" id="paytable-grid"></div>
-      <p class="paytable-note">Wild <span class="ui-ico" data-ico="wolf"></span> ersetzt alle Symbole außer Scatter <span class="ui-ico" data-ico="pot"></span>. Scatter zahlt überall.</p>
-      <button class="cta" data-close>Schließen</button>
+      <p class="paytable-note">Wild <span class="ui-ico" data-ico="wolf"></span> ersetzt alle Symbole ausser Scatter <span class="ui-ico" data-ico="pot"></span>. Scatter zahlt ueberall.</p>
+      <button class="cta" data-close>Schliessen</button>
     </div>
   </div>
 
-  <script src="art.js?v=6"></script>
-  <script src="audio.js?v=6"></script>
-  <script src="fx.js?v=6"></script>
-  <script src="assets/manifest.js?v=6"></script>
-  <script src="game-config.js?v=6"></script>
-  <script src="game-books.js?v=6"></script>
-  <script src="game.js?v=6"></script>
+  <script src="art.js?v=12"></script>
+  <script src="audio.js?v=12"></script>
+  <script src="fx.js?v=12"></script>
+  <script src="assets/manifest.js?v=12"></script>
+  <script src="game-config.js?v=12"></script>
+  <script src="game-books.js?v=12"></script>
+  <script src="game.js?v=12"></script>
 </body>
 </html>

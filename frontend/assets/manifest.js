@@ -34,7 +34,7 @@ window.PIGGY_ASSETS = {
     upgrade: "assets/audio/magic-upgrade.wav",
   },
   ui: {
-    screenShell: "assets/ui/screen-shell.webp",
+    screenShell: "assets/ui/neubackground.png",
     reelFrame: "assets/ui/reel-frame.png",
     reelCell: "assets/ui/reel-cell.webp",
     reelBed: "assets/ui/reel-bed.webp",

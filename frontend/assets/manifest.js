@@ -1,22 +1,17 @@
-/* Rebuilt Three Little Pigs asset manifest.
- *
- * Stake frontend runtime stays static: this manifest lists every bitmap used by
- * the event player, and the game falls back to code-native art only if a file is
- * missing during local development. */
 window.PIGGY_ASSETS = {
   symbols: {
-    W:  "assets/symbols/W.png",
-    S:  "assets/symbols/S.png",
+    W: "assets/symbols/W.png",
+    S: "assets/symbols/S.png",
     P1: "assets/symbols/P1.png",
     P2: "assets/symbols/P2.png",
     P3: "assets/symbols/P3.png",
     M1: "assets/symbols/M1.png",
     M2: "assets/symbols/M2.png",
     M3: "assets/symbols/M3.png",
-    A:  "assets/symbols/A.png",
-    K:  "assets/symbols/K.png",
-    Q:  "assets/symbols/Q.png",
-    J:  "assets/symbols/J.png",
+    A: "assets/symbols/A.png",
+    K: "assets/symbols/K.png",
+    Q: "assets/symbols/Q.png",
+    J: "assets/symbols/J.png",
     BR: "assets/symbols/BR.png",
   },
   background: "assets/background.webp",
@@ -68,8 +63,6 @@ window.PIGGY_ASSETS = {
     iconInfo: "assets/ui/icon-info.png",
     iconTable: "assets/ui/icon-table.png",
     iconSound: "assets/ui/icon-sound.png",
-    iconLock: "assets/ui/icon-lock.png",
-
     upgradePanelFrame: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_44 (1).png",
     upgradeHouseStraw: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_44 (2).png",
     upgradeHouseBrick: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_45 (3).png",
@@ -78,5 +71,6 @@ window.PIGGY_ASSETS = {
     upgradeBtnTurbo: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_47 (6).png",
     upgradeBtnCoin: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_47 (7).png",
     upgradeBtnSpin: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_48 (8).png",
+    iconLock: "assets/ui/icon-lock.png"
   },
 };

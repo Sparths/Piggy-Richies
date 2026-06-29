@@ -20,7 +20,7 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
@@ -207,6 +207,7 @@
   // ---- event player -------------------------------------------------------
   async function play(book, mode) {
     let roundWin = 0; dispWin = 0; winEl.textContent = "0.00"; casc = 0; lastMult = 1;
+    roundHadBonusTrigger = false;
     curGametype = mode === "base" ? "basegame" : "freegame"; setMult(1); setPhase();
     for (const ev of book.events) {
       switch (ev.type) {
@@ -259,6 +260,7 @@
         }
         case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}x ${chip("pot")} zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger":
+          roundHadBonusTrigger = true;
           if (curGametype === "freegame") { toast(`RETRIGGER &middot; +${ev.spinsAwarded} ${chip("pot")}`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
           else { // base-game trigger: celebrate the pots before the bonus intro
             ev.positions.forEach((p) => { cellAt(p[0], p[1]).classList.add("scat-hot"); if (FX) { const c = cellCenter(p[0], p[1]); FX.sparkle(c.x, c.y); FX.burst(c.x, c.y, 8, 0.6); } });
@@ -380,12 +382,12 @@
   // cinematic house upgrade: rays + the new house art slams in + bold title
   async function houseCine(ev) {
     const ov = $("house-cine"); if (!ov) return;
-    $("hc-house").innerHTML = icoHTML("house" + ev.level);
+    $("hc-house").innerHTML = houseFullHTML(ev.level);
     $("hc-title").textContent = ev.house;
     $("hc-sub").textContent = "+" + ev.extraSpins + " FREISPIELE";
     ov.classList.remove("hidden");
     const h = $("hc-house"); h.classList.remove("smash"); void h.offsetWidth; h.classList.add("smash");
-    SND.upgrade();
+    (SND.houseComplete || SND.upgrade).call(SND);
     if (FX) { FX.shake(12, 0.6); const cx = innerWidth / 2, cy = innerHeight * 0.45; setTimeout(() => { FX.explode(cx, cy, "#ffcaa0"); FX.confetti(cx, cy, 50); FX.coinShower(1.5, 16); SND.winTier(1); }, 260); }
     await sleep(1850);
     ov.classList.add("hidden");
@@ -398,7 +400,10 @@
     else if (m >= 50) await showBigWin(2, m);
     else if (m >= 15) await showBigWin(1, m);
     else {
-      if (m > 0 && FX) { const c = winBarCenter(); FX.burst(c.x, c.y, 9, 0.7); if (m >= 4) FX.shake(Math.min(8, m * 0.5), 0.25); SND.win(2); }
+      if (m > 0) {
+        if (FX) { const c = winBarCenter(); FX.burst(c.x, c.y, 9, 0.7); if (m >= 4) FX.shake(Math.min(8, m * 0.5), 0.25); }
+        if (!roundHadBonusTrigger && SND.smallWin) SND.smallWin(); else SND.win(2);
+      }
       await sleep(m > 0 ? 420 : 90);
     }
     setMult(1); lastMult = 1; setPhase();
@@ -489,6 +494,15 @@
     const v = IC[name]; return typeof v === "function" ? v() : (v || "");
   }
   const chip = (name) => `<span class="ui-ico">${icoHTML(name)}</span>`;
+  function houseFullHTML(level) {
+    const ui = ((window.PIGGY_ASSETS || {}).ui) || {};
+    const url = {
+      1: ui.strawHouseFull || "assets/ui/strohhaus.png",
+      2: ui.stoneHouseFull || "assets/ui/steinhaus.png",
+      3: ui.fortressHouseFull || "assets/ui/festung.png",
+    }[Math.max(1, Math.min(3, +level || 1))];
+    return url ? `<img class="hc-house-full" src="${url}" alt="">` : icoHTML("house" + level);
+  }
   function paintIcons(root) {
     (root || document).querySelectorAll("[data-ico]").forEach((el) => {
       if (el.dataset.painted) return; el.dataset.painted = "1"; el.innerHTML = icoHTML(el.dataset.ico);

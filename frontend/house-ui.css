@@ -12,6 +12,62 @@
   display:none!important;
 }
 
+.mult-tab{
+  left:auto!important;
+  right:6.6%!important;
+  top:16.85%!important;
+  width:11%!important;
+  height:7.8%!important;
+  z-index:14!important;
+  background:url("assets/ui/multiplier-frame.png") center/100% 100% no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 6px 7px rgba(42,78,17,.32))!important;
+  pointer-events:none;
+}
+
+.mult-tab .mult-wolf{
+  display:none!important;
+}
+
+.mult-col{
+  inset:11% 17% 16%!important;
+  display:flex!important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+}
+
+.mult-tab label{
+  display:block!important;
+  color:#fff7b0;
+  font-family:var(--font-ui);
+  font-size:clamp(7px,.75vw,12px);
+  font-weight:900;
+  line-height:.95;
+  letter-spacing:0;
+  text-shadow:0 2px 0 #183b0c,0 3px 4px rgba(0,0,0,.48);
+}
+
+.mult-tab #mult-badge{
+  color:#fff04d!important;
+  font-family:var(--font-title);
+  font-size:clamp(15px,1.75vw,28px)!important;
+  font-weight:900;
+  line-height:.95;
+  text-shadow:0 2px 0 #17400b,0 5px 8px rgba(0,0,0,.46),0 0 10px rgba(255,238,94,.35)!important;
+}
+
+.mult-tab.pump{
+  animation:multFramePump .45s cubic-bezier(.2,1.45,.35,1)!important;
+}
+
+@keyframes multFramePump{
+  48%{transform:scale(1.08);}
+}
+
 .house-upgrade-meter{
   position:absolute;
   left:15.35%;

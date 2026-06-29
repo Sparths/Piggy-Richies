@@ -15,9 +15,13 @@
     scatter: "assets/audio/pot-bubble.wav",
     trigger: "assets/audio/bonus-trigger.wav",
     upgrade: "assets/audio/magic-upgrade.wav",
+    smallWin: "assets/audio/small-win-chime.wav",
+    houseComplete: "assets/audio/house-complete.wav",
+    music: "assets/audio/background-music.wav",
   };
 
-  let ctx = null, muted = false, master = null, sampleBus = null;
+  const MUSIC_GAIN = 0.22;
+  let ctx = null, muted = false, master = null, sampleBus = null, musicBus = null, musicSource = null, musicWanted = false;
   const buffers = Object.create(null);
   const loading = Object.create(null);
 
@@ -27,9 +31,12 @@
         ctx = new (window.AudioContext || window.webkitAudioContext)();
         master = ctx.createGain();
         sampleBus = ctx.createGain();
+        musicBus = ctx.createGain();
         master.gain.value = 0.88;
         sampleBus.gain.value = 0.92;
+        musicBus.gain.value = MUSIC_GAIN;
         sampleBus.connect(master);
+        musicBus.connect(master);
         master.connect(ctx.destination);
       } catch (e) {}
     }
@@ -81,6 +88,22 @@
     src.start(t, offset, duration);
     src.stop(t + duration + 0.03);
     return true;
+  }
+
+  function startMusic() {
+    musicWanted = true;
+    if (muted || !ensure()) return;
+    loadSample("music").then((buffer) => {
+      if (!buffer || muted || !ctx || musicSource) return;
+      try {
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        src.loop = true;
+        src.connect(musicBus || sampleBus || master);
+        src.start(now());
+        musicSource = src;
+      } catch (e) {}
+    });
   }
 
   function tone(freq, t0, dur, type = "sine", gain = 0.2, slideTo = null) {
@@ -154,14 +177,15 @@
   }
 
   const API = {
-    unlock() { preloadSamples(); },
+    unlock() { preloadSamples(); startMusic(); },
     setMuted(m) {
       muted = m;
       if (master) master.gain.value = m ? 0 : 0.88;
+      if (!m) { preloadSamples(); if (musicWanted) startMusic(); }
     },
     toggle() {
       muted = !muted;
-      if (!muted) preloadSamples();
+      if (!muted) { preloadSamples(); startMusic(); }
       if (master) master.gain.value = muted ? 0 : 0.88;
       return muted;
     },
@@ -206,6 +230,10 @@
         duration: 0.58,
       });
       if (!ok) synthWin(step);
+    },
+    smallWin() {
+      if (muted || !ensure()) return;
+      if (!sample("smallWin", { gain: 0.34, rate: 1, offset: 0.0, duration: 1.25 })) synthWin(1);
     },
     multUp(m = 2) {
       if (muted || !ensure()) return;
@@ -271,6 +299,15 @@
         [392, 523, 659, 880, 1047].forEach((f, i) => tone(f, t + i * 0.08, 0.28, "sawtooth", 0.12));
       }
     },
+    houseComplete() {
+      if (muted || !ensure()) return;
+      if (!sample("houseComplete", { gain: 0.48, rate: 1, offset: 0.0, duration: 1.55 })) {
+        const t = now();
+        [330, 440, 554, 740, 988].forEach((f, i) => tone(f, t + i * 0.07, 0.24, "triangle", 0.13));
+        noise(t, 0.32, 0.05, 1800);
+      }
+    },
+    startMusic,
     thunder() {
       if (muted || !ensure()) return;
       sample("puff", { gain: 0.2, rate: 0.55, offset: 0.05, duration: 0.82 });
@@ -295,6 +332,6 @@
     bigwin() { this.winTier(2); },
   };
 
-  window.addEventListener("pointerdown", preloadSamples, { once: true, capture: true });
+  window.addEventListener("pointerdown", () => { preloadSamples(); startMusic(); }, { once: true, capture: true });
   window.PIGGY_AUDIO = API;
 })();

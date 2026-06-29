@@ -20,12 +20,25 @@
   const CSS = `
 /* --- generated top house upgrade meter ---------------------------------- */
 .jackpots.house-upgrade-meter{
-  left:15.1%;top:2.35%;width:65.2%;height:16.0%;z-index:18;pointer-events:none;
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.8%;align-items:stretch;
+  left:15.0%;top:2.2%;width:65.5%;height:16.3%;z-index:18;pointer-events:none;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.65%;align-items:stretch;
+  isolation:isolate;
+}
+/* Paint a new sky/forest patch over the old baked jackpot plaques in the shell.
+   This removes the old red/blue/green/purple panels without needing them visible
+   under the generated raster panels. */
+.jackpots.house-upgrade-meter::before{
+  content:"";position:absolute;z-index:0;left:-2.2%;right:-2.2%;top:-13%;bottom:-2%;border-radius:24px;
+  background:
+    radial-gradient(circle at 18% 9%,rgba(255,255,255,.78) 0 7%,rgba(255,255,255,.18) 8% 20%,transparent 33%),
+    radial-gradient(circle at 48% 18%,rgba(255,255,255,.7) 0 6%,rgba(255,255,255,.12) 7% 19%,transparent 31%),
+    radial-gradient(circle at 82% 15%,rgba(255,255,255,.58) 0 6%,rgba(255,255,255,.12) 7% 20%,transparent 32%),
+    linear-gradient(180deg,rgba(60,205,238,.96) 0%,rgba(93,218,236,.94) 44%,rgba(76,184,95,.72) 100%);
+  box-shadow:0 6px 12px rgba(13,75,25,.15);
 }
 .jackpots.house-upgrade-meter .jackpot{display:none!important;}
 .upgrade-card{
-  position:relative;min-width:0;height:100%;overflow:visible;
+  position:relative;z-index:1;min-width:0;height:100%;overflow:visible;
   background:var(--upgrade-frame) center/100% 100% no-repeat;
   filter:drop-shadow(0 7px 10px rgba(0,0,0,.38));
   isolation:isolate;
@@ -35,25 +48,21 @@
   border-radius:10px;overflow:hidden;background:#064b16;
   box-shadow:inset 0 0 18px rgba(0,0,0,.66);
 }
-.upgrade-art-base,
-.upgrade-piece{
-  position:absolute;inset:0;background-image:var(--house-img);background-repeat:no-repeat;
+.upgrade-art{
+  position:absolute;inset:0;z-index:1;background-image:var(--house-img);background-repeat:no-repeat;
+  background-size:cover;background-position:center;
 }
-.upgrade-art-base{background-size:100% 100%;background-position:center;filter:brightness(.28) saturate(.65) contrast(1.05);}
-.upgrade-piece{
-  top:0;bottom:0;right:auto;width:20%;opacity:0;background-size:500% 100%;
-  transition:opacity .26s ease,filter .26s ease;
-  filter:drop-shadow(0 0 8px rgba(255,225,96,.22));
+.upgrade-lock{
+  position:absolute;top:0;bottom:0;width:20%;z-index:2;
+  background:linear-gradient(180deg,rgba(2,14,16,.58),rgba(1,7,10,.78));
+  box-shadow:inset 0 0 16px rgba(0,0,0,.45);
+  transition:opacity .28s ease,filter .28s ease;
 }
-.upgrade-piece.revealed{opacity:1;animation:upgradePieceWake .42s cubic-bezier(.2,1.45,.35,1);}
-.upgrade-piece[data-i="0"]{left:0;background-position:0% center;}
-.upgrade-piece[data-i="1"]{left:20%;background-position:25% center;}
-.upgrade-piece[data-i="2"]{left:40%;background-position:50% center;}
-.upgrade-piece[data-i="3"]{left:60%;background-position:75% center;}
-.upgrade-piece[data-i="4"]{left:80%;background-position:100% center;}
+.upgrade-lock[data-i="0"]{left:0}.upgrade-lock[data-i="1"]{left:20%}.upgrade-lock[data-i="2"]{left:40%}.upgrade-lock[data-i="3"]{left:60%}.upgrade-lock[data-i="4"]{left:80%}
+.upgrade-lock.revealed{opacity:0;animation:upgradePieceWake .42s cubic-bezier(.2,1.45,.35,1);}
 .upgrade-window::after{
   content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
-  background:linear-gradient(90deg,transparent 0 19.4%,rgba(245,250,255,.42) 19.6% 20.1%,transparent 20.3% 39.4%,rgba(245,250,255,.42) 39.6% 40.1%,transparent 40.3% 59.4%,rgba(245,250,255,.42) 59.6% 60.1%,transparent 60.3% 79.4%,rgba(245,250,255,.42) 79.6% 80.1%,transparent 80.3%);
+  background:linear-gradient(90deg,transparent 0 19.4%,rgba(235,250,255,.44) 19.6% 20.1%,transparent 20.3% 39.4%,rgba(235,250,255,.44) 39.6% 40.1%,transparent 40.3% 59.4%,rgba(235,250,255,.44) 59.6% 60.1%,transparent 60.3% 79.4%,rgba(235,250,255,.44) 79.6% 80.1%,transparent 80.3%);
   box-shadow:inset 0 0 22px rgba(0,0,0,.45);
 }
 .upgrade-count{
@@ -72,7 +81,7 @@
 .upgrade-card.complete .upgrade-window{box-shadow:inset 0 0 12px rgba(0,0,0,.38),0 0 8px rgba(255,231,92,.38);}
 .upgrade-card.complete .upgrade-count{color:#ffffd8;}
 .upgrade-card.idle .upgrade-window{filter:saturate(.82) brightness(.82);}
-@keyframes upgradePieceWake{0%{opacity:0;transform:scaleX(.82);filter:brightness(2.25) drop-shadow(0 0 18px rgba(255,231,92,.95));}70%{transform:scaleX(1.04);}100%{opacity:1;transform:scaleX(1);filter:drop-shadow(0 0 8px rgba(255,225,96,.22));}}
+@keyframes upgradePieceWake{0%{opacity:.9;filter:brightness(2.25) drop-shadow(0 0 18px rgba(255,231,92,.95));}70%{opacity:.18;}100%{opacity:0;filter:none;}}
 
 /* Hide legacy free-spin meter visuals, but keep its DOM alive as the existing
    brick state source and fly-to target. */
@@ -128,12 +137,12 @@
     meter.innerHTML = STAGES.map((stage) => `
       <div class="upgrade-card idle" data-stage="${stage.stage}" aria-label="${stage.label}">
         <div class="upgrade-window">
-          <div class="upgrade-art-base"></div>
-          <span class="upgrade-piece" data-i="0"></span>
-          <span class="upgrade-piece" data-i="1"></span>
-          <span class="upgrade-piece" data-i="2"></span>
-          <span class="upgrade-piece" data-i="3"></span>
-          <span class="upgrade-piece" data-i="4"></span>
+          <div class="upgrade-art"></div>
+          <span class="upgrade-lock" data-i="0"></span>
+          <span class="upgrade-lock" data-i="1"></span>
+          <span class="upgrade-lock" data-i="2"></span>
+          <span class="upgrade-lock" data-i="3"></span>
+          <span class="upgrade-lock" data-i="4"></span>
         </div>
         <div class="upgrade-title">${stage.title}</div>
         <div class="upgrade-count">0/5</div>
@@ -194,8 +203,8 @@
       card.classList.toggle("complete", active && progress >= 5);
       const count = card.querySelector(".upgrade-count");
       if (count) count.textContent = `${progress}/5`;
-      card.querySelectorAll(".upgrade-piece").forEach((piece, i) => {
-        piece.classList.toggle("revealed", i < progress);
+      card.querySelectorAll(".upgrade-lock").forEach((lock, i) => {
+        lock.classList.toggle("revealed", i < progress);
       });
     });
   }

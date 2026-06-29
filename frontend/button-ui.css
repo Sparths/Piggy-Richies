@@ -1,0 +1,6 @@
+#btn-menu,#btn-turbo,.bar-icon.buy,.spin-btn{background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important;filter:drop-shadow(0 6px 8px rgba(0,0,0,.38))!important;}
+#btn-menu{background-image:var(--ui-upgradeBtnMenu)!important;}
+#btn-turbo{background-image:var(--ui-upgradeBtnTurbo)!important;}
+.bar-icon.buy{background-image:var(--ui-upgradeBtnCoin)!important;}
+.spin-btn{background-image:var(--ui-upgradeBtnSpin)!important;}
+#btn-menu .ui-ico,#btn-turbo .ui-ico,.bar-icon.buy b,.bar-icon.buy small,.spin-btn .spin-label{display:none!important;}

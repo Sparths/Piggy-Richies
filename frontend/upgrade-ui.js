@@ -1,140 +1,180 @@
-/* Piggy Richies -- top house-upgrade UI overlay.
- * Replaces the jackpot strip with three house upgrade targets. Each target is
- * split into five darkened image pieces, and collected bricks reveal pieces. */
+/* Piggy Richies -- generated house-upgrade UI binding.
+ *
+ * The old jackpot strip is replaced by three generated raster panels. Each house
+ * image is revealed in five vertical pieces from the existing free-spin brick
+ * state. The generated button art is also bound to the shell controls. */
 (() => {
   "use strict";
 
+  const ASSETS = window.PIGGY_ASSETS || {};
+  const UI = ASSETS.ui || {};
+  const $ = (id) => document.getElementById(id);
+  const cssUrl = (url) => (url ? `url("${url}")` : "none");
+
+  const STAGES = [
+    { stage: 1, key: "upgradeHouseStraw", title: "STROH", label: "Stroh-Haus" },
+    { stage: 2, key: "upgradeHouseBrick", title: "BRICK", label: "Brick-Haus" },
+    { stage: 3, key: "upgradeHouseFortress", title: "FESTUNG", label: "Festung" },
+  ];
+
   const CSS = `
-/* --- top house upgrade meter ------------------------------------------- */
-.jackpots.upgrade-meter{
-  left:17.3%;top:3.25%;width:57.4%;height:13.65%;z-index:16;pointer-events:none;
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2.2%;align-items:stretch;
+/* --- generated top house upgrade meter ---------------------------------- */
+.jackpots.house-upgrade-meter{
+  left:15.1%;top:2.35%;width:65.2%;height:16.0%;z-index:18;pointer-events:none;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.8%;align-items:stretch;
 }
-.jackpots.upgrade-meter .jackpot{display:none;}
+.jackpots.house-upgrade-meter .jackpot{display:none!important;}
 .upgrade-card{
-  position:relative;min-width:0;height:100%;overflow:hidden;border-radius:14px;
-  display:grid;grid-template-columns:42% 1fr;grid-template-rows:1fr;align-items:center;
-  padding:5.5% 6.5% 5.5% 4.6%;
-  background:
-    radial-gradient(circle at 50% 4%,rgba(255,255,177,.36),transparent 25%),
-    linear-gradient(180deg,rgba(42,97,22,.98),rgba(13,57,18,.96) 54%,rgba(12,42,19,.98));
-  border:2px solid rgba(255,218,86,.96);
-  box-shadow:
-    inset 0 0 0 2px rgba(110,59,15,.78),
-    inset 0 7px 14px rgba(255,234,119,.16),
-    inset 0 -10px 18px rgba(4,23,7,.42),
-    0 7px 12px rgba(0,0,0,.38);
+  position:relative;min-width:0;height:100%;overflow:visible;
+  background:var(--upgrade-frame) center/100% 100% no-repeat;
+  filter:drop-shadow(0 7px 10px rgba(0,0,0,.38));
   isolation:isolate;
 }
-.upgrade-card::before,
-.upgrade-card::after{
-  content:"";position:absolute;top:43%;width:15px;height:15px;border-radius:50%;z-index:3;
-  background:radial-gradient(circle at 34% 30%,#fff3ff 0 14%,#ff45c5 22%,#9b005a 72%,#410026 100%);
-  box-shadow:0 0 0 2px #ffe26b,0 2px 5px rgba(0,0,0,.52),0 0 10px rgba(255,67,196,.5);
+.upgrade-window{
+  position:absolute;left:7.9%;right:7.9%;top:15.0%;bottom:20.8%;z-index:1;
+  border-radius:10px;overflow:hidden;background:#064b16;
+  box-shadow:inset 0 0 18px rgba(0,0,0,.66);
 }
-.upgrade-card::before{left:-6px}.upgrade-card::after{right:-6px}
-.upgrade-frame{
-  position:relative;height:92%;min-height:0;display:flex;align-items:center;justify-content:center;
-  filter:drop-shadow(0 6px 8px rgba(0,0,0,.54));
+.upgrade-art-base,
+.upgrade-piece{
+  position:absolute;inset:0;background-image:var(--house-img);background-repeat:no-repeat;
 }
-.upgrade-house{position:relative;width:100%;height:100%;max-height:84px;aspect-ratio:1/1;}
-.upgrade-house img{display:block;width:100%;height:100%;object-fit:contain;}
-.upgrade-base{filter:brightness(.33) saturate(.58) contrast(.92);opacity:.9;}
-.upgrade-piece{position:absolute;top:0;bottom:0;width:20%;overflow:hidden;opacity:0;transition:opacity .26s ease,filter .26s ease;filter:drop-shadow(0 0 8px rgba(255,223,93,.28));}
-.upgrade-piece img{position:absolute;top:0;width:500%;height:100%;object-fit:contain;left:calc(var(--i) * -100%);}
-.upgrade-piece[data-i="0"]{left:0}.upgrade-piece[data-i="1"]{left:20%}.upgrade-piece[data-i="2"]{left:40%}.upgrade-piece[data-i="3"]{left:60%}.upgrade-piece[data-i="4"]{left:80%}
-.upgrade-piece.revealed{opacity:1;animation:pieceWake .42s cubic-bezier(.2,1.4,.35,1);}
-@keyframes pieceWake{0%{opacity:0;filter:brightness(2) drop-shadow(0 0 16px rgba(255,232,95,.9));transform:scale(1.12)}100%{opacity:1;filter:drop-shadow(0 0 8px rgba(255,223,93,.28));transform:scale(1)}}
-.upgrade-text{min-width:0;text-align:center;line-height:1;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;}
-.upgrade-title{font-family:var(--font-title);font-weight:900;font-size:clamp(8px,1.08vw,18px);color:#ffe35a;text-shadow:0 2px 0 #542500,0 4px 8px rgba(0,0,0,.62);white-space:nowrap;}
-.upgrade-sub{font-weight:900;font-size:clamp(5px,.58vw,10px);color:#dcffd3;text-shadow:0 1px 2px rgba(0,0,0,.82);letter-spacing:.02em;}
-.upgrade-count{min-width:42px;padding:2px 7px;border-radius:999px;background:rgba(255,235,91,.86);color:#18460e;font-weight:900;font-size:clamp(7px,.82vw,13px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),0 3px 5px rgba(0,0,0,.28);}
-.upgrade-card.active{box-shadow:inset 0 0 0 2px rgba(110,59,15,.78),0 0 0 2px rgba(255,232,101,.34),0 0 18px rgba(255,217,76,.42),0 7px 12px rgba(0,0,0,.38)}
-.upgrade-card.complete .upgrade-title{color:#fff6bf}.upgrade-card.complete .upgrade-count{background:#6cff7d;color:#0f3b0b;}
-.upgrade-card.complete .upgrade-house{animation:houseDone 1.15s ease-in-out infinite;}
-@keyframes houseDone{50%{transform:translateY(-1px) scale(1.035)}}
-.upgrade-meter.idle .upgrade-card{filter:saturate(.82) brightness(.82)}
+.upgrade-art-base{background-size:100% 100%;background-position:center;filter:brightness(.28) saturate(.65) contrast(1.05);}
+.upgrade-piece{
+  top:0;bottom:0;right:auto;width:20%;opacity:0;background-size:500% 100%;
+  transition:opacity .26s ease,filter .26s ease;
+  filter:drop-shadow(0 0 8px rgba(255,225,96,.22));
+}
+.upgrade-piece.revealed{opacity:1;animation:upgradePieceWake .42s cubic-bezier(.2,1.45,.35,1);}
+.upgrade-piece[data-i="0"]{left:0;background-position:0% center;}
+.upgrade-piece[data-i="1"]{left:20%;background-position:25% center;}
+.upgrade-piece[data-i="2"]{left:40%;background-position:50% center;}
+.upgrade-piece[data-i="3"]{left:60%;background-position:75% center;}
+.upgrade-piece[data-i="4"]{left:80%;background-position:100% center;}
+.upgrade-window::after{
+  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:linear-gradient(90deg,transparent 0 19.4%,rgba(245,250,255,.42) 19.6% 20.1%,transparent 20.3% 39.4%,rgba(245,250,255,.42) 39.6% 40.1%,transparent 40.3% 59.4%,rgba(245,250,255,.42) 59.6% 60.1%,transparent 60.3% 79.4%,rgba(245,250,255,.42) 79.6% 80.1%,transparent 80.3%);
+  box-shadow:inset 0 0 22px rgba(0,0,0,.45);
+}
+.upgrade-count{
+  position:absolute;left:36%;right:36%;bottom:2.9%;z-index:4;height:16%;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-family:var(--font-title);font-weight:900;font-size:clamp(11px,1.65vw,28px);line-height:1;
+  color:#fff8bf;text-shadow:0 2px 0 #1a4813,0 4px 5px rgba(0,0,0,.58);
+  letter-spacing:.04em;
+}
+.upgrade-title{
+  position:absolute;left:11%;right:11%;top:5.8%;z-index:4;text-align:center;
+  font-family:var(--font-title);font-size:clamp(6px,.72vw,12px);font-weight:900;
+  color:rgba(255,244,158,.0);text-shadow:none;pointer-events:none;
+}
+.upgrade-card.active{filter:drop-shadow(0 7px 10px rgba(0,0,0,.38)) drop-shadow(0 0 14px rgba(255,223,80,.38));}
+.upgrade-card.complete .upgrade-window{box-shadow:inset 0 0 12px rgba(0,0,0,.38),0 0 8px rgba(255,231,92,.38);}
+.upgrade-card.complete .upgrade-count{color:#ffffd8;}
+.upgrade-card.idle .upgrade-window{filter:saturate(.82) brightness(.82);}
+@keyframes upgradePieceWake{0%{opacity:0;transform:scaleX(.82);filter:brightness(2.25) drop-shadow(0 0 18px rgba(255,231,92,.95));}70%{transform:scaleX(1.04);}100%{opacity:1;transform:scaleX(1);filter:drop-shadow(0 0 8px rgba(255,225,96,.22));}}
 
-/* Keep the legacy free-spin house panel alive as a hidden animation target so
-   existing brick fly code still travels to the new top meter area. */
-#house-panel:not(.hidden){left:17.3%!important;top:3.25%!important;width:57.4%!important;height:13.65%!important;opacity:0!important;pointer-events:none!important;z-index:15!important;}
-#house-panel:not(.hidden) .brick-rack{left:34%!important;right:2%!important;top:20%!important;height:60%!important;display:grid!important;grid-template-columns:repeat(10,1fr)!important;}
-#house-panel:not(.hidden) .house-stage-slots{inset:0!important;}
+/* Hide legacy free-spin meter visuals, but keep its DOM alive as the existing
+   brick state source and fly-to target. */
+#house-panel:not(.hidden){opacity:0!important;pointer-events:none!important;z-index:14!important;}
+#house-panel:not(.hidden) .brick-rack{display:grid!important;}
+.phase-banner,#mult-tab{display:none!important;}
 
-/* Button alignment pass: lock the controls into the art-design sockets. */
-#btn-menu{left:3.9%!important;top:13.0%!important;width:5.45%!important;height:9.75%!important;}
-#btn-turbo{left:3.9%!important;top:39.25%!important;width:5.45%!important;height:9.75%!important;}
-.spin-btn{right:8.35%!important;top:40.85%!important;width:10.75%!important;height:19.05%!important;}
-.bar-icon.buy{right:15.45%!important;top:28.25%!important;width:5.75%!important;height:10.25%!important;}
-#btn-menu .ui-ico,#btn-turbo .ui-ico{width:46%!important;height:46%!important;}
-.bar-icon.buy::before{inset:15%!important;}
+/* Generated control-button binding. */
+#btn-menu,#btn-turbo,.bar-icon.buy,.spin-btn{
+  background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.38))!important;
+}
+#btn-menu{left:3.15%!important;top:18.6%!important;width:6.15%!important;height:10.95%!important;background-image:var(--btn-menu)!important;}
+#btn-turbo{left:3.15%!important;top:39.0%!important;width:6.15%!important;height:10.95%!important;background-image:var(--btn-turbo)!important;}
+#btn-menu .ui-ico,#btn-turbo .ui-ico{display:none!important;}
+.bar-icon.buy{right:15.0%!important;top:30.1%!important;width:6.2%!important;height:11.0%!important;background-image:var(--btn-coin)!important;}
+.bar-icon.buy::before,.bar-icon.buy b,.bar-icon.buy small{display:none!important;}
+.spin-btn{right:7.35%!important;top:41.8%!important;width:12.1%!important;height:21.5%!important;background-image:var(--btn-spin)!important;}
+.spin-btn .spin-label{display:none!important;}
+.spin-btn.spinning{animation:none!important;filter:brightness(1.08) drop-shadow(0 0 12px rgba(104,255,70,.45)) drop-shadow(0 8px 10px rgba(0,0,0,.45))!important;}
+
 @media (max-aspect-ratio: 1/1){
-  .jackpots.upgrade-meter{top:4%;height:12.4%;gap:1.5%;}
-  .upgrade-card{border-radius:10px;padding:4% 4.5%;grid-template-columns:44% 1fr;}
-  .upgrade-title{font-size:clamp(7px,2.3vw,13px)}
-  .upgrade-sub{display:none}.upgrade-count{font-size:clamp(7px,2vw,11px);padding:1px 5px;}
+  .jackpots.house-upgrade-meter{left:14.8%;top:3.1%;width:65.8%;height:14.3%;gap:1.1%;}
+  .upgrade-window{left:8.5%;right:8.5%;top:17%;bottom:22%;border-radius:8px;}
+  .upgrade-count{font-size:clamp(8px,2.7vw,18px);bottom:3.5%;}
 }
 `;
 
-  const STAGES = [
-    { level: 1, key: "house1", title: "STROH HAUS", sub: "Start-Haus" },
-    { level: 2, key: "house2", title: "BRICK HAUS", sub: "+5 Bricks" },
-    { level: 3, key: "house3", title: "FESTUNG", sub: "+10 Bricks" },
-  ];
-
   function addCss() {
-    if (document.getElementById("upgrade-ui-css")) return;
+    if (document.getElementById("piggy-upgrade-ui-css")) return;
     const s = document.createElement("style");
-    s.id = "upgrade-ui-css";
+    s.id = "piggy-upgrade-ui-css";
     s.textContent = CSS;
     document.head.appendChild(s);
   }
 
-  function uiAsset(name) {
-    const A = window.PIGGY_ASSETS || {};
-    return (A.ui || {})[name] || "";
-  }
-
-  function houseMarkup(url, title) {
-    if (!url) return `<div class="upgrade-fallback">${title}</div>`;
-    let pieces = "";
-    for (let i = 0; i < 5; i++) {
-      pieces += `<span class="upgrade-piece" data-i="${i}" style="--i:${i}"><img src="${url}" alt=""></span>`;
-    }
-    return `<div class="upgrade-house"><img class="upgrade-base" src="${url}" alt="${title}">${pieces}</div>`;
+  function setCssVars() {
+    const root = document.documentElement;
+    root.style.setProperty("--upgrade-frame", cssUrl(UI.upgradePanelFrame));
+    root.style.setProperty("--btn-menu", cssUrl(UI.upgradeBtnMenu));
+    root.style.setProperty("--btn-turbo", cssUrl(UI.upgradeBtnTurbo));
+    root.style.setProperty("--btn-coin", cssUrl(UI.upgradeBtnCoin));
+    root.style.setProperty("--btn-spin", cssUrl(UI.upgradeBtnSpin));
   }
 
   function buildMeter() {
     const meter = document.querySelector(".jackpots");
-    if (!meter || meter.classList.contains("upgrade-meter")) return meter;
-    meter.classList.add("upgrade-meter", "idle");
+    if (!meter) return null;
+    if (meter.classList.contains("house-upgrade-meter")) return meter;
+    meter.classList.add("house-upgrade-meter");
     meter.removeAttribute("aria-hidden");
-    meter.setAttribute("aria-label", "Haus Upgrade Fortschritt");
-    meter.innerHTML = STAGES.map((st) => {
-      const url = uiAsset(st.key);
-      return `<div class="upgrade-card" data-upgrade-level="${st.level}">
-        <div class="upgrade-frame">${houseMarkup(url, st.title)}</div>
-        <div class="upgrade-text"><div class="upgrade-title">${st.title}</div><div class="upgrade-sub">${st.sub}</div><div class="upgrade-count">0/5</div></div>
-      </div>`;
-    }).join("");
+    meter.setAttribute("aria-label", "Haus-Upgrade-Fortschritt");
+    meter.innerHTML = STAGES.map((stage) => `
+      <div class="upgrade-card idle" data-stage="${stage.stage}" aria-label="${stage.label}">
+        <div class="upgrade-window">
+          <div class="upgrade-art-base"></div>
+          <span class="upgrade-piece" data-i="0"></span>
+          <span class="upgrade-piece" data-i="1"></span>
+          <span class="upgrade-piece" data-i="2"></span>
+          <span class="upgrade-piece" data-i="3"></span>
+          <span class="upgrade-piece" data-i="4"></span>
+        </div>
+        <div class="upgrade-title">${stage.title}</div>
+        <div class="upgrade-count">0/5</div>
+      </div>`).join("");
+
+    STAGES.forEach((stage) => {
+      const card = meter.querySelector(`[data-stage="${stage.stage}"]`);
+      const art = UI[stage.key] || UI[`house${stage.stage}`] || "";
+      if (card && art) card.style.setProperty("--house-img", cssUrl(art));
+    });
     return meter;
   }
 
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  function filledBricks() {
-    return [...document.querySelectorAll("#brick-rack span.filled")].length;
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function brickCount() {
+    const slots = document.querySelectorAll("#brick-rack span.filled");
+    if (slots.length) return slots.length;
+    const txt = ($("brick-label") && $("brick-label").textContent) || "";
+    const m = txt.match(/(\d+)\s*\/\s*(\d+)/);
+    return m ? Number(m[1]) : 0;
   }
-  function inFreeSpins() {
-    const panel = document.getElementById("house-panel");
+
+  function isFreeSpinActive() {
+    const panel = $("house-panel");
     return !!(panel && !panel.classList.contains("hidden"));
   }
+
   function houseLevel() {
-    const panel = document.getElementById("house-panel");
-    return Number((panel && panel.dataset.level) || 1);
+    const panel = $("house-panel");
+    const fromPanel = Number(panel && panel.dataset.level);
+    if (fromPanel) return fromPanel;
+    const name = (($("house-name") && $("house-name").textContent) || "").toLowerCase();
+    if (name.includes("fest")) return 3;
+    if (name.includes("holz") || name.includes("brick") || name.includes("ziegel")) return 2;
+    return 1;
   }
-  function stageProgress(stage, bricks, level, active) {
+
+  function progressFor(stage, bricks, level, active) {
     if (!active) return 0;
-    if (stage === 1) return 5;                 // the bonus starts in the straw house
+    if (stage === 1) return 5;
     if (stage === 2) return level >= 2 ? 5 : clamp(bricks, 0, 5);
     if (stage === 3) return level >= 3 ? 5 : clamp(bricks - 5, 0, 5);
     return 0;
@@ -143,32 +183,36 @@
   function paintMeter() {
     const meter = buildMeter();
     if (!meter) return;
-    const active = inFreeSpins();
-    const bricks = filledBricks();
-    const lvl = houseLevel();
-    meter.classList.toggle("idle", !active);
+    const active = isFreeSpinActive();
+    const level = houseLevel();
+    const bricks = brickCount();
     meter.querySelectorAll(".upgrade-card").forEach((card) => {
-      const stage = Number(card.dataset.upgradeLevel);
-      const p = stageProgress(stage, bricks, lvl, active);
-      card.classList.toggle("active", active && stage === lvl);
-      card.classList.toggle("complete", p >= 5);
-      card.querySelector(".upgrade-count").textContent = `${p}/5`;
-      card.querySelectorAll(".upgrade-piece").forEach((piece, i) => piece.classList.toggle("revealed", i < p));
+      const stage = Number(card.dataset.stage);
+      const progress = progressFor(stage, bricks, level, active);
+      card.classList.toggle("idle", !active);
+      card.classList.toggle("active", active && stage === level);
+      card.classList.toggle("complete", active && progress >= 5);
+      const count = card.querySelector(".upgrade-count");
+      if (count) count.textContent = `${progress}/5`;
+      card.querySelectorAll(".upgrade-piece").forEach((piece, i) => {
+        piece.classList.toggle("revealed", i < progress);
+      });
     });
   }
 
-  function observe() {
-    const watched = [document.getElementById("house-panel"), document.getElementById("brick-rack"), document.body].filter(Boolean);
+  function watchState() {
+    const nodes = [$("house-panel"), $("brick-rack"), $("house-name"), document.body].filter(Boolean);
     const mo = new MutationObserver(paintMeter);
-    watched.forEach((node) => mo.observe(node, { attributes: true, childList: true, subtree: true, attributeFilter: ["class", "data-level"] }));
-    setInterval(paintMeter, 600);
+    nodes.forEach((node) => mo.observe(node, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "data-level"] }));
+    setInterval(paintMeter, 450);
   }
 
   function boot() {
     addCss();
+    setCssVars();
     buildMeter();
     paintMeter();
-    observe();
+    watchState();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

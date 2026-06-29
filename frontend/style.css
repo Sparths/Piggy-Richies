@@ -395,7 +395,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   animation:rays 18s linear infinite;
 }
 @keyframes rays{to{transform:rotate(360deg);}}
-.hc-house{position:relative;width:210px;height:210px;filter:drop-shadow(0 14px 26px rgba(0,0,0,.62));}
+.hc-house{position:relative;width:min(560px,52vw);height:auto;aspect-ratio:2/1;filter:drop-shadow(0 14px 26px rgba(0,0,0,.62));}
 .hc-house img{width:100%;height:100%;object-fit:contain;}
 .hc-house.smash{animation:hcSmash .7s cubic-bezier(.18,1.48,.34,1);}
 @keyframes hcSmash{0%{transform:scale(2.2);opacity:0;}52%{opacity:1;}68%{transform:scale(.9);}100%{transform:scale(1);}}
@@ -509,7 +509,7 @@ body.fs-active .reel-panel{filter:drop-shadow(0 20px 34px rgba(0,0,0,.56)) drop-
   .fs-flash .fi-ico{width:82px;height:82px;}
   .fs-flash h1{font-size:36px;}
   .fs-flash p{font-size:14px;}
-  .hc-house{width:150px;height:150px;}
+  .hc-house{width:min(320px,60vw);height:auto;}
   .hc-title,.bigwin-tier{font-size:38px;}
   .bigwin-amount{font-size:52px;}
   .paytable{grid-template-columns:1fr;}

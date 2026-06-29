@@ -41,13 +41,16 @@
 }
 .upgrade-art-base{background-size:100% 100%;background-position:center;filter:brightness(.28) saturate(.65) contrast(1.05);}
 .upgrade-piece{
-  top:0;bottom:0;right:auto;width:20%;opacity:0;
-  background-size:500% 100%;background-position:calc(var(--i) * -100%) center;
+  top:0;bottom:0;right:auto;width:20%;opacity:0;background-size:500% 100%;
   transition:opacity .26s ease,filter .26s ease;
   filter:drop-shadow(0 0 8px rgba(255,225,96,.22));
 }
 .upgrade-piece.revealed{opacity:1;animation:upgradePieceWake .42s cubic-bezier(.2,1.45,.35,1);}
-.upgrade-piece[data-i="0"]{left:0}.upgrade-piece[data-i="1"]{left:20%}.upgrade-piece[data-i="2"]{left:40%}.upgrade-piece[data-i="3"]{left:60%}.upgrade-piece[data-i="4"]{left:80%}
+.upgrade-piece[data-i="0"]{left:0;background-position:0% center;}
+.upgrade-piece[data-i="1"]{left:20%;background-position:25% center;}
+.upgrade-piece[data-i="2"]{left:40%;background-position:50% center;}
+.upgrade-piece[data-i="3"]{left:60%;background-position:75% center;}
+.upgrade-piece[data-i="4"]{left:80%;background-position:100% center;}
 .upgrade-window::after{
   content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
   background:linear-gradient(90deg,transparent 0 19.4%,rgba(245,250,255,.42) 19.6% 20.1%,transparent 20.3% 39.4%,rgba(245,250,255,.42) 39.6% 40.1%,transparent 40.3% 59.4%,rgba(245,250,255,.42) 59.6% 60.1%,transparent 60.3% 79.4%,rgba(245,250,255,.42) 79.6% 80.1%,transparent 80.3%);
@@ -126,11 +129,11 @@
       <div class="upgrade-card idle" data-stage="${stage.stage}" aria-label="${stage.label}">
         <div class="upgrade-window">
           <div class="upgrade-art-base"></div>
-          <span class="upgrade-piece" data-i="0" style="--i:0"></span>
-          <span class="upgrade-piece" data-i="1" style="--i:1"></span>
-          <span class="upgrade-piece" data-i="2" style="--i:2"></span>
-          <span class="upgrade-piece" data-i="3" style="--i:3"></span>
-          <span class="upgrade-piece" data-i="4" style="--i:4"></span>
+          <span class="upgrade-piece" data-i="0"></span>
+          <span class="upgrade-piece" data-i="1"></span>
+          <span class="upgrade-piece" data-i="2"></span>
+          <span class="upgrade-piece" data-i="3"></span>
+          <span class="upgrade-piece" data-i="4"></span>
         </div>
         <div class="upgrade-title">${stage.title}</div>
         <div class="upgrade-count">0/5</div>

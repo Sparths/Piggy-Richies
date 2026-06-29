@@ -49,15 +49,14 @@
 
 .house-upgrade-art{
   position:absolute;
-  inset:-4% -3%;
+  inset:5.2% 5.2% 15.8%;
   z-index:1;
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr));
   overflow:hidden;
-  border-radius:0;
-  background:#0f3811;
-  -webkit-mask:url("assets/ui/hausrahmen-window-mask.png") center/100% 100% no-repeat;
-  mask:url("assets/ui/hausrahmen-window-mask.png") center/100% 100% no-repeat;
+  border-radius:7px 7px 10px 10px;
+  background:transparent;
+  clip-path:inset(0 round 7px 7px 10px 10px);
 }
 
 .house-upgrade-part{

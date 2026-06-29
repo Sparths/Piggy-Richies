@@ -70,7 +70,6 @@ window.PIGGY_ASSETS = {
     iconSound: "assets/ui/icon-sound.png",
     iconLock: "assets/ui/icon-lock.png",
 
-    // Generated UI redesign assets uploaded via GitHub on 2026-06-29.
     upgradePanelFrame: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_44 (1).png",
     upgradeHouseStraw: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_44 (2).png",
     upgradeHouseBrick: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_45 (3).png",

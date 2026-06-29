@@ -1,8 +1,9 @@
 /* Piggy Richies -- generated house-upgrade UI binding.
  *
- * The old jackpot strip is replaced by three generated raster panels. Each house
- * image is revealed in five vertical pieces from the existing free-spin brick
- * state. The generated button art is also bound to the shell controls. */
+ * The clean generated shell is used as the live screen background. The old
+ * jackpot strip is replaced by three generated raster panels. Each house image
+ * is revealed in five vertical pieces from the existing free-spin brick state.
+ * The generated button art is also bound to the shell controls. */
 (() => {
   "use strict";
 
@@ -23,18 +24,6 @@
   left:15.0%;top:2.2%;width:65.5%;height:16.3%;z-index:18;pointer-events:none;
   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.65%;align-items:stretch;
   isolation:isolate;
-}
-/* Paint a new sky/forest patch over the old baked jackpot plaques in the shell.
-   This removes the old red/blue/green/purple panels without needing them visible
-   under the generated raster panels. */
-.jackpots.house-upgrade-meter::before{
-  content:"";position:absolute;z-index:0;left:-2.2%;right:-2.2%;top:-13%;bottom:-2%;border-radius:24px;
-  background:
-    radial-gradient(circle at 18% 9%,rgba(255,255,255,.78) 0 7%,rgba(255,255,255,.18) 8% 20%,transparent 33%),
-    radial-gradient(circle at 48% 18%,rgba(255,255,255,.7) 0 6%,rgba(255,255,255,.12) 7% 19%,transparent 31%),
-    radial-gradient(circle at 82% 15%,rgba(255,255,255,.58) 0 6%,rgba(255,255,255,.12) 7% 20%,transparent 32%),
-    linear-gradient(180deg,rgba(60,205,238,.96) 0%,rgba(93,218,236,.94) 44%,rgba(76,184,95,.72) 100%);
-  box-shadow:0 6px 12px rgba(13,75,25,.15);
 }
 .jackpots.house-upgrade-meter .jackpot{display:none!important;}
 .upgrade-card{
@@ -120,6 +109,7 @@
 
   function setCssVars() {
     const root = document.documentElement;
+    root.style.setProperty("--ui-screenShell", cssUrl(UI.cleanScreenShell || UI.screenShell));
     root.style.setProperty("--upgrade-frame", cssUrl(UI.upgradePanelFrame));
     root.style.setProperty("--btn-menu", cssUrl(UI.upgradeBtnMenu));
     root.style.setProperty("--btn-turbo", cssUrl(UI.upgradeBtnTurbo));

@@ -34,7 +34,7 @@ window.PIGGY_ASSETS = {
     upgrade: "assets/audio/magic-upgrade.wav",
   },
   ui: {
-    screenShell: "assets/ui/screen-shell.webp",
+    screenShell: "assets/ui/neubackground.png",
     reelFrame: "assets/ui/reel-frame.png",
     reelCell: "assets/ui/reel-cell.webp",
     reelBed: "assets/ui/reel-bed.webp",
@@ -68,5 +68,13 @@ window.PIGGY_ASSETS = {
     iconTable: "assets/ui/icon-table.png",
     iconSound: "assets/ui/icon-sound.png",
     iconLock: "assets/ui/icon-lock.png",
+    upgradePanelFrame: "assets/ui/hausrahmen.png",
+    upgradeHouseStraw: "assets/ui/strohhaus.png",
+    upgradeHouseBrick: "assets/ui/steinhaus.png",
+    upgradeHouseFortress: "assets/ui/festung.png",
+    upgradeBtnMenu: "assets/ui/menubutton.png",
+    upgradeBtnTurbo: "assets/ui/turbobutton.png",
+    upgradeBtnCoin: "assets/ui/bonusbutton.png",
+    upgradeBtnSpin: "assets/ui/spinbuttun.png",
   },
 };

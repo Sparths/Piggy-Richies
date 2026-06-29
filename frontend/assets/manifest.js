@@ -12,7 +12,7 @@ window.PIGGY_ASSETS = {
     K: "assets/symbols/K.png",
     Q: "assets/symbols/Q.png",
     J: "assets/symbols/J.png",
-    BR: "assets/symbols/BR.png",
+    BR: "assets/symbols/BR.png"
   },
   background: "assets/background.webp",
   logo: "assets/logo.webp",
@@ -26,11 +26,11 @@ window.PIGGY_ASSETS = {
     brick: "assets/audio/brick-impact.wav",
     scatter: "assets/audio/pot-bubble.wav",
     trigger: "assets/audio/bonus-trigger.wav",
-    upgrade: "assets/audio/magic-upgrade.wav",
+    upgrade: "assets/audio/magic-upgrade.wav"
   },
   ui: {
     screenShell: "assets/ui/screen-shell.webp",
-    cleanScreenShell: "assets/ui/6ada2f56-ec57-4043-aa04-17b12230f811.png",
+    cleanScreenShell: "assets/ui/neubackground.png",
     reelFrame: "assets/ui/reel-frame.png",
     reelCell: "assets/ui/reel-cell.webp",
     reelBed: "assets/ui/reel-bed.webp",
@@ -63,14 +63,14 @@ window.PIGGY_ASSETS = {
     iconInfo: "assets/ui/icon-info.png",
     iconTable: "assets/ui/icon-table.png",
     iconSound: "assets/ui/icon-sound.png",
-    upgradePanelFrame: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_44 (1).png",
-    upgradeHouseStraw: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_44 (2).png",
-    upgradeHouseBrick: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_45 (3).png",
-    upgradeHouseFortress: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_45 (4).png",
-    upgradeBtnMenu: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_47 (5).png",
-    upgradeBtnTurbo: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_47 (6).png",
-    upgradeBtnCoin: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_47 (7).png",
-    upgradeBtnSpin: "assets/ui/ChatGPT Image 29. Juni 2026, 10_50_48 (8).png",
-    iconLock: "assets/ui/icon-lock.png"
-  },
+    iconLock: "assets/ui/icon-lock.png",
+    upgradePanelFrame: "assets/ui/hausrahmen.png",
+    upgradeHouseStraw: "assets/ui/strohhaus.png",
+    upgradeHouseBrick: "assets/ui/steinhaus.png",
+    upgradeHouseFortress: "assets/ui/festung.png",
+    upgradeBtnMenu: "assets/ui/menubutton.png",
+    upgradeBtnTurbo: "assets/ui/turbobutton.png",
+    upgradeBtnCoin: "assets/ui/bonusbutton.png",
+    upgradeBtnSpin: "assets/ui/spinbuttun.png"
+  }
 };

@@ -7,6 +7,7 @@
   const CFG = window.PIGGY_CONFIG || fallbackConfig();
   const BOOKS = window.PIGGY_BOOKS || { base: [], bonus: [], bonus_vip: [] };
   const ART = window.PIGGY_ART, SND = window.PIGGY_AUDIO;
+  const STAKE = window.PIGGY_STAKE || fallbackStakeAdapter();
   const SYM = {}; CFG.symbols.forEach((s) => (SYM[s.id] = s));
   const REELS = CFG.numReels, ROWS = CFG.numRows;
 
@@ -20,15 +21,36 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", currentMode = "base", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false, currentPlayEvents = [];
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
   const bet = () => BETS[betIdx];
   const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
-  const fmt = (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (n) => (STAKE && STAKE.format ? STAKE.format(n) : n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   function uiAsset(name) { const A = window.PIGGY_ASSETS || {}; return (A.ui || {})[name] || ""; }
+  function safeHouse(method, ...args) {
+    try {
+      const api = window.PIGGY_HOUSE_UI;
+      return api && typeof api[method] === "function" ? api[method](...args) : null;
+    } catch (err) {
+      console.warn("[house-ui bridge]", err);
+      return null;
+    }
+  }
+  function cloneBoard(b) { return (b || []).map((col) => (col || []).slice()); }
+  function syncHouseUI(rawBricks = currentBricks) {
+    safeHouse("setState", {
+      active: curGametype === "freegame" && !housePanel.classList.contains("hidden"),
+      gametype: curGametype,
+      mode: currentMode,
+      house: houseLabel,
+      level: currentHouseLevel,
+      rawBricks: Math.max(0, Number(rawBricks) || 0),
+      visualTotal: curGametype === "freegame" ? Math.min(15, 5 + Math.max(0, Number(rawBricks) || 0)) : 0,
+    });
+  }
 
   // ---- art / board --------------------------------------------------------
   const symInner = (id) => (ART.hasImage(id) ? `<img src="${ART.imageUrl(id)}" alt="${id}">` : `<span class="sym-fallback">${id}</span>`);
@@ -207,9 +229,14 @@
   // ---- event player -------------------------------------------------------
   async function play(book, mode) {
     let roundWin = 0; dispWin = 0; winEl.textContent = "0.00"; casc = 0; lastMult = 1;
+    currentMode = mode;
     roundHadBonusTrigger = false;
     curGametype = mode === "base" ? "basegame" : "freegame"; setMult(1); setPhase();
-    for (const ev of book.events) {
+    syncHouseUI(curGametype === "freegame" ? currentBricks : 0);
+    const events = book.events || [];
+    currentPlayEvents = events;
+    for (let eventIndex = 0; eventIndex < events.length; eventIndex += 1) {
+      const ev = events[eventIndex];
       switch (ev.type) {
         case "reveal": {
           curGametype = ev.gametype; explodeMap = null; clearCellFx();
@@ -217,6 +244,7 @@
           await spinReels(ev.board);                 // reel-strip slide: reel-stops + anticipation built in
           const sc = ev.board.reduce((a, cA) => a + cA.filter((id) => SYM[id] && SYM[id].scatter).length, 0);
           if (sc >= 2) await sleep(300);             // let a 2+ pot board breathe before the next event
+          await collectBoardBricks(ev.board, eventIndex, null, null, false);
           break;
         }
         case "updateGlobalMult": {
@@ -225,7 +253,19 @@
           break;
         }
         case "wildLand":
-          ev.wilds.forEach((w) => { if (w.multiplier > 1) { const c = cellAt(w.position[0], w.position[1]); const t = document.createElement("span"); t.className = "wmult"; t.textContent = "x" + w.multiplier; c.appendChild(t); c.classList.add("sticky"); } }); break;
+          ev.wilds.forEach((w) => {
+            if (w.multiplier > 1) {
+              const c = cellAt(w.position[0], w.position[1]);
+              const t = document.createElement("span");
+              t.className = "wmult";
+              t.textContent = "x" + w.multiplier;
+              const badge = uiAsset("wolfMultBadge");
+              if (badge) t.style.setProperty("--wolf-mult-badge", `url("${badge}")`);
+              c.appendChild(t);
+              c.classList.add("sticky");
+            }
+          });
+          break;
         case "winInfo": {
           const ks = new Set(); ev.wins.forEach((w) => w.positions.forEach((p) => ks.add(p[0] + "," + p[1])));
           const wd = 0.55 * SPD() + "s";
@@ -251,12 +291,16 @@
           { const bd = 0.42 * SPD() + "s"; ev.explodePositions.forEach(([c, r]) => { (explodeMap[c] || (explodeMap[c] = new Set())).add(r); const cell = cellAt(c, r); const s = cell.querySelector(".sym"); if (s) s.style.animationDuration = bd; cell.classList.add("explode"); if (FX) { const p = cellCenter(c, r); FX.explode(p.x, p.y); } }); }
           await sleep(430); wolfEl.classList.remove("blow"); break;
         case "dropBoard": {
+          const prevBoard = cloneBoard(curBoard);
+          const removedMap = explodeMap;
           if (explodeMap) animateColumns(ev.board, explodeMap); else setStatic(ev.board);
           explodeMap = null; SND.drop();
           // a soup-pot may have tumbled in -> glow every pot now showing (chase the 3rd)
           let sc = 0; for (let c = 0; c < REELS; c++) for (let r = 0; r < ROWS; r++) if (SYM[ev.board[c][r]] && SYM[ev.board[c][r]].scatter) { cellAt(c, r).classList.add("scat-hot"); sc++; }
           if (sc >= 2) SND.scatter();
-          await sleep(400); break;
+          await sleep(400);
+          await collectBoardBricks(ev.board, eventIndex, prevBoard, removedMap, true);
+          break;
         }
         case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}x ${chip("pot")} zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger":
@@ -268,24 +312,35 @@
             await sleep(750);
           }
           break;
-        case "enterFreeGame": { await freeIntro(ev); housePanel.classList.remove("hidden"); curGametype = "freegame"; houseLabel = ev.house; fsTot = ev.totalSpins; fsNow = 0; const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1; setHouse(lvl, ev.house, 0); fsCount.textContent = `0 / ${ev.totalSpins}`; setPhase(); break; }
+        case "enterFreeGame": {
+          await freeIntro(ev);
+          housePanel.classList.remove("hidden");
+          curGametype = "freegame";
+          houseLabel = ev.house;
+          fsTot = ev.totalSpins;
+          fsNow = 0;
+          const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1;
+          currentBricks = Math.max(0, Number(ev.bricks) || 0);
+          setHouse(lvl, ev.house, currentBricks);
+          syncHouseUI(currentBricks);
+          safeHouse("completeStrawIntro");
+          fsCount.textContent = `0 / ${ev.totalSpins}`;
+          setPhase();
+          break;
+        }
         case "updateFreeSpin": fsNow = ev.current; fsTot = ev.total; fsCount.textContent = `${ev.current} / ${ev.total}`; setPhase(); break;
         case "collectBrick": {
-          const c = cellAt(ev.position[0], ev.position[1]);
-          flyBrickToHouse(c, ev.bricks); c.classList.add("collected");
-          if (FX) { const p = cellCenter(ev.position[0], ev.position[1]); FX.sparkle(p.x, p.y); }
-          await sleep(420);
-          updateBricks(ev.bricks); pulseRing(); SND.brick();
-          await sleep(170); break;
+          await collectBrickVisual(ev.position, ev.bricks, true);
+          break;
         }
         case "houseUpgrade": {
           await houseCine(ev);                                   // full cinematic: house art slams in
-          setHouse(ev.level, ev.house, ev.bricks);               // update the panel ring to the new level
+          setHouse(ev.level, ev.house, Math.max(Number(ev.bricks) || 0, currentBricks));               // update the panel ring to the new level
           const ring = $("house-ring"); if (ring) { ring.classList.remove("near"); ring.classList.add("flash"); setTimeout(() => ring.classList.remove("flash"), 900); }
           glow.className = "board-glow bonus";
           break;
         }
-        case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
+        case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; syncHouseUI(0); if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
         case "setTotalWin": roundWin = ev.amount; countWin(roundWin); break;
         case "finalWin": await settle(ev); break;
       }
@@ -307,15 +362,17 @@
     updateBricks(bricks);
   }
   function updateBricks(b) {
-    currentBricks = b;
-    const span = bricksTarget - bricksFloor, p = span > 0 ? Math.min(1, (b - bricksFloor) / span) : 1;
+    currentBricks = Math.max(0, Number(b) || 0);
+    const displayBricks = Math.max(bricksFloor, currentBricks);
+    const span = bricksTarget - bricksFloor, p = span > 0 ? Math.min(1, Math.max(0, (displayBricks - bricksFloor) / span)) : 1;
     const ring = $("house-ring");
     if (ring) {
       ring.style.setProperty("--p", p);
       ring.classList.toggle("near", span > 0 && p >= 0.6);
     }
-    brickLabel.innerHTML = span > 0 ? `${chip("brick")} ${b - bricksFloor} / ${span}` : `${chip("brick")} MAX`;
-    paintBrickRack(b);
+    brickLabel.innerHTML = span > 0 ? `${chip("brick")} ${displayBricks - bricksFloor} / ${span}` : `${chip("brick")} MAX`;
+    paintBrickRack(currentBricks);
+    syncHouseUI(currentBricks);
   }
   function paintHouseStages(level) {
     housePanel.querySelectorAll("[data-house-stage]").forEach((el) => {
@@ -330,11 +387,14 @@
     slots.forEach((slot, i) => slot.classList.toggle("filled", i < Math.min(10, Math.max(0, bricks))));
   }
   function pulseRing() {
+    safeHouse("pulseTarget", currentBricks);
     const target = getBrickSlot(currentBricks) || $("house-panel");
     if (!target) return;
     target.classList.remove("tick"); void target.offsetWidth; target.classList.add("tick");
   }
   function getBrickSlot(bricksAfter) {
+    const uiTarget = safeHouse("getBrickTarget", bricksAfter);
+    if (uiTarget) return uiTarget;
     const slots = document.querySelectorAll("#brick-rack span");
     if (!slots.length) return null;
     return slots[Math.max(0, Math.min(slots.length - 1, bricksAfter - 1))];
@@ -349,6 +409,71 @@
     const dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay;
     requestAnimationFrame(() => { fly.style.transform = `translate(${dx}px,${dy}px) scale(.45)`; fly.style.opacity = "0"; });
     setTimeout(() => fly.remove(), 720);
+  }
+  async function collectBrickVisual(position, bricksAfter, waitForArrival) {
+    if (!position) return;
+    const rawAfter = Math.max(Number(bricksAfter) || 0, currentBricks + 1);
+    const c = cellAt(position[0], position[1]);
+    flyBrickToHouse(c, rawAfter);
+    if (c) c.classList.add("collected");
+    if (FX) { const p = cellCenter(position[0], position[1]); FX.sparkle(p.x, p.y); }
+    const land = () => {
+      updateBricks(rawAfter);
+      pulseRing();
+      SND.brick();
+    };
+    if (waitForArrival) {
+      await sleep(420);
+      land();
+      await sleep(170);
+    } else {
+      setTimeout(land, Math.max(80, 350 * SPD()));
+    }
+  }
+  function nextBoardMutation(events, fromIndex) {
+    for (let i = fromIndex + 1; i < events.length; i += 1) {
+      if (["reveal", "dropBoard", "updateFreeSpin", "exitFreeGame"].includes(events[i].type)) return i;
+    }
+    return events.length;
+  }
+  function hasUpcomingExplicitCollect(events, fromIndex, col, row) {
+    const end = nextBoardMutation(events, fromIndex);
+    for (let i = fromIndex + 1; i < end; i += 1) {
+      const ev = events[i];
+      if (ev.type === "collectBrick" && ev.position && ev.position[0] === col && ev.position[1] === row) return true;
+    }
+    return false;
+  }
+  function isSurvivingBrick(prevBoard, removedMap, col, row) {
+    if (!prevBoard || !prevBoard[col]) return false;
+    if (!removedMap || !removedMap[col] || !removedMap[col].size) {
+      return prevBoard[col][row] === "BR";
+    }
+    const removed = removedMap[col];
+    const kept = [];
+    for (let r = 0; r < ROWS; r += 1) if (!removed.has(r)) kept.push(r);
+    const missing = removed.size;
+    if (row < missing) return false;
+    const oldRow = kept[row - missing];
+    return oldRow != null && prevBoard[col][oldRow] === "BR";
+  }
+  async function collectBoardBricks(board, eventIndex, prevBoard, removedMap, fromDrop) {
+    if (curGametype !== "freegame" || !board) return;
+    const bookEvents = currentPlayEvents || [];
+    const tasks = [];
+    for (let col = 0; col < REELS; col += 1) {
+      for (let row = 0; row < ROWS; row += 1) {
+        if (!board[col] || board[col][row] !== "BR") continue;
+        if (hasUpcomingExplicitCollect(bookEvents, eventIndex, col, row)) continue;
+        if (fromDrop && isSurvivingBrick(prevBoard, removedMap, col, row)) continue;
+        tasks.push([col, row]);
+      }
+    }
+    let next = currentBricks;
+    for (const pos of tasks) {
+      next += 1;
+      await collectBrickVisual(pos, next, false);
+    }
   }
   // cinematic free-spin trigger: pot + wolf burst in, screen shake, confetti,
   // crossfade, then the storm rolls in for the bonus.
@@ -394,7 +519,14 @@
   }
   async function settle(ev) {
     const m = ev.amount;
-    balance += m * bet(); balanceEl.textContent = fmt(balance); countWin(m);
+    if (STAKE.active) {
+      await STAKE.endRound({ win: m * bet(), state: gameState() });
+      const synced = STAKE.getBalance();
+      if (synced != null) balance = synced;
+    } else {
+      balance += m * bet();
+    }
+    balanceEl.textContent = fmt(balance); countWin(m);
     if (ev.wincapReached) await showBigWin(3, m, true);
     else if (m >= 150) await showBigWin(3, m);
     else if (m >= 50) await showBigWin(2, m);
@@ -416,9 +548,25 @@
     const cost = (mode === "base" ? 1 : mode === "bonus" ? buyA : buyB) * bet();
     if (balance < cost) { toast("Nicht genug Guthaben"); autoLeft = 0; return; }
     busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
-    balance -= cost; balanceEl.textContent = fmt(balance); overlay.innerHTML = ""; setMult(1);
-    const book = pickBook(mode); if (book.serverSeedHash) $("seed-hash").textContent = book.serverSeedHash.slice(0, 22) + "...";
-    await play(book, mode);
+    let book = null;
+    try {
+      if (STAKE.active) {
+        const stakeRound = await STAKE.play({ amount: cost, mode, bet: bet() });
+        book = stakeRound && stakeRound.book;
+        const synced = STAKE.getBalance();
+        if (synced != null) balance = synced;
+      } else {
+        balance -= cost;
+      }
+      balanceEl.textContent = fmt(balance); overlay.innerHTML = ""; setMult(1);
+      book = book || pickBook(mode);
+      if (book.serverSeedHash) $("seed-hash").textContent = book.serverSeedHash.slice(0, 22) + "...";
+      await play(book, mode);
+    } catch (err) {
+      console.warn("[game] spin failed", err);
+      toast("Verbindung nicht bereit");
+      autoLeft = 0;
+    }
     busy = false; spinBtn.disabled = false; spinBtn.classList.remove("spinning"); ctlEnable(true);
   }
   function ctlEnable(on) { ["bet-up", "bet-down", "btn-buy"].forEach((id) => ($(id).disabled = !on)); }
@@ -512,6 +660,19 @@
   const easeOut = (k) => 1 - Math.pow(1 - k, 3);
   function cellCenter(col, row) { const r = cellAt(col, row).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
   function winBarCenter() { const r = winEl.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  function gameState() {
+    return {
+      mode: currentMode,
+      gametype: curGametype,
+      bet: bet(),
+      balance,
+      board: cloneBoard(curBoard),
+      multiplier: lastMult,
+      freeSpins: { current: fsNow, total: fsTot },
+      house: { label: houseLabel, level: currentHouseLevel, bricks: currentBricks, visualTotal: curGametype === "freegame" ? 5 + currentBricks : 0 },
+      win: dispWin,
+    };
+  }
 
   let skipBig = false;
   async function showBigWin(tier, mult, isCap = false) {
@@ -538,10 +699,39 @@
     await sleep(skipBig ? 150 : 850);
     ov.classList.add("hidden");
   }
+  async function replayBook(book) {
+    if (!book || !Array.isArray(book.events) || busy) return;
+    busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
+    try {
+      overlay.innerHTML = "";
+      setMult(1);
+      const replayMode = book.events.some((ev) => ev.type === "enterFreeGame") ? "bonus" : "base";
+      await play(book, replayMode);
+    } catch (err) {
+      console.warn("[game] replay failed", err);
+      toast("Replay nicht verfuegbar");
+    }
+    busy = false; spinBtn.disabled = false; spinBtn.classList.remove("spinning"); ctlEnable(true);
+  }
 
   // ---- boot / loading -----------------------------------------------------
   let started = false;
   function boot() {
+    balance = STAKE.init(balance) || balance;
+    STAKE.onBalance((nextBalance) => {
+      balance = nextBalance;
+      if (balanceEl) balanceEl.textContent = fmt(balance);
+    });
+    STAKE.onReplay((book) => setTimeout(() => replayBook(book), 650));
+    STAKE.onReset(() => {
+      if (busy) return;
+      curGametype = "basegame"; housePanel.classList.add("hidden"); currentBricks = 0; setMult(1); syncHouseUI(0); countWin(0);
+    });
+    window.PIGGY_GAME = {
+      replay: replayBook,
+      setBalance: (v) => STAKE.setBalance(v, "api"),
+      state: gameState,
+    };
     $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "x";
     buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire(); paintIcons();
     if (FX) FX.init($("fx"), document.querySelector(".stage"));
@@ -587,6 +777,21 @@
     return b;
   }
   function demoBook() { return { payoutMultiplier: 0, events: [{ type: "reveal", gametype: "basegame", board: randomBoard() }, { type: "setTotalWin", amount: 0 }, { type: "finalWin", amount: 0, wincapReached: false }] }; }
+  function fallbackStakeAdapter() {
+    return {
+      active: false,
+      init: (v) => v,
+      getBalance: () => null,
+      setBalance() {},
+      onBalance() {},
+      onReplay() {},
+      onReset() {},
+      play: async () => null,
+      endRound: async () => null,
+      recordState() {},
+      format: (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    };
+  }
   function fallbackConfig() {
     return { gameName: "Piggy Richies", rtp: 0.9655, wincap: 15000, numReels: 5, numRows: 4, reels: null, paytable: {}, scatterPays: {},
       symbols: [{ id: "W", kind: "wild", wild: true, name: "Wolf" }, { id: "S", kind: "scatter", scatter: true, name: "Topf" }, { id: "P1", kind: "premium", name: "Ziegel-Schwein" }, { id: "P2", kind: "premium", name: "Holz-Schwein" }, { id: "P3", kind: "premium", name: "Stroh-Schwein" }, { id: "M1", kind: "mid", name: "Axt" }, { id: "M2", kind: "mid", name: "Kelle" }, { id: "M3", kind: "mid", name: "Gabel" }, { id: "A", kind: "low", name: "Ass" }, { id: "K", kind: "low", name: "Koenig" }, { id: "Q", kind: "low", name: "Dame" }, { id: "J", kind: "low", name: "Bube" }, { id: "BR", kind: "collect", collectible: true, name: "Ziegel" }],

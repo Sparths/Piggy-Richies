@@ -9,11 +9,15 @@
     fortress: "assets/ui/festung.png",
   };
 
-  function guard(fn) {
+  let container = null;
+  let currentVisualTotal = 0;
+
+  function guard(fn, fallback) {
     try {
-      fn();
+      return fn();
     } catch (err) {
       console.warn("[house-ui] disabled:", err);
+      return fallback;
     }
   }
 
@@ -40,47 +44,12 @@
     return el;
   }
 
-  function createCard(stage) {
-    const card = make("section", "house-upgrade-card");
-    card.dataset.stage = stage.id;
-    card.setAttribute("aria-label", stage.label);
-
-    const art = make("div", "house-upgrade-art");
-    art.style.setProperty("--house-image", `url("${stage.image}")`);
-
-    for (let i = 0; i < PARTS; i += 1) {
-      const part = make("span", "house-upgrade-part is-locked");
-      part.style.setProperty("--part-pos", `${i * 25}%`);
-      part.dataset.part = String(i + 1);
-      art.appendChild(part);
-    }
-
-    const count = make("div", "house-upgrade-count");
-    count.textContent = "0/5";
-
-    card.appendChild(art);
-    card.appendChild(count);
-    return card;
+  function totalFromRaw(rawBricks, active) {
+    if (!active) return 0;
+    return clamp(5 + Math.max(0, Number(rawBricks) || 0), 0, 15);
   }
 
-  function readGameProgress() {
-    const housePanel = document.getElementById("house-panel");
-    const rack = document.getElementById("brick-rack");
-    const inFreeSpins = !!housePanel && !housePanel.classList.contains("hidden");
-
-    if (!inFreeSpins) {
-      return [0, 0, 0];
-    }
-
-    const levelRaw = Number.parseInt(housePanel.dataset.level || "1", 10);
-    const level = Number.isFinite(levelRaw) ? clamp(levelRaw, 1, 3) : 1;
-    const filled = rack ? rack.querySelectorAll("span.filled").length : 0;
-
-    let total = Math.max(filled, (level - 1) * PARTS);
-    if (level >= 3 && total <= 10) {
-      total = 11;
-    }
-
+  function progressFromTotal(total) {
     return [
       clamp(total, 0, PARTS),
       clamp(total - PARTS, 0, PARTS),
@@ -88,12 +57,40 @@
     ];
   }
 
-  function applyProgress(container, progress) {
+  function createCard(stage) {
+    const card = make("section", "house-upgrade-card");
+    card.dataset.stage = stage.id;
+    card.dataset.progress = "0";
+    card.setAttribute("aria-label", stage.label);
+
+    const art = make("div", "house-upgrade-art");
+    const mask = make("div", "house-upgrade-mask");
+    art.style.setProperty("--house-image", `url("${stage.image}")`);
+
+    for (let i = 0; i < PARTS; i += 1) {
+      const part = make("span", "house-upgrade-part is-locked");
+      part.style.setProperty("--part-pos", `${i * 25}%`);
+      part.dataset.part = String(i + 1);
+      mask.appendChild(part);
+    }
+
+    const count = make("div", "house-upgrade-count");
+    count.textContent = "0/5";
+
+    art.appendChild(mask);
+    card.appendChild(art);
+    card.appendChild(count);
+    return card;
+  }
+
+  function applyProgress(progress) {
+    if (!container) return;
     const cards = [...container.querySelectorAll(".house-upgrade-card")];
     cards.forEach((card, cardIndex) => {
       const value = clamp(progress[cardIndex] || 0, 0, PARTS);
       const previous = Number.parseInt(card.dataset.progress || "0", 10);
       card.dataset.progress = String(value);
+      card.classList.toggle("is-complete", value >= PARTS);
       card.classList.toggle("is-active", value > 0 && value < PARTS);
 
       const parts = [...card.querySelectorAll(".house-upgrade-part")];
@@ -107,18 +104,61 @@
       if (count) count.textContent = `${value}/5`;
 
       if (value !== previous) {
-        card.classList.remove("is-active");
+        card.classList.remove("is-tick");
         void card.offsetWidth;
-        card.classList.toggle("is-active", value > 0 && value < PARTS);
+        card.classList.add("is-tick");
+      }
+    });
+  }
+
+  function setState(state = {}) {
+    guard(() => {
+      const active = state.active !== false && state.gametype !== "basegame";
+      const total = Number.isFinite(state.visualTotal) ? clamp(state.visualTotal, 0, 15) : totalFromRaw(state.rawBricks, active);
+      currentVisualTotal = total;
+      applyProgress(progressFromTotal(total));
+    });
+  }
+
+  function targetForRaw(rawBricksAfter) {
+    if (!container) return null;
+    const total = totalFromRaw(rawBricksAfter, true);
+    const stageIndex = total <= 10 ? 1 : 2;
+    const local = stageIndex === 1 ? clamp(total - 5, 1, 5) : clamp(total - 10, 1, 5);
+    const card = container.querySelectorAll(".house-upgrade-card")[stageIndex];
+    if (!card) return null;
+    return card.querySelector(`[data-part="${local}"]`) || card;
+  }
+
+  function pulseTarget(rawBricksAfter) {
+    guard(() => {
+      const target = targetForRaw(rawBricksAfter);
+      if (!target) return;
+      const card = target.closest(".house-upgrade-card") || target;
+      target.classList.remove("is-target-hit");
+      card.classList.remove("is-target-hit");
+      void target.offsetWidth;
+      target.classList.add("is-target-hit");
+      card.classList.add("is-target-hit");
+    });
+  }
+
+  function completeStrawIntro() {
+    guard(() => {
+      currentVisualTotal = Math.max(currentVisualTotal, 5);
+      applyProgress(progressFromTotal(currentVisualTotal));
+      const card = container && container.querySelector('[data-stage="straw"]');
+      if (card) {
+        card.classList.remove("is-complete-pop");
+        void card.offsetWidth;
+        card.classList.add("is-complete-pop");
       }
     });
   }
 
   function init() {
-    const container = document.getElementById("house-upgrade-meter");
-    if (!container || !window.PIGGY_ASSETS) {
-      return;
-    }
+    container = document.getElementById("house-upgrade-meter");
+    if (!container || !window.PIGGY_ASSETS) return;
 
     const stages = [
       { id: "straw", label: "Strohhaus", image: asset("straw") },
@@ -128,31 +168,22 @@
 
     container.textContent = "";
     stages.forEach((stage) => container.appendChild(createCard(stage)));
+    applyProgress([0, 0, 0]);
 
-    let queued = false;
-    const sync = () => guard(() => applyProgress(container, readGameProgress()));
-    const scheduleSync = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(() => {
-        queued = false;
-        sync();
-      });
+    window.PIGGY_HOUSE_UI = {
+      setState,
+      getBrickTarget: (rawBricksAfter) => guard(() => targetForRaw(rawBricksAfter), null),
+      pulseTarget,
+      completeStrawIntro,
     };
-
-    sync();
-
-    const housePanel = document.getElementById("house-panel");
-    const rack = document.getElementById("brick-rack");
-    const observer = new MutationObserver(scheduleSync);
-
-    if (housePanel) {
-      observer.observe(housePanel, { attributes: true, attributeFilter: ["class", "data-level"] });
-    }
-    if (rack) {
-      observer.observe(rack, { subtree: true, attributes: true, attributeFilter: ["class"] });
-    }
   }
+
+  window.PIGGY_HOUSE_UI = window.PIGGY_HOUSE_UI || {
+    setState() {},
+    getBrickTarget() { return null; },
+    pulseTarget() {},
+    completeStrawIntro() {},
+  };
 
   onReady(init);
 })();

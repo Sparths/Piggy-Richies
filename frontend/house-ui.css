@@ -14,10 +14,10 @@
 
 .mult-tab{
   left:auto!important;
-  right:6.6%!important;
-  top:16.85%!important;
-  width:11%!important;
-  height:7.8%!important;
+  right:7.25%!important;
+  top:14.9%!important;
+  width:10.6%!important;
+  height:7.55%!important;
   z-index:14!important;
   background:url("assets/ui/multiplier-frame.png") center/100% 100% no-repeat!important;
   border:0!important;
@@ -105,14 +105,20 @@
 
 .house-upgrade-art{
   position:absolute;
-  inset:5.2% 5.2% 15.8%;
+  inset:5.8% 5.6% 17.8%;
   z-index:1;
+  overflow:hidden;
+  border-radius:8px 8px 11px 11px;
+  background:#194d25;
+  clip-path:inset(0 round 8px 8px 11px 11px);
+}
+
+.house-upgrade-mask{
+  position:absolute;
+  inset:-2.5% -1.5% -4%;
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr));
   overflow:hidden;
-  border-radius:7px 7px 10px 10px;
-  background:transparent;
-  clip-path:inset(0 round 7px 7px 10px 10px);
 }
 
 .house-upgrade-part{
@@ -121,7 +127,7 @@
   min-height:0;
   background-image:var(--house-image);
   background-repeat:no-repeat;
-  background-size:500% 100%;
+  background-size:508% 112%;
   background-position:var(--part-pos) center;
   transition:filter .24s ease, opacity .24s ease, transform .24s ease;
 }
@@ -172,8 +178,28 @@
   color:#fff36d;
 }
 
+.house-upgrade-card.is-target-hit .house-upgrade-count,
+.house-upgrade-part.is-target-hit{
+  animation:houseTargetHit .56s cubic-bezier(.2,1.45,.35,1);
+}
+
+.house-upgrade-card.is-complete-pop{
+  animation:houseCompletePop .78s cubic-bezier(.2,1.45,.35,1);
+}
+
 @keyframes houseUpgradeWake{
   0%{transform:scale(.985);filter:brightness(1.45) drop-shadow(0 0 13px rgba(255,234,78,.8));}
+  100%{transform:scale(1);filter:drop-shadow(0 5px 6px rgba(20,75,8,.32));}
+}
+
+@keyframes houseTargetHit{
+  0%{filter:brightness(1.9) drop-shadow(0 0 14px rgba(255,239,91,.9));}
+  100%{filter:none;}
+}
+
+@keyframes houseCompletePop{
+  0%{transform:scale(.96);filter:brightness(1.8) drop-shadow(0 0 18px rgba(255,239,91,.9));}
+  58%{transform:scale(1.045);}
   100%{transform:scale(1);filter:drop-shadow(0 5px 6px rgba(20,75,8,.32));}
 }
 

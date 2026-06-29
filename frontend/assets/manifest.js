@@ -35,6 +35,7 @@ window.PIGGY_ASSETS = {
   },
   ui: {
     screenShell: "assets/ui/screen-shell.webp",
+    cleanScreenShell: "assets/ui/6ada2f56-ec57-4043-aa04-17b12230f811.png",
     reelFrame: "assets/ui/reel-frame.png",
     reelCell: "assets/ui/reel-cell.webp",
     reelBed: "assets/ui/reel-bed.webp",

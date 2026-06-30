@@ -11,12 +11,16 @@
   const rgsUrl = params.get("rgs_url") || params.get("rgsUrl") || params.get("rgs") || "";
   const lang = params.get("language") || params.get("lang") || navigator.language || "de-DE";
   const currency = params.get("currency") || params.get("token") || "";
-  const active = !!(sessionID && rgsUrl);
+  const embedded = !!(window.parent && window.parent !== window);
+  const hasInjectedStake = !!(window.StakeEngine || window.stakeEngine || window.Stake || window.stake);
+  const active = !!(sessionID || rgsUrl || embedded || hasInjectedStake);
   const SCALE = 1000000;
 
   let balance = numberParam("balance", null);
   let muted = false;
   let ready = null;
+  let connectionReady = !active;
+  let localFallbackRound = false;
   let currentRound = null;
   let replayBook = parseReplayParam();
   const balanceListeners = new Set();
@@ -93,16 +97,45 @@
     return res.json();
   }
 
+  async function postAny(paths, payload) {
+    let lastError = null;
+    for (const path of paths) {
+      try {
+        return await post(path, payload);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError || new Error("Stake endpoint unavailable");
+  }
+
+  async function injectedCall(method, payload) {
+    const candidates = [window.StakeEngine, window.stakeEngine, window.Stake, window.stake].filter(Boolean);
+    for (const api of candidates) {
+      const fn = api && (api[method] || api[`_${method}`]);
+      if (typeof fn !== "function") continue;
+      try {
+        return await fn.call(api, payload);
+      } catch (err) {
+        log(method + " hook failed", err);
+      }
+    }
+    return null;
+  }
+
   function bootStake() {
     if (!active) return Promise.resolve(null);
     if (ready) return ready;
-    ready = post("/wallet/authenticate", { sessionID })
+    ready = injectedCall("authenticate", { sessionID, currency })
+      .then((hookData) => hookData || (rgsUrl ? postAny(["/wallet/authenticate", "/authenticate", "/session"], { sessionID, currency }) : null))
       .then((data) => {
+        connectionReady = !!data || hasInjectedStake;
         if (data && data.balance != null) setBalance(data.balance, "authenticate");
         replayBook = normalizeBook(data && (data.replay || data.round || data.lastRound || data.activeRound)) || replayBook;
         return data;
       })
       .catch((err) => {
+        connectionReady = false;
         log("authenticate failed, continuing standalone-safe", err);
         return null;
       });
@@ -115,6 +148,18 @@
         window.parent.postMessage({ type, payload, game: "piggy_richies" }, "*");
       }
     });
+  }
+
+  function emitReady(state) {
+    const payload = { ready: true, active, connectionReady, sessionID: !!sessionID, rgs: !!rgsUrl, currency, state: state || null };
+    ["piggy:ready", "game:ready", "stake:ready", "ready"].forEach((type) => emitParent(type, payload));
+    safe(() => window.dispatchEvent(new CustomEvent("piggy:ready", { detail: payload })));
+  }
+
+  function localFallback(reason) {
+    localFallbackRound = true;
+    emitParent("piggy:local-fallback", { reason, connectionReady, active });
+    return { book: null, round: null, raw: null, localFallback: true, reason };
   }
 
   function messageType(data) {
@@ -149,7 +194,7 @@
     language: lang,
     init(defaultBalance) {
       if (balance == null) balance = Number(defaultBalance) || 0;
-      bootStake();
+      bootStake().then(() => emitReady());
       return balance;
     },
     getBalance() {
@@ -172,9 +217,17 @@
     },
     async play({ amount, mode, bet }) {
       if (!active) return null;
+      localFallbackRound = false;
       await bootStake();
       const payload = { sessionID, amount: toStakeAmount(amount), mode, bet: toStakeAmount(bet || 0), currency };
-      const data = await post("/wallet/play", payload);
+      const hooked = await injectedCall("play", payload);
+      const data = hooked || (rgsUrl ? await postAny(["/play", "/wallet/play"], payload).catch((err) => {
+        connectionReady = false;
+        log("play failed, using visual fallback", err);
+        return null;
+      }) : null);
+      if (!data) return localFallback("play-unavailable");
+      connectionReady = true;
       if (data && data.balance != null) setBalance(data.balance, "play");
       currentRound = data && (data.round || data.game || data.result || data);
       emitParent("piggy:round-start", { mode, amount, round: currentRound });
@@ -182,15 +235,26 @@
     },
     async endRound({ win, state }) {
       if (!active) return null;
+      if (localFallbackRound) {
+        emitParent("piggy:round-end", { win, state, round: currentRound, localFallback: true });
+        localFallbackRound = false;
+        currentRound = null;
+        return null;
+      }
       const payload = { sessionID, amount: toStakeAmount(win || 0), win: toStakeAmount(win || 0), round: currentRound, state };
-      const data = await post("/wallet/end-round", payload).catch((err) => {
+      const hooked = await injectedCall("endRound", payload);
+      const data = hooked || (rgsUrl ? await postAny(["/end-round", "/wallet/end-round"], payload).catch((err) => {
         log("end-round failed", err);
         return null;
-      });
+      }) : null);
       if (data && data.balance != null) setBalance(data.balance, "end-round");
       emitParent("piggy:round-end", { win, state, round: currentRound });
       currentRound = null;
       return data;
+    },
+    ready: emitReady,
+    isLocalFallback() {
+      return localFallbackRound;
     },
     recordState(state) {
       emitParent("piggy:state", state);

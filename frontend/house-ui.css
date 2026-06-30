@@ -14,10 +14,10 @@
 
 .mult-tab{
   left:auto!important;
-  right:7.25%!important;
-  top:14.9%!important;
-  width:10.6%!important;
-  height:7.55%!important;
+  right:6.75%!important;
+  top:15.75%!important;
+  width:10.15%!important;
+  height:7.05%!important;
   z-index:14!important;
   background:url("assets/ui/multiplier-frame.png") center/100% 100% no-repeat!important;
   border:0!important;
@@ -32,7 +32,7 @@
 }
 
 .mult-col{
-  inset:11% 17% 16%!important;
+  inset:18% 19% 16%!important;
   display:flex!important;
   flex-direction:column;
   align-items:center;
@@ -105,7 +105,7 @@
 
 .house-upgrade-art{
   position:absolute;
-  inset:5.8% 5.6% 17.8%;
+  inset:5.15% 5.15% 11.4%;
   z-index:1;
   overflow:hidden;
   border-radius:8px 8px 11px 11px;
@@ -115,7 +115,7 @@
 
 .house-upgrade-mask{
   position:absolute;
-  inset:-2.5% -1.5% -4%;
+  inset:-3.8% -2.4% -8.5%;
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr));
   overflow:hidden;
@@ -127,8 +127,8 @@
   min-height:0;
   background-image:var(--house-image);
   background-repeat:no-repeat;
-  background-size:508% 112%;
-  background-position:var(--part-pos) center;
+  background-size:512% 121%;
+  background-position:var(--part-pos) 56%;
   transition:filter .24s ease, opacity .24s ease, transform .24s ease;
 }
 

@@ -21,7 +21,7 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", currentMode = "base", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false, currentPlayEvents = [];
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", currentMode = "base", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false, currentPlayEvents = [], completedHouseStages = new Set(), stakeLocalRound = false;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
@@ -323,7 +323,9 @@
           currentBricks = Math.max(0, Number(ev.bricks) || 0);
           setHouse(lvl, ev.house, currentBricks);
           syncHouseUI(currentBricks);
+          completedHouseStages = new Set([1]);
           safeHouse("completeStrawIntro");
+          await completeReachedHouses(currentBricks, false);
           fsCount.textContent = `0 / ${ev.totalSpins}`;
           setPhase();
           break;
@@ -334,13 +336,16 @@
           break;
         }
         case "houseUpgrade": {
-          await houseCine(ev);                                   // full cinematic: house art slams in
+          const level = Math.max(1, Math.min(3, Number(ev.level) || 1));
+          if (!completedHouseStages.has(level)) await houseCine(ev); // full cinematic: house art slams in
+          completedHouseStages.add(level);
+          safeHouse("completeStage", level);
           setHouse(ev.level, ev.house, Math.max(Number(ev.bricks) || 0, currentBricks));               // update the panel ring to the new level
           const ring = $("house-ring"); if (ring) { ring.classList.remove("near"); ring.classList.add("flash"); setTimeout(() => ring.classList.remove("flash"), 900); }
           glow.className = "board-glow bonus";
           break;
         }
-        case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; syncHouseUI(0); if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
+        case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; completedHouseStages = new Set(); syncHouseUI(0); if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
         case "setTotalWin": roundWin = ev.amount; countWin(roundWin); break;
         case "finalWin": await settle(ev); break;
       }
@@ -386,6 +391,28 @@
     const slots = [...document.querySelectorAll("#brick-rack span")];
     slots.forEach((slot, i) => slot.classList.toggle("filled", i < Math.min(10, Math.max(0, bricks))));
   }
+  function houseDisplayName(level, fallback) {
+    return ({ 1: "Strohhaus", 2: "Steinhaus", 3: "Festung" }[Math.max(1, Math.min(3, Number(level) || 1))]) || fallback || "";
+  }
+  function houseCompleteEvent(level, bricks) {
+    const lvl = Math.max(1, Math.min(3, Number(level) || 1));
+    const cfg = (CFG.features.houseLevels || []).find((h) => h.level === lvl) || {};
+    return { level: lvl, house: houseDisplayName(lvl, cfg.name), bricks: Math.max(Number(bricks) || 0, cfg.bricks || 0), extraSpins: cfg.extra_spins || 0 };
+  }
+  async function completeReachedHouses(rawBricks, playCine) {
+    const raw = Math.max(0, Number(rawBricks) || 0);
+    const stages = [];
+    if (raw >= 5) stages.push(2);
+    if (raw >= 10) stages.push(3);
+    for (const level of stages) {
+      if (completedHouseStages.has(level)) continue;
+      completedHouseStages.add(level);
+      const ev = houseCompleteEvent(level, raw);
+      safeHouse("completeStage", level);
+      if (playCine) await houseCine(ev);
+      setHouse(level, ev.house, raw);
+    }
+  }
   function pulseRing() {
     safeHouse("pulseTarget", currentBricks);
     const target = getBrickSlot(currentBricks) || $("house-panel");
@@ -417,17 +444,18 @@
     flyBrickToHouse(c, rawAfter);
     if (c) c.classList.add("collected");
     if (FX) { const p = cellCenter(position[0], position[1]); FX.sparkle(p.x, p.y); }
-    const land = () => {
+    const land = async () => {
       updateBricks(rawAfter);
       pulseRing();
       SND.brick();
+      await completeReachedHouses(rawAfter, true);
     };
     if (waitForArrival) {
       await sleep(420);
-      land();
+      await land();
       await sleep(170);
     } else {
-      setTimeout(land, Math.max(80, 350 * SPD()));
+      setTimeout(() => { land(); }, Math.max(80, 350 * SPD()));
     }
   }
   function nextBoardMutation(events, fromIndex) {
@@ -479,9 +507,10 @@
   // crossfade, then the storm rolls in for the bonus.
   async function freeIntro(ev) {
     fsFlash.innerHTML =
-      `<div class="fi-chars"><span class="fi-ico pot">${icoHTML("pot")}</span><span class="fi-ico wolf">${icoHTML("wolf")}</span></div>` +
-      `<h1>HAUSBAU<br>FREISPIELE</h1>` +
-      `<p>${ev.totalSpins} Freispiele &middot; sammle ${chip("brick")} auf den Walzen</p>`;
+      `<div class="fs-splash-card">` +
+      `<img class="fs-splash-img" src="${uiAsset("freeSpinsSplash") || "assets/ui/free-spins-splash.png"}" alt="">` +
+      `<div class="fs-splash-copy"><span>HOUSE BUILD</span><h1>FREE SPINS</h1><p>${ev.totalSpins} Free Spins &middot; Collect bricks on the reels</p></div>` +
+      `</div>`;
     fsFlash.className = "fs-flash zoom";
     SND.trigger();
     if (FX) { FX.shake(10, 0.6); const cx = innerWidth / 2, cy = innerHeight * 0.42; FX.confetti(cx, cy, 44); FX.coinShower(1.7, 18); }
@@ -508,8 +537,8 @@
   async function houseCine(ev) {
     const ov = $("house-cine"); if (!ov) return;
     $("hc-house").innerHTML = houseFullHTML(ev.level);
-    $("hc-title").textContent = ev.house;
-    $("hc-sub").textContent = "+" + ev.extraSpins + " FREISPIELE";
+    $("hc-title").textContent = houseDisplayName(ev.level, ev.house);
+    $("hc-sub").textContent = ev.extraSpins ? "+" + ev.extraSpins + " FREE SPINS" : "HOUSE COMPLETE";
     ov.classList.remove("hidden");
     const h = $("hc-house"); h.classList.remove("smash"); void h.offsetWidth; h.classList.add("smash");
     (SND.houseComplete || SND.upgrade).call(SND);
@@ -519,13 +548,14 @@
   }
   async function settle(ev) {
     const m = ev.amount;
-    if (STAKE.active) {
+    if (STAKE.active && !stakeLocalRound) {
       await STAKE.endRound({ win: m * bet(), state: gameState() });
       const synced = STAKE.getBalance();
       if (synced != null) balance = synced;
     } else {
       balance += m * bet();
     }
+    stakeLocalRound = false;
     balanceEl.textContent = fmt(balance); countWin(m);
     if (ev.wincapReached) await showBigWin(3, m, true);
     else if (m >= 150) await showBigWin(3, m);
@@ -549,12 +579,17 @@
     if (balance < cost) { toast("Nicht genug Guthaben"); autoLeft = 0; return; }
     busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
     let book = null;
+    stakeLocalRound = false;
     try {
       if (STAKE.active) {
         const stakeRound = await STAKE.play({ amount: cost, mode, bet: bet() });
         book = stakeRound && stakeRound.book;
-        const synced = STAKE.getBalance();
-        if (synced != null) balance = synced;
+        stakeLocalRound = !!(stakeRound && stakeRound.localFallback);
+        if (stakeLocalRound) balance -= cost;
+        else {
+          const synced = STAKE.getBalance();
+          if (synced != null) balance = synced;
+        }
       } else {
         balance -= cost;
       }
@@ -564,7 +599,7 @@
       await play(book, mode);
     } catch (err) {
       console.warn("[game] spin failed", err);
-      toast("Verbindung nicht bereit");
+      toast("Connection not ready");
       autoLeft = 0;
     }
     busy = false; spinBtn.disabled = false; spinBtn.classList.remove("spinning"); ctlEnable(true);
@@ -595,7 +630,14 @@
   function closePops() { $("menu-pop").classList.add("hidden"); $("buy-pop").classList.add("hidden"); }
   function togglePop(id) { const p = $(id), open = p.classList.contains("hidden"); closePops(); if (open) p.classList.remove("hidden"); }
   function openModal(id) { closePops(); $(id).classList.remove("hidden"); }
-  function refreshBet() { betEl.textContent = fmt(bet()); $("buy-a-cost").textContent = buyA + "x"; $("buy-b-cost").textContent = buyB + "x"; }
+  function refreshBet() {
+    betEl.textContent = fmt(bet());
+    $("buy-a-cost").textContent = buyA + "x bet";
+    $("buy-b-cost").textContent = buyB + "x bet";
+    const aPrice = $("buy-a-price"), bPrice = $("buy-b-price");
+    if (aPrice) aPrice.textContent = fmt(bet() * buyA);
+    if (bPrice) bPrice.textContent = fmt(bet() * buyB);
+  }
 
   function wire() {
     spinBtn.onclick = () => doSpin("base");
@@ -725,7 +767,7 @@
     STAKE.onReplay((book) => setTimeout(() => replayBook(book), 650));
     STAKE.onReset(() => {
       if (busy) return;
-      curGametype = "basegame"; housePanel.classList.add("hidden"); currentBricks = 0; setMult(1); syncHouseUI(0); countWin(0);
+      curGametype = "basegame"; housePanel.classList.add("hidden"); currentBricks = 0; completedHouseStages = new Set(); setMult(1); syncHouseUI(0); countWin(0);
     });
     window.PIGGY_GAME = {
       replay: replayBook,
@@ -768,6 +810,7 @@
     if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
     setStatic(randomBoard()); buildPaytable();
     const ld = $("loader"); ld.classList.add("gone"); setTimeout(() => (ld.style.display = "none"), 600);
+    if (STAKE.ready) STAKE.ready(gameState());
   }
 
   // ---- fallbacks ----------------------------------------------------------
@@ -788,6 +831,8 @@
       onReset() {},
       play: async () => null,
       endRound: async () => null,
+      ready() {},
+      isLocalFallback: () => false,
       recordState() {},
       format: (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     };

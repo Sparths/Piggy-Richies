@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Huff &amp; Puff: Piggy Richies</title>
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
   <link rel="stylesheet" href="button-ui.css?v=3" />
-  <link rel="stylesheet" href="house-ui.css?v=6" />
+  <link rel="stylesheet" href="house-ui.css?v=7" />
 </head>
 <body>
   <div class="bg" id="bg"></div>
@@ -92,8 +92,14 @@
 
   <div class="pop hidden" id="buy-pop">
     <div class="pop-title">Bonus kaufen</div>
-    <button data-buy="bonus"><span><span class="ui-ico" data-ico="house1"></span> Stroh-Haus</span><b id="buy-a-cost">70x</b></button>
-    <button data-buy="bonus_vip" class="vip"><span><span class="ui-ico" data-ico="house2"></span> Holz-Haus VIP</span><b id="buy-b-cost">234x</b></button>
+    <button data-buy="bonus" class="buy-choice">
+      <span class="buy-main"><span class="ui-ico" data-ico="house1"></span><span><b>Straw House Bonus</b><small>Cost: <span id="buy-a-cost">70x bet</span></small></span></span>
+      <strong id="buy-a-price">70.00</strong>
+    </button>
+    <button data-buy="bonus_vip" class="buy-choice vip">
+      <span class="buy-main"><span class="ui-ico" data-ico="house2"></span><span><b>Stone House VIP</b><small>Cost: <span id="buy-b-cost">234x bet</span></small></span></span>
+      <strong id="buy-b-price">234.00</strong>
+    </button>
     <div class="pop-info small">Startet direkt die Hausbau-Freispiele.</div>
   </div>
 
@@ -158,8 +164,8 @@
   <script src="assets/manifest.js?v=15"></script>
   <script src="game-config.js?v=12"></script>
   <script src="game-books.js?v=12"></script>
-  <script src="stake-adapter.js?v=1"></script>
-  <script src="game.js?v=13"></script>
-  <script src="house-ui.js?v=2"></script>
+  <script src="stake-adapter.js?v=2"></script>
+  <script src="game.js?v=14"></script>
+  <script src="house-ui.js?v=3"></script>
 </body>
 </html>

@@ -156,6 +156,20 @@
     });
   }
 
+  function completeStage(level) {
+    guard(() => {
+      const clamped = clamp(Number(level) || 1, 1, 3);
+      currentVisualTotal = Math.max(currentVisualTotal, clamped * PARTS);
+      applyProgress(progressFromTotal(currentVisualTotal));
+      const card = container && container.querySelectorAll(".house-upgrade-card")[clamped - 1];
+      if (card) {
+        card.classList.remove("is-complete-pop");
+        void card.offsetWidth;
+        card.classList.add("is-complete-pop");
+      }
+    });
+  }
+
   function init() {
     container = document.getElementById("house-upgrade-meter");
     if (!container || !window.PIGGY_ASSETS) return;
@@ -175,6 +189,7 @@
       getBrickTarget: (rawBricksAfter) => guard(() => targetForRaw(rawBricksAfter), null),
       pulseTarget,
       completeStrawIntro,
+      completeStage,
     };
   }
 
@@ -183,6 +198,7 @@
     getBrickTarget() { return null; },
     pulseTarget() {},
     completeStrawIntro() {},
+    completeStage() {},
   };
 
   onReady(init);

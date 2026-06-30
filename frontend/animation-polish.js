@@ -1,4 +1,4 @@
-/* Piggy Richies animation polish: asset-driven free-spins transition + lightweight win sparks. */
+/* Piggy Richies animation polish: simple Free Spins banner + lightweight win sparks. */
 (() => {
   "use strict";
 
@@ -23,40 +23,25 @@
     return (text.match(/<p>\s*(\d+)\s*Free Spins/i) || text.match(/(\d+)\s*Free Spins/i) || [null, ""])[1];
   }
 
-  function transitionMarkup(html) {
+  function simpleFreeSpinMarkup(html) {
     if (typeof html !== "string" || (!html.includes("fs-splash-img") && !html.includes("FREE SPINS"))) return html;
     const spins = freeSpinCountFrom(html);
-    const count = spins ? `${spins} FREISPIELE` : "FREISPIELE";
-    const src = {
-      dim: ui("transitionDimmingOverlay", "assets/ui/chat8.png"),
-      burst: ui("transitionBurstBg", "assets/ui/chat2.png"),
-      wind: ui("transitionWindOverlay", "assets/ui/chat3.png"),
-      pot: ui("transitionPotSeal", "assets/ui/chat4.png"),
-      brick: ui("transitionBrickBurst", "assets/ui/chat5.png"),
-      portal: ui("transitionPortalRing", "assets/ui/chat7.png"),
-      banner: ui("transitionFreeSpinsBanner", "assets/ui/chat1.png"),
-    };
-
+    const caption = spins ? `${spins} FREISPIELE` : "FREISPIELE";
+    const banner = ui("freeSpinsBanner", "assets/ui/chat1.webp");
     return [
-      '<div class="fsfx-shell" aria-hidden="true">',
-      `  <img class="fsfx-layer fsfx-dim" src="${esc(src.dim)}" alt="">`,
-      `  <img class="fsfx-layer fsfx-burst" src="${esc(src.burst)}" alt="">`,
-      `  <img class="fsfx-layer fsfx-wind" src="${esc(src.wind)}" alt="">`,
-      `  <img class="fsfx-layer fsfx-bricks" src="${esc(src.brick)}" alt="">`,
-      `  <img class="fsfx-layer fsfx-pot" src="${esc(src.pot)}" alt="">`,
-      `  <img class="fsfx-layer fsfx-portal" src="${esc(src.portal)}" alt="">`,
-      `  <img class="fsfx-layer fsfx-banner" src="${esc(src.banner)}" alt="FREE SPINS">`,
-      `  <div class="fsfx-count">${esc(count)} &middot; Ziegel sammeln</div>`,
+      '<div class="fs-simple-shell">',
+      `  <img class="fs-simple-banner" src="${esc(banner)}" alt="FREE SPINS">`,
+      `  <div class="fs-simple-caption">${esc(caption)}</div>`,
       '</div>',
     ].join("");
   }
 
-  function armFreeSpinTransition(node) {
-    if (!node || !node.querySelector || !node.querySelector(".fsfx-shell")) return;
+  function armSimpleFreeSpin(node) {
+    if (!node || !node.querySelector || !node.querySelector(".fs-simple-shell")) return;
     requestAnimationFrame(() => {
-      const shell = node.querySelector(".fsfx-shell");
+      const shell = node.querySelector(".fs-simple-shell");
       if (!shell) return;
-      node.classList.add("asset-free-transition");
+      node.classList.add("simple-free-transition");
       shell.classList.remove("is-running");
       void shell.offsetWidth;
       shell.classList.add("is-running");
@@ -71,9 +56,9 @@
     },
     set(value) {
       const isFreeFlash = this && this.id === "fs-flash";
-      if (isFreeFlash) value = transitionMarkup(value);
+      if (isFreeFlash) value = simpleFreeSpinMarkup(value);
       const result = nativeSet.call(this, value);
-      if (isFreeFlash) armFreeSpinTransition(this);
+      if (isFreeFlash) armSimpleFreeSpin(this);
       return result;
     },
   });

@@ -1,7 +1,7 @@
-/* Piggy host mascot: 8-frame WebP spritesheets, transparent background, positioned beside the reels. */
+/* Piggy host mascot: transparent SVG animation assets, positioned beside the reels. */
 :root{
-  --pig-host-idle:url("assets/ui/piggy-host-idle.webp");
-  --pig-host-win:url("assets/ui/piggy-host-win.webp");
+  --pig-host-idle:url("assets/ui/piggy-host-idle.svg");
+  --pig-host-win:url("assets/ui/piggy-host-win.svg");
 }
 .pig-host{
   position:absolute;
@@ -32,25 +32,15 @@
   display:block;
   background-image:var(--pig-host-idle);
   background-repeat:no-repeat;
-  background-size:800% 100%;
-  background-position:0 0;
-  animation:pigHostIdle 1.72s steps(8,end) infinite;
-  will-change:background-position,transform;
+  background-size:contain;
+  background-position:center bottom;
+  will-change:background-image,transform;
 }
 .pig-host.is-win{
   z-index:12;
 }
 .pig-host.is-win .pig-host-sprite{
   background-image:var(--pig-host-win);
-  animation:pigHostWin 1.08s steps(8,end) 1 both;
-}
-@keyframes pigHostIdle{
-  from{background-position:0 0;}
-  to{background-position:100% 0;}
-}
-@keyframes pigHostWin{
-  from{background-position:0 0;}
-  to{background-position:100% 0;}
 }
 @media (max-width:760px),(max-height:520px){
   .pig-host{display:none;}

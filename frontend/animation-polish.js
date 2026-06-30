@@ -18,20 +18,12 @@
     return assets[name] || fallback || "";
   }
 
-  function freeSpinCountFrom(html) {
-    const text = typeof html === "string" ? html : "";
-    return (text.match(/<p>\s*(\d+)\s*Free Spins/i) || text.match(/(\d+)\s*Free Spins/i) || [null, ""])[1];
-  }
-
   function simpleFreeSpinMarkup(html) {
     if (typeof html !== "string" || (!html.includes("fs-splash-img") && !html.includes("FREE SPINS"))) return html;
-    const spins = freeSpinCountFrom(html);
-    const caption = spins ? `${spins} FREISPIELE` : "FREISPIELE";
     const badge = ui("freeSpinsTriggerImage", ui("freeSpinsTriggerSprite", "assets/ui/freespinsasset.webp"));
     return [
       '<div class="fs-simple-shell fs-image-shell">',
       `  <img class="fs-trigger-image" src="${esc(badge)}" alt="FREE SPINS" decoding="async">`,
-      `  <div class="fs-simple-caption">${esc(caption)}</div>`,
       '</div>',
     ].join("");
   }

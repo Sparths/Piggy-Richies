@@ -9,9 +9,11 @@
 
   const sprite = host.querySelector(".pig-host-sprite");
   const idleAnim = "pigHostBreath 4.8s ease-in-out infinite, pigHostTinySway 6.2s ease-in-out infinite";
-  host.style.setProperty("left", "4.85%");
-  host.style.setProperty("top", "43.6%");
-  host.style.setProperty("width", "16.8%");
+  host.style.setProperty("left", "auto");
+  host.style.setProperty("right", "5.6%");
+  host.style.setProperty("top", "36.8%");
+  host.style.setProperty("width", "17.2%");
+  host.style.setProperty("transform", "scaleX(-1)");
   if (sprite) sprite.style.animation = idleAnim;
 
   let lastValue = 0;
@@ -29,6 +31,7 @@
 
   function restoreIdle() {
     host.classList.remove("is-win");
+    host.style.setProperty("transform", "scaleX(-1)");
     if (sprite) sprite.style.animation = idleAnim;
   }
 
@@ -37,6 +40,7 @@
     if (now - lastPlayAt < 760) return;
     lastPlayAt = now;
     host.classList.remove("is-win");
+    host.style.setProperty("transform", "scaleX(-1)");
     if (sprite) sprite.style.animation = "";
     void host.offsetWidth;
     host.classList.add("is-win");

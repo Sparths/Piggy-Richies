@@ -9,9 +9,9 @@
 
   const sprite = host.querySelector(".pig-host-sprite");
   const idleAnim = "pigHostBreath 4.8s ease-in-out infinite, pigHostTinySway 6.2s ease-in-out infinite";
-  host.style.setProperty("left", "5.2%");
-  host.style.setProperty("top", "44.8%");
-  host.style.setProperty("width", "15.2%");
+  host.style.setProperty("left", "4.85%");
+  host.style.setProperty("top", "43.6%");
+  host.style.setProperty("width", "16.8%");
   if (sprite) sprite.style.animation = idleAnim;
 
   let lastValue = 0;

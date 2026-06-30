@@ -1,4 +1,4 @@
-/* Piggy host animation controller. Keeps idle running and plays a short win reaction when the win meter increases. */
+/* Piggy host animation controller. Keeps the host grounded and only plays a short win reaction. */
 (() => {
   "use strict";
 
@@ -6,6 +6,12 @@
   const winEl = document.getElementById("win-amount");
   const spinBtn = document.getElementById("spin");
   if (!host || !winEl) return;
+
+  const sprite = host.querySelector(".pig-host-sprite");
+  host.style.setProperty("left", "5.4%");
+  host.style.setProperty("top", "45.2%");
+  host.style.setProperty("width", "14.2%");
+  if (sprite) sprite.style.animation = "none";
 
   let lastValue = 0;
   let lastPlayAt = 0;
@@ -28,7 +34,10 @@
     void host.offsetWidth;
     host.classList.add("is-win");
     window.clearTimeout(resetTimer);
-    resetTimer = window.setTimeout(() => host.classList.remove("is-win"), 1180);
+    resetTimer = window.setTimeout(() => {
+      host.classList.remove("is-win");
+      if (sprite) sprite.style.animation = "none";
+    }, 1180);
   }
 
   function checkWinMeter() {
@@ -36,6 +45,7 @@
     if (value <= 0.001) {
       lastValue = 0;
       host.classList.remove("is-win");
+      if (sprite) sprite.style.animation = "none";
       return;
     }
     if (value > lastValue + 0.001) playWin();
@@ -49,6 +59,7 @@
     spinBtn.addEventListener("click", () => {
       lastValue = 0;
       host.classList.remove("is-win");
+      if (sprite) sprite.style.animation = "none";
     }, { passive: true });
   }
 

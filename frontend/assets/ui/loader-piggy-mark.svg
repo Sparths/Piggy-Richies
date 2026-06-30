@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Piggy Richies loading mark">
+  <defs>
+    <radialGradient id="coin" cx="35%" cy="25%" r="72%"><stop offset="0" stop-color="#fff7b8"/><stop offset="0.42" stop-color="#ffd957"/><stop offset="0.76" stop-color="#d98724"/><stop offset="1" stop-color="#7a3e0c"/></radialGradient>
+    <linearGradient id="pig" x1="45" y1="58" x2="198" y2="205" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffb8bf"/><stop offset="0.52" stop-color="#ff748d"/><stop offset="1" stop-color="#b93556"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#2a1200" flood-opacity="0.42"/></filter>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="128" cy="128" r="112" fill="url(#coin)" filter="url(#shadow)"/>
+  <circle cx="128" cy="128" r="96" fill="none" stroke="#fff39a" stroke-width="7" opacity="0.88"/>
+  <circle cx="128" cy="128" r="82" fill="#2b7a29" opacity="0.16"/>
+  <path d="M47 88c29-24 60-33 94-24 29 8 53 29 64 56" fill="none" stroke="#fff4a2" stroke-width="10" stroke-linecap="round" opacity="0.52"/>
+  <g filter="url(#shadow)">
+    <path d="M70 137c0-34 28-58 66-58 35 0 62 22 66 54 13 5 20 14 20 26 0 16-13 29-31 29H91c-18 0-32-13-32-29 0-10 4-17 11-22Z" fill="url(#pig)"/>
+    <path d="M85 92 68 62c-4-7 2-15 10-12l31 13c-10 6-18 16-24 29Z" fill="#ff8fa2"/>
+    <path d="M181 91 203 62c5-7 16-2 14 7l-8 37c-8-8-17-12-28-15Z" fill="#ff8196"/>
+    <ellipse cx="138" cy="143" rx="38" ry="29" fill="#ff9cac"/>
+    <ellipse cx="124" cy="143" rx="7" ry="10" fill="#8c2848" opacity="0.82"/><ellipse cx="153" cy="143" rx="7" ry="10" fill="#8c2848" opacity="0.82"/>
+    <circle cx="105" cy="119" r="8" fill="#32140e"/><circle cx="175" cy="119" r="8" fill="#32140e"/><circle cx="108" cy="116" r="3" fill="#fff8dc"/><circle cx="178" cy="116" r="3" fill="#fff8dc"/>
+  </g>
+  <g filter="url(#glow)" opacity="0.92"><path d="M55 191c27 19 54 25 82 18" fill="none" stroke="#fff3a4" stroke-width="7" stroke-linecap="round"/><path d="M42 174c17 10 31 14 44 12" fill="none" stroke="#fff3a4" stroke-width="5" stroke-linecap="round" opacity="0.78"/><path d="M164 213c17-4 31-12 43-25" fill="none" stroke="#fff3a4" stroke-width="5" stroke-linecap="round" opacity="0.72"/></g>
+  <g transform="translate(175 177) rotate(-8)"><rect x="0" y="0" width="28" height="20" rx="3" fill="#d8552c" stroke="#ffd692" stroke-width="2"/><path d="M2 10h24M14 1v18" stroke="#8c2f1d" stroke-width="2" opacity="0.55"/></g>
+</svg>

@@ -1,4 +1,4 @@
-/* Simple Free Spins intro: only show the banner briefly, then leave. */
+/* Free Spins trigger: lightweight 8-frame sprite animation. */
 .fs-flash.simple-free-transition{
   z-index:330;
   display:flex;
@@ -17,17 +17,31 @@
   place-items:center;
   pointer-events:none;
 }
-.fs-simple-banner{
-  width:min(78vw,880px);
-  height:auto;
+.fs-trigger-stage{
+  position:relative;
+  width:min(76vw,760px);
+  aspect-ratio:1/1;
+  overflow:hidden;
   opacity:0;
-  transform:translateY(26px) scale(.82);
+  transform:translateY(24px) scale(.78);
   filter:drop-shadow(0 24px 36px rgba(0,0,0,.62)) drop-shadow(0 0 24px rgba(255,220,80,.34));
   will-change:transform,opacity,filter;
 }
+.fs-trigger-strip{
+  position:absolute;
+  left:0;
+  top:0;
+  height:100%;
+  width:800%;
+  display:block;
+  background-repeat:no-repeat;
+  background-size:100% 100%;
+  transform:translateX(0);
+  will-change:transform;
+}
 .fs-simple-caption{
   position:absolute;
-  top:calc(50% + min(18vw,210px));
+  top:calc(50% + min(18vw,205px));
   left:50%;
   transform:translate(-50%,12px) scale(.94);
   padding:7px 16px;
@@ -44,13 +58,19 @@
   text-shadow:0 2px 0 #5b2b08,0 6px 12px rgba(0,0,0,.55);
   box-shadow:0 12px 28px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,210,.13);
 }
-.fs-simple-shell.is-running .fs-simple-banner{animation:fsBannerOnly 1.35s cubic-bezier(.18,1.18,.32,1) both;}
-.fs-simple-shell.is-running .fs-simple-caption{animation:fsCaptionOnly 1.18s cubic-bezier(.18,1.18,.32,1) .12s both;}
-@keyframes fsBannerOnly{
-  0%{opacity:0;transform:translateY(28px) scale(.78);filter:blur(2px) brightness(1.12);}
-  22%{opacity:1;transform:translateY(-4px) scale(1.04);filter:blur(0) brightness(1.04);}
-  62%{opacity:1;transform:translateY(0) scale(1);}
-  100%{opacity:0;transform:translateY(-20px) scale(.96);filter:blur(3px) brightness(1.18);}
+.fs-simple-shell.is-running .fs-trigger-stage{animation:fsSpriteStage 1.55s cubic-bezier(.18,1.18,.32,1) both;}
+.fs-simple-shell.is-running .fs-trigger-strip{animation:fsTriggerFrames .92s steps(7,end) both;}
+.fs-simple-shell.is-running .fs-simple-caption{animation:fsCaptionOnly 1.18s cubic-bezier(.18,1.18,.32,1) .16s both;}
+@keyframes fsTriggerFrames{
+  from{transform:translateX(0);}
+  to{transform:translateX(-87.5%);}
+}
+@keyframes fsSpriteStage{
+  0%{opacity:0;transform:translateY(28px) scale(.74);filter:blur(2px) brightness(1.12);}
+  18%{opacity:1;transform:translateY(-3px) scale(1.02);filter:blur(0) brightness(1.05);}
+  56%{opacity:1;transform:translateY(0) scale(1);}
+  78%{opacity:1;transform:translateY(0) scale(.98);}
+  100%{opacity:0;transform:translateY(-18px) scale(.94);filter:blur(3px) brightness(1.16);}
 }
 @keyframes fsCaptionOnly{
   0%{opacity:0;transform:translate(-50%,12px) scale(.94);}
@@ -58,6 +78,6 @@
   100%{opacity:0;transform:translate(-50%,-8px) scale(.98);}
 }
 @media (max-width:600px){
-  .fs-simple-banner{width:94vw;}
+  .fs-trigger-stage{width:94vw;}
   .fs-simple-caption{top:calc(50% + 35vw);font-size:11px;padding:6px 12px;}
 }

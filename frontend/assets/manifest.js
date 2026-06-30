@@ -61,6 +61,7 @@ window.PIGGY_ASSETS = {
     loaderMark: "assets/ui/loader-piggy-mark.svg",
     freeSpinBadge: "assets/ui/free-spin-badge.svg",
     freeSpinsBanner: "assets/ui/chat1.webp",
+    freeSpinsTriggerImage: "assets/ui/freespinsasset.webp",
     freeSpinsTriggerSprite: "assets/ui/freespinsasset.webp",
     fantasyFontSheet: "assets/ui/fontsheetasset.webp",
     pigHostIdle: "assets/ui/piggy-host-idle.webp",

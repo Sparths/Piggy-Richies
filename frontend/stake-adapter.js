@@ -116,7 +116,7 @@
     const res = await fetch(endpoint(path), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      credentials: "same-origin",
       body: JSON.stringify(payload || {}),
     });
     const data = await res.json().catch(() => null);

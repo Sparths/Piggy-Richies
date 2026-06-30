@@ -1,31 +1,47 @@
-/* Defensive Stake/RGS bridge.
- * Standalone play stays local. When Stake Engine injects query params or
- * postMessage balance/replay events, this adapter keeps the UI in sync without
- * blocking the loader if an endpoint is unavailable.
+/* Stake Engine RGS bridge.
+ * Production mode follows the public StakeEngine RGS/client contract:
+ * - launch URL provides sessionID + rgs_url
+ * - authenticate through /wallet/authenticate
+ * - play through /wallet/play with base bet amount + mode
+ * - end through /wallet/end-round with sessionID only
+ *
+ * Standalone/local preview is still possible, but when a real Stake session is
+ * active the adapter never falls back to client demo math.
  */
 (() => {
   "use strict";
 
   const params = new URLSearchParams(window.location.search || "");
   const sessionID = params.get("sessionID") || params.get("sessionId") || params.get("session_id") || "";
-  const rgsUrl = params.get("rgs_url") || params.get("rgsUrl") || params.get("rgs") || "";
-  const lang = params.get("language") || params.get("lang") || navigator.language || "de-DE";
-  const currency = params.get("currency") || params.get("token") || "";
-  const embedded = !!(window.parent && window.parent !== window);
+  const rawRgsUrl = params.get("rgs_url") || params.get("rgsUrl") || params.get("rgs") || "";
+  const lang = params.get("lang") || params.get("language") || navigator.language || "de";
+  const device = params.get("device") || "desktop";
+  let currency = params.get("currency") || params.get("token") || "";
   const hasInjectedStake = !!(window.StakeEngine || window.stakeEngine || window.Stake || window.stake);
-  const active = !!(sessionID || rgsUrl || embedded || hasInjectedStake);
+  const rgsUrl = normalizeRgsUrl(rawRgsUrl);
+  const active = !!((sessionID && rgsUrl) || hasInjectedStake);
   const SCALE = 1000000;
 
   let balance = numberParam("balance", null);
   let muted = false;
   let ready = null;
   let connectionReady = !active;
-  let localFallbackRound = false;
   let currentRound = null;
   let replayBook = parseReplayParam();
+  let authConfig = null;
+  let jurisdiction = null;
+  let roundActive = false;
   const balanceListeners = new Set();
   const replayListeners = new Set();
   const resetListeners = new Set();
+  const configListeners = new Set();
+
+  function normalizeRgsUrl(value) {
+    const clean = String(value || "").trim().replace(/\/+$/, "");
+    if (!clean) return "";
+    if (/^https?:\/\//i.test(clean)) return clean;
+    return `https://${clean}`;
+  }
 
   function numberParam(name, fallback) {
     const v = params.get(name);
@@ -48,11 +64,17 @@
   }
 
   function endpoint(path) {
-    return rgsUrl.replace(/\/+$/, "") + path;
+    return rgsUrl + path;
   }
 
-  function toUnits(v) {
-    const n = Number(v);
+  function parseBalanceValue(value) {
+    if (value == null) return null;
+    if (typeof value === "object") {
+      if (value.currency) currency = value.currency;
+      if (value.amount != null) return Number(value.amount) / SCALE;
+      return null;
+    }
+    const n = Number(value);
     if (!Number.isFinite(n)) return null;
     return Math.abs(n) > 10000 ? n / SCALE : n;
   }
@@ -62,7 +84,7 @@
   }
 
   function setBalance(v, source = "stake") {
-    const n = toUnits(v);
+    const n = parseBalanceValue(v);
     if (n == null) return;
     balance = n;
     balanceListeners.forEach((fn) => safe(() => fn(balance, source)));
@@ -74,9 +96,8 @@
     if (round.book && Array.isArray(round.book.events)) return round.book;
     if (round.result && Array.isArray(round.result.events)) return round.result;
     if (round.game && Array.isArray(round.game.events)) return round.game;
-    if (typeof round === "string") {
-      return safe(() => JSON.parse(round), null);
-    }
+    if (round.round && Array.isArray(round.round.events)) return round.round;
+    if (typeof round === "string") return safe(() => normalizeBook(JSON.parse(round)), null);
     return null;
   }
 
@@ -86,60 +107,54 @@
     return safe(() => normalizeBook(JSON.parse(decodeURIComponent(raw))), null);
   }
 
+  function stakeError(path, status, data) {
+    const detail = typeof data === "string" ? data : (data && (data.code || data.error || data.message || JSON.stringify(data))) || "unknown";
+    return new Error(`${path} ${status}: ${detail}`);
+  }
+
   async function post(path, payload) {
     const res = await fetch(endpoint(path), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(payload || {}),
     });
-    if (!res.ok) throw new Error(path + " " + res.status);
-    return res.json();
-  }
-
-  async function postAny(paths, payload) {
-    let lastError = null;
-    for (const path of paths) {
-      try {
-        return await post(path, payload);
-      } catch (err) {
-        lastError = err;
-      }
-    }
-    throw lastError || new Error("Stake endpoint unavailable");
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw stakeError(path, res.status, data);
+    return data;
   }
 
   async function injectedCall(method, payload) {
     const candidates = [window.StakeEngine, window.stakeEngine, window.Stake, window.stake].filter(Boolean);
+    const names = method === "authenticate" ? ["Authenticate", "authenticate"] : method === "play" ? ["Play", "play"] : method === "endRound" ? ["EndRound", "endRound"] : [method];
     for (const api of candidates) {
-      const fn = api && (api[method] || api[`_${method}`]);
-      if (typeof fn !== "function") continue;
-      try {
-        return await fn.call(api, payload);
-      } catch (err) {
-        log(method + " hook failed", err);
+      for (const name of names) {
+        const fn = api && (api[name] || api[`_${name}`]);
+        if (typeof fn !== "function") continue;
+        try {
+          return await fn.call(api, payload);
+        } catch (err) {
+          log(`${name} hook failed`, err);
+        }
       }
     }
     return null;
   }
 
-  function bootStake() {
-    if (!active) return Promise.resolve(null);
-    if (ready) return ready;
-    ready = injectedCall("authenticate", { sessionID, currency })
-      .then((hookData) => hookData || (rgsUrl ? postAny(["/wallet/authenticate", "/authenticate", "/session"], { sessionID, currency }) : null))
-      .then((data) => {
-        connectionReady = !!data || hasInjectedStake;
-        if (data && data.balance != null) setBalance(data.balance, "authenticate");
-        replayBook = normalizeBook(data && (data.replay || data.round || data.lastRound || data.activeRound)) || replayBook;
-        return data;
-      })
-      .catch((err) => {
-        connectionReady = false;
-        log("authenticate failed, continuing standalone-safe", err);
-        return null;
-      });
-    return ready;
+  function readConfig(data) {
+    const cfg = data && (data.config || data.authenticateConfig || data.authConfig);
+    if (cfg) {
+      authConfig = {
+        minBet: cfg.minBet,
+        maxBet: cfg.maxBet,
+        stepBet: cfg.stepBet,
+        defaultBetLevel: cfg.defaultBetLevel,
+        betLevels: Array.isArray(cfg.betLevels) ? cfg.betLevels.slice() : [],
+        jurisdiction: cfg.jurisdiction || cfg.jurisdictionFlags || null,
+      };
+      jurisdiction = authConfig.jurisdiction || jurisdiction;
+      configListeners.forEach((fn) => safe(() => fn(authConfig)));
+    }
   }
 
   function emitParent(type, payload) {
@@ -151,15 +166,45 @@
   }
 
   function emitReady(state) {
-    const payload = { ready: true, active, connectionReady, sessionID: !!sessionID, rgs: !!rgsUrl, currency, state: state || null };
+    const payload = { ready: true, active, connectionReady, sessionID: !!sessionID, rgs: !!rgsUrl, currency, lang, device, config: authConfig, jurisdiction, state: state || null };
     ["piggy:ready", "game:ready", "stake:ready", "ready"].forEach((type) => emitParent(type, payload));
     safe(() => window.dispatchEvent(new CustomEvent("piggy:ready", { detail: payload })));
   }
 
-  function localFallback(reason) {
-    localFallbackRound = true;
-    emitParent("piggy:local-fallback", { reason, connectionReady, active });
-    return { book: null, round: null, raw: null, localFallback: true, reason };
+  async function bootStake() {
+    if (!active) return null;
+    if (ready) return ready;
+    ready = (async () => {
+      const data = await injectedCall("authenticate", { sessionID, language: lang, lang, device }) || (rgsUrl ? await post("/wallet/authenticate", { sessionID, language: lang }) : null);
+      connectionReady = !!data || hasInjectedStake;
+      if (data) {
+        readConfig(data);
+        if (data.balance != null) setBalance(data.balance, "authenticate");
+        replayBook = normalizeBook(data.round || data.replay || data.lastRound || data.activeRound) || replayBook;
+        roundActive = !!(data.round && data.round.active);
+      }
+      return data;
+    })().catch((err) => {
+      connectionReady = false;
+      log("authenticate failed", err);
+      return null;
+    });
+    return ready;
+  }
+
+  function requireStakeConnection() {
+    if (!active) return;
+    if (!connectionReady) throw new Error("Stake RGS connection is not ready");
+    if (!hasInjectedStake && (!sessionID || !rgsUrl)) throw new Error("Missing Stake sessionID or rgs_url");
+  }
+
+  function assertValidStakeBet(stakeAmount) {
+    if (!authConfig) return;
+    const { minBet, maxBet, stepBet, betLevels } = authConfig;
+    if (Number.isFinite(Number(minBet)) && stakeAmount < Number(minBet)) throw new Error("Bet below Stake minBet");
+    if (Number.isFinite(Number(maxBet)) && stakeAmount > Number(maxBet)) throw new Error("Bet above Stake maxBet");
+    if (Number.isFinite(Number(stepBet)) && Number(stepBet) > 0 && stakeAmount % Number(stepBet) !== 0) throw new Error("Bet does not match Stake stepBet");
+    if (Array.isArray(betLevels) && betLevels.length && !betLevels.map(Number).includes(stakeAmount)) throw new Error("Bet is not in Stake betLevels");
   }
 
   function messageType(data) {
@@ -170,21 +215,15 @@
     const data = typeof ev.data === "string" ? safe(() => JSON.parse(ev.data), { type: ev.data }) : ev.data;
     const type = messageType(data);
     const payload = data && (data.payload || data.data || data);
-    if (type.includes("balance") || payload && payload.balance != null) {
-      setBalance(payload.balance, "message");
-    }
+    if (type.includes("balance") || payload && payload.balance != null) setBalance(payload.balance, "message");
     if (type.includes("replay") || type.includes("restore")) {
       const book = normalizeBook(payload && (payload.book || payload.round || payload));
       if (book) replayListeners.forEach((fn) => safe(() => fn(book)));
     }
-    if (type.includes("reset") || type.includes("newsession")) {
-      resetListeners.forEach((fn) => safe(fn));
-    }
+    if (type.includes("reset") || type.includes("newsession")) resetListeners.forEach((fn) => safe(fn));
     if (type.includes("mute") || type.includes("sound")) {
       muted = payload && (payload.muted === true || payload.sound === false);
-      if (window.PIGGY_AUDIO && typeof window.PIGGY_AUDIO.setMuted === "function") {
-        window.PIGGY_AUDIO.setMuted(muted);
-      }
+      if (window.PIGGY_AUDIO && typeof window.PIGGY_AUDIO.setMuted === "function") window.PIGGY_AUDIO.setMuted(muted);
     }
   }));
 
@@ -192,72 +231,63 @@
     active,
     currency,
     language: lang,
+    device,
     init(defaultBalance) {
       if (balance == null) balance = Number(defaultBalance) || 0;
       bootStake().then(() => emitReady());
       return balance;
     },
-    getBalance() {
-      return balance;
-    },
+    getBalance() { return balance; },
+    getConfig() { return authConfig; },
+    getBetLevels() { return authConfig && Array.isArray(authConfig.betLevels) ? authConfig.betLevels.map((v) => Number(v) / SCALE) : null; },
     setBalance,
-    onBalance(fn) {
-      if (typeof fn === "function") balanceListeners.add(fn);
+    onBalance(fn) { if (typeof fn === "function") balanceListeners.add(fn); },
+    onConfig(fn) {
+      if (typeof fn === "function") configListeners.add(fn);
+      if (authConfig && typeof fn === "function") setTimeout(() => safe(() => fn(authConfig)), 0);
     },
     onReplay(fn) {
       if (typeof fn === "function") replayListeners.add(fn);
       if (replayBook && typeof fn === "function") setTimeout(() => safe(() => fn(replayBook)), 0);
     },
-    onReset(fn) {
-      if (typeof fn === "function") resetListeners.add(fn);
-    },
+    onReset(fn) { if (typeof fn === "function") resetListeners.add(fn); },
     format(value) {
       const opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
       return safe(() => new Intl.NumberFormat(lang || "de-DE", opts).format(Number(value) || 0), (Number(value) || 0).toFixed(2));
     },
     async play({ amount, mode, bet }) {
       if (!active) return null;
-      localFallbackRound = false;
       await bootStake();
-      const payload = { sessionID, amount: toStakeAmount(amount), mode, bet: toStakeAmount(bet || 0), currency };
-      const hooked = await injectedCall("play", payload);
-      const data = hooked || (rgsUrl ? await postAny(["/play", "/wallet/play"], payload).catch((err) => {
-        connectionReady = false;
-        log("play failed, using visual fallback", err);
-        return null;
-      }) : null);
-      if (!data) return localFallback("play-unavailable");
+      requireStakeConnection();
+      if (roundActive) throw new Error("A Stake round is already active; end it before starting a new one");
+      const baseBet = Number(bet || amount || 0);
+      const stakeAmount = toStakeAmount(baseBet);
+      assertValidStakeBet(stakeAmount);
+      const payload = { sessionID, mode, amount: stakeAmount };
+      const data = await injectedCall("play", payload) || await post("/wallet/play", payload);
       connectionReady = true;
       if (data && data.balance != null) setBalance(data.balance, "play");
       currentRound = data && (data.round || data.game || data.result || data);
-      emitParent("piggy:round-start", { mode, amount, round: currentRound });
-      return { book: normalizeBook(currentRound), round: currentRound, raw: data };
+      const book = normalizeBook(currentRound);
+      if (!book) throw new Error("Stake play response did not include a playable event book");
+      roundActive = !!(currentRound && currentRound.active);
+      emitParent("piggy:round-start", { mode, amount: stakeAmount, round: currentRound });
+      return { book, round: currentRound, raw: data };
     },
-    async endRound({ win, state }) {
+    async endRound() {
       if (!active) return null;
-      if (localFallbackRound) {
-        emitParent("piggy:round-end", { win, state, round: currentRound, localFallback: true });
-        localFallbackRound = false;
-        currentRound = null;
-        return null;
-      }
-      const payload = { sessionID, amount: toStakeAmount(win || 0), win: toStakeAmount(win || 0), round: currentRound, state };
-      const hooked = await injectedCall("endRound", payload);
-      const data = hooked || (rgsUrl ? await postAny(["/end-round", "/wallet/end-round"], payload).catch((err) => {
-        log("end-round failed", err);
-        return null;
-      }) : null);
+      await bootStake();
+      requireStakeConnection();
+      const payload = { sessionID };
+      const data = await injectedCall("endRound", payload) || await post("/wallet/end-round", payload);
       if (data && data.balance != null) setBalance(data.balance, "end-round");
-      emitParent("piggy:round-end", { win, state, round: currentRound });
+      emitParent("piggy:round-end", { round: currentRound });
       currentRound = null;
+      roundActive = false;
       return data;
     },
     ready: emitReady,
-    isLocalFallback() {
-      return localFallbackRound;
-    },
-    recordState(state) {
-      emitParent("piggy:state", state);
-    },
+    isLocalFallback() { return false; },
+    recordState(state) { emitParent("piggy:state", state); },
   };
 })();

@@ -83,6 +83,13 @@
     return Math.max(0, Math.round((Number(v) || 0) * SCALE));
   }
 
+  function normalizeMode(mode) {
+    const raw = String(mode || "base");
+    const key = raw.toLowerCase().replace(/[\s-]+/g, "_");
+    const mapped = { base: "BASE", basegame: "BASE", bonus: "BONUS", bonus_vip: "BONUS_VIP", bonusvip: "BONUS_VIP" }[key];
+    return mapped || raw.toUpperCase().replace(/[\s-]+/g, "_");
+  }
+
   function setBalance(v, source = "stake") {
     const n = parseBalanceValue(v);
     if (n == null) return;
@@ -93,10 +100,19 @@
   function normalizeBook(round) {
     if (!round) return null;
     if (Array.isArray(round.events)) return round;
+    if (round.state) {
+      const stateBook = normalizeBook(round.state);
+      if (stateBook) return stateBook;
+    }
+    if (round.event) {
+      const eventBook = normalizeBook(round.event);
+      if (eventBook) return eventBook;
+    }
     if (round.book && Array.isArray(round.book.events)) return round.book;
     if (round.result && Array.isArray(round.result.events)) return round.result;
     if (round.game && Array.isArray(round.game.events)) return round.game;
     if (round.round && Array.isArray(round.round.events)) return round.round;
+    if (round.data && Array.isArray(round.data.events)) return round.data;
     if (typeof round === "string") return safe(() => normalizeBook(JSON.parse(round)), null);
     return null;
   }
@@ -259,19 +275,31 @@
       if (!active) return null;
       await bootStake();
       requireStakeConnection();
-      if (roundActive) throw new Error("A Stake round is already active; end it before starting a new one");
+      if (roundActive) await this.endRound();
       const baseBet = Number(bet || amount || 0);
       const stakeAmount = toStakeAmount(baseBet);
       assertValidStakeBet(stakeAmount);
-      const payload = { sessionID, mode, amount: stakeAmount };
-      const data = await injectedCall("play", payload) || await post("/wallet/play", payload);
+      const stakeMode = normalizeMode(mode);
+      let payload = { sessionID, mode: stakeMode, amount: stakeAmount };
+      let data;
+      try {
+        data = await injectedCall("play", payload) || await post("/wallet/play", payload);
+      } catch (err) {
+        const rawMode = String(mode || "base");
+        if (!/ERR_VAL|400/.test(String(err && (err.message || err))) || rawMode === stakeMode) throw err;
+        payload = { sessionID, mode: rawMode, amount: stakeAmount };
+        data = await injectedCall("play", payload) || await post("/wallet/play", payload);
+      }
       connectionReady = true;
       if (data && data.balance != null) setBalance(data.balance, "play");
       currentRound = data && (data.round || data.game || data.result || data);
       const book = normalizeBook(currentRound);
-      if (!book) throw new Error("Stake play response did not include a playable event book");
+      if (!book) {
+        log("play response without event book", data);
+        throw new Error("Stake play response did not include a playable event book");
+      }
       roundActive = !!(currentRound && currentRound.active);
-      emitParent("piggy:round-start", { mode, amount: stakeAmount, round: currentRound });
+      emitParent("piggy:round-start", { mode: payload.mode, amount: stakeAmount, round: currentRound });
       return { book, round: currentRound, raw: data };
     },
     async endRound() {

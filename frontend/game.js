@@ -65,8 +65,8 @@
   const DROP_DUR = 320, DROP_EASE = "cubic-bezier(.3,1.42,.5,1)";   // overshoot = bounce on impact
   // full reel-spin slide (reveal): a rigid per-column strip with the incoming
   // symbols stacked directly above the outgoing ones -> one motion, no blink.
-  // SPIN_EASE overshoots slightly so each reel "bounces" as it settles.
-  const SPIN_DUR = 360, SPIN_STAG = 88, SPIN_EASE = "cubic-bezier(.22,1.34,.42,1)";
+  // SPIN_EASE is quick but non-overshooting so Stake scaling does not add a rubbery snap.
+  const SPIN_DUR = 430, SPIN_STAG = 96, SPIN_EASE = "cubic-bezier(.18,.82,.28,1)";
   const ANTICIP_DUR = 560, ANTICIP_GAP = 300; // "2 pots showing -> chase" crawl
   const rowPitch = () => { const a = cellAt(0, 0), b = cellAt(0, 1); return a && b ? b.getBoundingClientRect().top - a.getBoundingClientRect().top : (a ? a.offsetHeight : 60); };
 
@@ -549,9 +549,12 @@
   async function settle(ev) {
     const m = ev.amount;
     if (STAKE.active && !stakeLocalRound) {
-      await STAKE.endRound({ win: m * bet(), state: gameState() });
+      const winAmount = m * bet();
+      const shouldEndRound = winAmount > 0;
+      const settled = shouldEndRound ? await STAKE.endRound({ win: winAmount, state: gameState() }) : null;
       const synced = STAKE.getBalance();
       if (synced != null) balance = synced;
+      else if (settled && settled.localFallback) balance += winAmount;
     } else {
       balance += m * bet();
     }

@@ -146,6 +146,18 @@
     return data;
   }
 
+  async function postFirst(paths, payload) {
+    let lastError = null;
+    for (const path of paths) {
+      try {
+        return await post(path, payload);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError || new Error("Stake endpoint unavailable");
+  }
+
   async function injectedCall(method, payload) {
     const candidates = [window.StakeEngine, window.stakeEngine, window.Stake, window.stake].filter(Boolean);
     const names = method === "authenticate" ? ["Authenticate", "authenticate"] : method === "play" ? ["Play", "play"] : method === "endRound" ? ["EndRound", "endRound"] : [method];
@@ -281,7 +293,7 @@
       if (!active) return null;
       await bootStake();
       requireStakeConnection();
-      if (roundActive) await this.endRound();
+      if (roundActive) await this.endRound({ quiet: true, reason: "pre-play-cleanup" });
       const baseBet = Number(bet || amount || 0);
       const stakeAmount = toStakeAmount(baseBet);
       assertValidStakeBet(stakeAmount);
@@ -308,12 +320,21 @@
       emitParent("piggy:round-start", { mode: payload.mode, amount: stakeAmount, round: currentRound });
       return { book, round: currentRound, raw: data };
     },
-    async endRound() {
+    async endRound(context = {}) {
       if (!active) return null;
       await bootStake();
       requireStakeConnection();
       const payload = { sessionID };
-      const data = await injectedCall("endRound", payload) || await post("/wallet/end-round", payload);
+      let data = null;
+      try {
+        data = await injectedCall("endRound", payload) || await postFirst(["/wallet/end-round", "/end-round"], payload);
+      } catch (err) {
+        if (!context.quiet) log("end-round failed, finishing visual round locally", err);
+        emitParent("piggy:round-end", { round: currentRound, localFallback: true, reason: context.reason || "end-round-failed" });
+        currentRound = null;
+        roundActive = false;
+        return { localFallback: true, error: String(err && (err.message || err)) };
+      }
       if (data && data.balance != null) setBalance(data.balance, "end-round");
       emitParent("piggy:round-end", { round: currentRound });
       currentRound = null;

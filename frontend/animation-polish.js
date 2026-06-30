@@ -1,4 +1,4 @@
-/* Piggy Richies animation polish: simple Free Spins banner + lightweight win sparks. */
+/* Piggy Richies animation polish: Free Spins trigger sprite + lightweight win sparks. */
 (() => {
   "use strict";
 
@@ -27,10 +27,12 @@
     if (typeof html !== "string" || (!html.includes("fs-splash-img") && !html.includes("FREE SPINS"))) return html;
     const spins = freeSpinCountFrom(html);
     const caption = spins ? `${spins} FREISPIELE` : "FREISPIELE";
-    const banner = ui("freeSpinsBanner", "assets/ui/chat1.webp");
+    const sprite = ui("freeSpinsTriggerSprite", "assets/ui/freespins-trigger-sprite.svg");
     return [
-      '<div class="fs-simple-shell">',
-      `  <img class="fs-simple-banner" src="${esc(banner)}" alt="FREE SPINS">`,
+      '<div class="fs-simple-shell fs-sprite-shell">',
+      '  <div class="fs-trigger-stage" role="img" aria-label="FREE SPINS">',
+      `    <i class="fs-trigger-strip" style="background-image:url(&quot;${esc(sprite)}&quot;)"></i>`,
+      '  </div>',
       `  <div class="fs-simple-caption">${esc(caption)}</div>`,
       '</div>',
     ].join("");

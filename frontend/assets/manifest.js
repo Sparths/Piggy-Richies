@@ -58,6 +58,8 @@ window.PIGGY_ASSETS = {
     iconButton: "assets/ui/icon-button.webp",
     stepper: "assets/ui/stepper.webp",
     phasePill: "assets/ui/phase-pill.webp",
+    loaderMark: "assets/ui/loader-piggy-mark.svg",
+    freeSpinBadge: "assets/ui/free-spin-badge.svg",
     house1: "assets/ui/house1.webp",
     house2: "assets/ui/house2.webp",
     house3: "assets/ui/house3.webp",

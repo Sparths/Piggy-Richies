@@ -1,4 +1,4 @@
-/* Free Spins trigger: lightweight 8-frame sprite animation. */
+/* Free Spins trigger: uploaded 8-frame 4x2 sprite animation. */
 .fs-flash.simple-free-transition{
   z-index:330;
   display:flex;
@@ -29,41 +29,42 @@
 }
 .fs-trigger-strip{
   position:absolute;
-  left:0;
-  top:0;
-  height:100%;
-  width:800%;
+  inset:0;
   display:block;
   background-repeat:no-repeat;
-  background-size:100% 100%;
-  transform:translateX(0);
-  will-change:transform;
+  background-size:400% 200%;
+  background-position:0% 0%;
+  will-change:background-position;
 }
 .fs-simple-caption{
   position:absolute;
   top:calc(50% + min(18vw,205px));
   left:50%;
   transform:translate(-50%,12px) scale(.94);
-  padding:7px 16px;
-  border-radius:999px;
-  border:1px solid rgba(255,230,110,.68);
-  background:linear-gradient(180deg,rgba(24,78,31,.9),rgba(8,39,25,.92));
+  padding:0;
+  border:0;
+  background:transparent;
   color:#fff7d6;
   font-family:var(--font-title);
-  font-size:clamp(12px,1.2vw,20px);
+  font-size:clamp(14px,1.45vw,24px);
   font-weight:900;
   letter-spacing:.08em;
   opacity:0;
   white-space:nowrap;
   text-shadow:0 2px 0 #5b2b08,0 6px 12px rgba(0,0,0,.55);
-  box-shadow:0 12px 28px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,210,.13);
 }
 .fs-simple-shell.is-running .fs-trigger-stage{animation:fsSpriteStage 1.55s cubic-bezier(.18,1.18,.32,1) both;}
-.fs-simple-shell.is-running .fs-trigger-strip{animation:fsTriggerFrames .92s steps(7,end) both;}
+.fs-simple-shell.is-running .fs-trigger-strip{animation:fsTriggerFramesGrid .92s linear both;}
 .fs-simple-shell.is-running .fs-simple-caption{animation:fsCaptionOnly 1.18s cubic-bezier(.18,1.18,.32,1) .16s both;}
-@keyframes fsTriggerFrames{
-  from{transform:translateX(0);}
-  to{transform:translateX(-87.5%);}
+@keyframes fsTriggerFramesGrid{
+  0%,12.49%{background-position:0% 0%;}
+  12.5%,24.99%{background-position:33.333% 0%;}
+  25%,37.49%{background-position:66.666% 0%;}
+  37.5%,49.99%{background-position:100% 0%;}
+  50%,62.49%{background-position:0% 100%;}
+  62.5%,74.99%{background-position:33.333% 100%;}
+  75%,87.49%{background-position:66.666% 100%;}
+  87.5%,100%{background-position:100% 100%;}
 }
 @keyframes fsSpriteStage{
   0%{opacity:0;transform:translateY(28px) scale(.74);filter:blur(2px) brightness(1.12);}
@@ -79,5 +80,5 @@
 }
 @media (max-width:600px){
   .fs-trigger-stage{width:94vw;}
-  .fs-simple-caption{top:calc(50% + 35vw);font-size:11px;padding:6px 12px;}
+  .fs-simple-caption{top:calc(50% + 35vw);font-size:12px;}
 }

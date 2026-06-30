@@ -1,8 +1,8 @@
 /* Layout overrides: host right of reels, controls lower-right. */
 #pig-host.pig-host{
   left:auto!important;
-  right:4.4%!important;
-  top:33.8%!important;
+  right:3.4%!important;
+  top:36.0%!important;
   width:18.8%!important;
   z-index:14!important;
   transform:scaleX(-1)!important;

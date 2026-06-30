@@ -1,4 +1,4 @@
-/* Piggy Richies animation polish: remove large image splash overlays and replace them with procedural UI. */
+/* Piggy Richies animation polish: asset-driven free-spins transition + lightweight win sparks. */
 (() => {
   "use strict";
 
@@ -9,29 +9,58 @@
   const nativeGet = desc.get;
   const nativeSet = desc.set;
 
-  function escapeAttr(value) {
+  function esc(value) {
     return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   }
 
-  function buildCleanFreeSpinIntro(html) {
-    if (typeof html !== "string" || !html.includes("fs-splash-img")) return html;
-    const spins = (html.match(/<p>\s*(\d+)\s*Free Spins/i) || [null, ""])[1];
-    const ui = ((window.PIGGY_ASSETS || {}).ui) || {};
-    const badge = ui.freeSpinBadge || "assets/ui/free-spin-badge.svg";
-    const spinCopy = spins ? `${spins} Free Spins` : "Free Spins";
+  function ui(name, fallback) {
+    const assets = (window.PIGGY_ASSETS && window.PIGGY_ASSETS.ui) || {};
+    return assets[name] || fallback || "";
+  }
+
+  function freeSpinCountFrom(html) {
+    const text = typeof html === "string" ? html : "";
+    return (text.match(/<p>\s*(\d+)\s*Free Spins/i) || text.match(/(\d+)\s*Free Spins/i) || [null, ""])[1];
+  }
+
+  function transitionMarkup(html) {
+    if (typeof html !== "string" || (!html.includes("fs-splash-img") && !html.includes("FREE SPINS"))) return html;
+    const spins = freeSpinCountFrom(html);
+    const count = spins ? `${spins} FREISPIELE` : "FREISPIELE";
+    const src = {
+      dim: ui("transitionDimmingOverlay", "assets/ui/chat8.png"),
+      burst: ui("transitionBurstBg", "assets/ui/chat2.png"),
+      wind: ui("transitionWindOverlay", "assets/ui/chat3.png"),
+      pot: ui("transitionPotSeal", "assets/ui/chat4.png"),
+      brick: ui("transitionBrickBurst", "assets/ui/chat5.png"),
+      portal: ui("transitionPortalRing", "assets/ui/chat7.png"),
+      banner: ui("transitionFreeSpinsBanner", "assets/ui/chat1.png"),
+    };
 
     return [
-      '<div class="fs-splash-card fs-splash-card--clean">',
-      '  <div class="fs-streaks" aria-hidden="true"><span></span><span></span><span></span><span></span></div>',
-      `  <div class="fs-badge-wrap"><img class="fs-badge-img" src="${escapeAttr(badge)}" alt=""></div>`,
-      '  <div class="fs-splash-copy">',
-      '    <span class="fs-transition-topline">HOUSE BUILD MODE</span>',
-      '    <h1>FREE SPINS</h1>',
-      `    <p>${spinCopy} &middot; Bricks collect directly from the reels</p>`,
-      '    <i class="fs-rule" aria-hidden="true"></i>',
-      '  </div>',
+      '<div class="fsfx-shell" aria-hidden="true">',
+      `  <img class="fsfx-layer fsfx-dim" src="${esc(src.dim)}" alt="">`,
+      `  <img class="fsfx-layer fsfx-burst" src="${esc(src.burst)}" alt="">`,
+      `  <img class="fsfx-layer fsfx-wind" src="${esc(src.wind)}" alt="">`,
+      `  <img class="fsfx-layer fsfx-bricks" src="${esc(src.brick)}" alt="">`,
+      `  <img class="fsfx-layer fsfx-pot" src="${esc(src.pot)}" alt="">`,
+      `  <img class="fsfx-layer fsfx-portal" src="${esc(src.portal)}" alt="">`,
+      `  <img class="fsfx-layer fsfx-banner" src="${esc(src.banner)}" alt="FREE SPINS">`,
+      `  <div class="fsfx-count">${esc(count)} &middot; Ziegel sammeln</div>`,
       '</div>',
     ].join("");
+  }
+
+  function armFreeSpinTransition(node) {
+    if (!node || !node.querySelector || !node.querySelector(".fsfx-shell")) return;
+    requestAnimationFrame(() => {
+      const shell = node.querySelector(".fsfx-shell");
+      if (!shell) return;
+      node.classList.add("asset-free-transition");
+      shell.classList.remove("is-running");
+      void shell.offsetWidth;
+      shell.classList.add("is-running");
+    });
   }
 
   Object.defineProperty(proto, "innerHTML", {
@@ -41,8 +70,11 @@
       return nativeGet.call(this);
     },
     set(value) {
-      if (this && this.id === "fs-flash") value = buildCleanFreeSpinIntro(value);
-      return nativeSet.call(this, value);
+      const isFreeFlash = this && this.id === "fs-flash";
+      if (isFreeFlash) value = transitionMarkup(value);
+      const result = nativeSet.call(this, value);
+      if (isFreeFlash) armFreeSpinTransition(this);
+      return result;
     },
   });
 

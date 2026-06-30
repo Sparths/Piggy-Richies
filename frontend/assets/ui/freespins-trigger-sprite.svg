@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4096" height="512" viewBox="0 0 4096 512">
+  <defs>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feColorMatrix in="b" type="matrix" values="1 0 0 0 1  0 1 0 0 .78  0 0 1 0 .18  0 0 0 .75 0" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="peakGlow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="18" result="b"/><feColorMatrix in="b" type="matrix" values="1 0 0 0 1  0 1 0 0 .82  0 0 1 0 .12  0 0 0 .95 0" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#49c44b"/><stop offset=".55" stop-color="#13842f"/><stop offset="1" stop-color="#07501f"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff28c"/><stop offset=".45" stop-color="#f5b72e"/><stop offset="1" stop-color="#a4550b"/></linearGradient>
+    <linearGradient id="letter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbd0"/><stop offset=".4" stop-color="#ffd84c"/><stop offset="1" stop-color="#ff8d18"/></linearGradient>
+    <g id="spark"><path d="M0-18 5-5 18 0 5 5 0 18-5 5-18 0-5-5Z" fill="#fff7a4"/></g>
+    <g id="badge">
+      <path d="M106 267c-46-5-75-24-90-48 23 4 57 1 97-21Z" fill="url(#green)" stroke="#e89a20" stroke-width="9" stroke-linejoin="round"/>
+      <path d="M406 267c46-5 75-24 90-48-23 4-57 1-97-21Z" fill="url(#green)" stroke="#e89a20" stroke-width="9" stroke-linejoin="round"/>
+      <path d="M113 130h286c22 0 40 18 40 40v128c0 22-18 40-40 40H113c-22 0-40-18-40-40V170c0-22 18-40 40-40Z" fill="url(#gold)"/>
+      <path d="M126 147h260c18 0 32 14 32 32v110c0 18-14 32-32 32H126c-18 0-32-14-32-32V179c0-18 14-32 32-32Z" fill="url(#green)" stroke="#6b3206" stroke-width="6"/>
+      <path d="M205 132 228 77l28 36 28-36 23 55Z" fill="url(#gold)" stroke="#8b4209" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M256 100 276 125 256 151 236 125Z" fill="#21d65c" stroke="#07501f" stroke-width="5"/>
+      <text x="256" y="223" text-anchor="middle" font-family="Arial Rounded MT Bold, Trebuchet MS, Arial, sans-serif" font-size="82" font-weight="900" fill="url(#letter)" stroke="#7c3307" stroke-width="9" paint-order="stroke" letter-spacing="2">FREE</text>
+      <text x="256" y="304" text-anchor="middle" font-family="Arial Rounded MT Bold, Trebuchet MS, Arial, sans-serif" font-size="78" font-weight="900" fill="url(#letter)" stroke="#7c3307" stroke-width="9" paint-order="stroke" letter-spacing="1">SPINS</text>
+      <path d="M124 154c61 23 204 23 264 0" fill="none" stroke="#fff4aa" stroke-width="5" opacity=".45"/>
+    </g>
+    <g id="rays" opacity=".85"><path d="M256 34 269 118 256 112 243 118Z" fill="#ffe967"/><path d="M411 90 362 158 354 145Z" fill="#ffe967"/><path d="M101 90 158 145 150 158Z" fill="#ffe967"/><path d="M454 331 370 307 382 298Z" fill="#ffe967"/><path d="M58 331 130 298 142 307Z" fill="#ffe967"/></g>
+  </defs>
+  <rect width="4096" height="512" fill="none"/>
+  <g transform="translate(0 0)"><g transform="translate(256 256) scale(.56) translate(-256 -256)" opacity=".55"><use href="#badge"/></g><use href="#spark" transform="translate(335 170) scale(.35)" opacity=".35"/></g>
+  <g transform="translate(512 0)"><g filter="url(#softGlow)" transform="translate(256 256) scale(.76) translate(-256 -256)" opacity=".84"><use href="#badge"/></g><use href="#spark" transform="translate(165 163) scale(.45)" opacity=".65"/><use href="#spark" transform="translate(372 144) scale(.32)" opacity=".55"/></g>
+  <g transform="translate(1024 0)"><g filter="url(#softGlow)" transform="translate(256 256) scale(.92) translate(-256 -256)"><use href="#badge"/></g><use href="#spark" transform="translate(137 154) scale(.48)"/><use href="#spark" transform="translate(386 154) scale(.43)"/></g>
+  <g transform="translate(1536 0)"><use href="#rays" transform="translate(0 0)" opacity=".45"/><g filter="url(#peakGlow)" transform="translate(256 256) scale(1.03) translate(-256 -256)"><use href="#badge"/></g><use href="#spark" transform="translate(108 141) scale(.62)"/><use href="#spark" transform="translate(408 135) scale(.55)"/><use href="#spark" transform="translate(352 88) scale(.38)"/></g>
+  <g transform="translate(2048 0)"><use href="#rays" opacity=".75"/><circle cx="256" cy="256" r="205" fill="#ffd941" opacity=".16"/><g filter="url(#peakGlow)" transform="translate(256 256) scale(1.12) translate(-256 -256)"><use href="#badge"/></g><use href="#spark" transform="translate(74 124) scale(.72)"/><use href="#spark" transform="translate(439 142) scale(.74)"/><use href="#spark" transform="translate(382 375) scale(.42)"/><use href="#spark" transform="translate(124 366) scale(.42)"/></g>
+  <g transform="translate(2560 0)"><use href="#rays" opacity=".38"/><g filter="url(#softGlow)" transform="translate(256 256) scale(1.02) translate(-256 -256)"><use href="#badge"/></g><use href="#spark" transform="translate(116 153) scale(.55)"/><use href="#spark" transform="translate(403 168) scale(.48)"/></g>
+  <g transform="translate(3072 0)"><g filter="url(#softGlow)" transform="translate(256 256) scale(.96) translate(-256 -256)"><use href="#badge"/></g><use href="#spark" transform="translate(139 169) scale(.38)" opacity=".8"/><use href="#spark" transform="translate(391 175) scale(.35)" opacity=".8"/></g>
+  <g transform="translate(3584 0)"><g filter="url(#softGlow)" transform="translate(256 256) scale(.9) translate(-256 -256)"><use href="#badge"/></g><use href="#spark" transform="translate(154 174) scale(.3)" opacity=".7"/><use href="#spark" transform="translate(371 175) scale(.28)" opacity=".65"/></g>
+</svg>

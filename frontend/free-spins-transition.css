@@ -1,93 +1,15 @@
-/* Free Spins trigger: uploaded 8-frame 4x2 sprite animation without white panel. */
-.fs-flash.simple-free-transition{
-  z-index:330;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  background:rgba(0,0,0,.34);
-  backdrop-filter:blur(1px) saturate(1.04);
-}
+.fs-flash.simple-free-transition{z-index:330;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.34);backdrop-filter:blur(1px) saturate(1.04);}
 .fs-flash.simple-free-transition.hidden{display:none;}
 .fs-flash.simple-free-transition::before,.fs-flash.simple-free-transition::after{display:none;}
-.fs-simple-shell{
-  position:absolute;
-  inset:0;
-  display:grid;
-  place-items:center;
-  pointer-events:none;
-  isolation:isolate;
-}
-.fs-trigger-stage{
-  position:relative;
-  width:min(58vw,620px);
-  aspect-ratio:1/1;
-  overflow:hidden;
-  opacity:0;
-  transform:translateY(18px) scale(.82);
-  filter:drop-shadow(0 24px 34px rgba(0,0,0,.58)) drop-shadow(0 0 18px rgba(255,220,80,.28));
-  will-change:transform,opacity,filter;
-}
-.fs-trigger-strip{
-  position:absolute;
-  inset:0;
-  display:block;
-  background-repeat:no-repeat;
-  background-size:400% 200%;
-  background-position:0% 0%;
-  mix-blend-mode:multiply;
-  filter:saturate(1.35) contrast(1.08) brightness(1.08);
-  will-change:background-position;
-}
-.fs-trigger-stage::after{
-  content:"";
-  position:absolute;
-  inset:9%;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(255,225,70,.22),rgba(255,225,70,0) 58%);
-  mix-blend-mode:screen;
-  pointer-events:none;
-}
-.fs-simple-caption{
-  position:absolute;
-  top:calc(50% + min(13.8vw,150px));
-  left:50%;
-  transform:translate(-50%,10px) scale(.96);
-  padding:0;
-  border:0;
-  background:transparent;
-  font-size:clamp(20px,2.05vw,34px);
-  font-weight:900;
-  letter-spacing:.04em;
-  opacity:0;
-  white-space:nowrap;
-}
-.fs-simple-shell.is-running .fs-trigger-stage{animation:fsSpriteStage 1.45s cubic-bezier(.18,1.08,.32,1) both;}
+.fs-simple-shell{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;}
+.fs-trigger-stage{position:relative;width:min(56vw,590px);aspect-ratio:1/1;overflow:hidden;opacity:0;transform:translateY(14px) scale(.82);background:transparent;filter:drop-shadow(0 24px 34px rgba(0,0,0,.58)) drop-shadow(0 0 18px rgba(255,220,80,.28));will-change:transform,opacity,filter;}
+.fs-trigger-strip{position:absolute;inset:0;display:block;background-repeat:no-repeat;background-size:400% 200%;background-position:0% 0%;background-color:transparent;mix-blend-mode:multiply;filter:saturate(1.55) contrast(1.18) brightness(1.18);will-change:background-position;}
+.fs-trigger-stage::after{content:"";position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(255,225,70,.24),rgba(255,225,70,0) 58%);mix-blend-mode:screen;pointer-events:none;}
+.fs-simple-caption{position:absolute;top:calc(50% + min(12.9vw,140px));left:50%;transform:translate(-50%,10px) scale(.96);padding:0;border:0;background:transparent;font-size:clamp(22px,2.1vw,36px);font-weight:900;letter-spacing:.04em;opacity:0;white-space:nowrap;}
+.fs-simple-shell.is-running .fs-trigger-stage{animation:fsSpriteStage 1.42s cubic-bezier(.18,1.08,.32,1) both;}
 .fs-simple-shell.is-running .fs-trigger-strip{animation:fsTriggerFramesGrid .88s linear both;}
 .fs-simple-shell.is-running .fs-simple-caption{animation:fsCaptionOnly 1.18s cubic-bezier(.18,1.08,.32,1) .14s both;}
-@keyframes fsTriggerFramesGrid{
-  0%,12.49%{background-position:0% 0%;}
-  12.5%,24.99%{background-position:33.333% 0%;}
-  25%,37.49%{background-position:66.666% 0%;}
-  37.5%,49.99%{background-position:100% 0%;}
-  50%,62.49%{background-position:0% 100%;}
-  62.5%,74.99%{background-position:33.333% 100%;}
-  75%,87.49%{background-position:66.666% 100%;}
-  87.5%,100%{background-position:100% 100%;}
-}
-@keyframes fsSpriteStage{
-  0%{opacity:0;transform:translateY(20px) scale(.78);filter:drop-shadow(0 20px 28px rgba(0,0,0,.52)) brightness(1.06);}
-  18%{opacity:1;transform:translateY(-2px) scale(1.02);filter:drop-shadow(0 25px 36px rgba(0,0,0,.6)) brightness(1.04);}
-  56%{opacity:1;transform:translateY(0) scale(1);}
-  78%{opacity:1;transform:translateY(0) scale(.985);}
-  100%{opacity:0;transform:translateY(-16px) scale(.94);filter:drop-shadow(0 18px 30px rgba(0,0,0,.5)) brightness(1.1);}
-}
-@keyframes fsCaptionOnly{
-  0%{opacity:0;transform:translate(-50%,10px) scale(.96);}
-  30%,72%{opacity:1;transform:translate(-50%,0) scale(1);}
-  100%{opacity:0;transform:translate(-50%,-8px) scale(.98);}
-}
-@media (max-width:600px){
-  .fs-trigger-stage{width:86vw;}
-  .fs-simple-caption{top:calc(50% + 30vw);font-size:18px;}
-}
+@keyframes fsTriggerFramesGrid{0%,12.49%{background-position:0% 0%;}12.5%,24.99%{background-position:33.333% 0%;}25%,37.49%{background-position:66.666% 0%;}37.5%,49.99%{background-position:100% 0%;}50%,62.49%{background-position:0% 100%;}62.5%,74.99%{background-position:33.333% 100%;}75%,87.49%{background-position:66.666% 100%;}87.5%,100%{background-position:100% 100%;}}
+@keyframes fsSpriteStage{0%{opacity:0;transform:translateY(18px) scale(.78);filter:drop-shadow(0 20px 28px rgba(0,0,0,.52)) brightness(1.06);}18%{opacity:1;transform:translateY(-2px) scale(1.02);filter:drop-shadow(0 25px 36px rgba(0,0,0,.6)) brightness(1.04);}56%{opacity:1;transform:translateY(0) scale(1);}78%{opacity:1;transform:translateY(0) scale(.985);}100%{opacity:0;transform:translateY(-14px) scale(.94);filter:drop-shadow(0 18px 30px rgba(0,0,0,.5)) brightness(1.1);}}
+@keyframes fsCaptionOnly{0%{opacity:0;transform:translate(-50%,10px) scale(.96);}30%,72%{opacity:1;transform:translate(-50%,0) scale(1);}100%{opacity:0;transform:translate(-50%,-8px) scale(.98);}}
+@media (max-width:600px){.fs-trigger-stage{width:82vw;}.fs-simple-caption{top:calc(50% + 29vw);font-size:18px;}}

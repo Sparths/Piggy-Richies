@@ -1,11 +1,9 @@
 /* Fantasy text styler for premium UI labels.
-   The uploaded font sheet is kept as an asset reference, but dynamic text stays
-   real text so it remains readable and never slices the atlas incorrectly. */
+   Dynamic text stays real text so it remains readable. */
 (() => {
   "use strict";
 
   const selectors = [
-    ".fs-simple-caption",
     "#bigwin-tier",
     "#hc-title",
     "#hc-sub",

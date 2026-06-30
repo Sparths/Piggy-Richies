@@ -1,0 +1,47 @@
+/* Piggy host mascot: transparent SVG animation assets, positioned beside the reels. */
+:root{
+  --pig-host-idle:url("assets/ui/piggy-host-idle.svg");
+  --pig-host-win:url("assets/ui/piggy-host-win.svg");
+}
+.pig-host{
+  position:absolute;
+  left:1.1%;
+  top:19.2%;
+  z-index:9;
+  width:18.6%;
+  aspect-ratio:224/306;
+  pointer-events:none;
+  transform-origin:50% 96%;
+  filter:drop-shadow(0 14px 18px rgba(0,0,0,.48)) drop-shadow(0 0 12px rgba(255,220,96,.12));
+}
+.pig-host::after{
+  content:"";
+  position:absolute;
+  left:18%;
+  right:18%;
+  bottom:2.5%;
+  height:8%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,.34),rgba(0,0,0,0) 68%);
+  transform:scaleX(1.05);
+  z-index:-1;
+}
+.pig-host-sprite{
+  position:absolute;
+  inset:0;
+  display:block;
+  background-image:var(--pig-host-idle);
+  background-repeat:no-repeat;
+  background-size:contain;
+  background-position:center bottom;
+  will-change:background-image,transform;
+}
+.pig-host.is-win{
+  z-index:12;
+}
+.pig-host.is-win .pig-host-sprite{
+  background-image:var(--pig-host-win);
+}
+@media (max-width:760px),(max-height:520px){
+  .pig-host{display:none;}
+}

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 306" role="img" aria-label="Piggy host idle">
+  <defs>
+    <linearGradient id="skin" x1="70" y1="35" x2="158" y2="160" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd0bf"/><stop offset="0.55" stop-color="#ff987f"/><stop offset="1" stop-color="#d95c47"/></linearGradient>
+    <linearGradient id="vest" x1="73" y1="132" x2="154" y2="230" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2e8f31"/><stop offset="0.58" stop-color="#176522"/><stop offset="1" stop-color="#073c19"/></linearGradient>
+    <linearGradient id="pants" x1="79" y1="210" x2="145" y2="296" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8a471f"/><stop offset="1" stop-color="#4a220f"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/></filter>
+    <radialGradient id="cheek" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffb59c"/><stop offset="1" stop-color="#ff8b78" stop-opacity="0"/></radialGradient>
+    <style>
+      #host{animation:breathe 1.72s ease-in-out infinite;transform-origin:112px 292px;}
+      #eyes-open{animation:blink 4.8s infinite;}
+      #eyes-closed{animation:blinkClosed 4.8s infinite;opacity:0;}
+      #hand{animation:handFloat 1.72s ease-in-out infinite;transform-origin:170px 142px;}
+      @keyframes breathe{0%,100%{transform:translateY(1px) scale(1)}50%{transform:translateY(-2px) scale(1.012)}}
+      @keyframes handFloat{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-2deg)}}
+      @keyframes blink{0%,90%,100%{opacity:1}94%,97%{opacity:0}}
+      @keyframes blinkClosed{0%,90%,100%{opacity:0}94%,97%{opacity:1}}
+    </style>
+  </defs>
+  <g id="host" filter="url(#shadow)">
+    <ellipse cx="112" cy="294" rx="55" ry="9" fill="#000" opacity="0.22"/>
+    <path d="M82 193c-4 31-2 67 8 95h26c2-26 1-55-2-87z" fill="url(#pants)"/><path d="M118 200c-2 32-1 61 5 88h27c6-29 6-62-3-94z" fill="url(#pants)"/>
+    <path d="M91 286c-13 3-23 9-26 18h52c4-8-6-18-26-18z" fill="#3b1d0f"/><path d="M122 286c20 0 34 6 39 18h-53c-4-9 2-18 14-18z" fill="#3b1d0f"/>
+    <path d="M71 128c-16 16-22 41-15 60 4 10 13 16 23 14 11-2 17-14 13-25-3-10 0-23 8-31z" fill="#fff"/><path d="M150 128c21 6 34 18 42 35 4 9 0 19-9 23-10 4-20-1-24-10-4-9-11-15-20-18z" fill="#fff"/>
+    <g id="hand"><path d="M178 161c16-6 28-2 32 7 3 8-3 16-14 18-14 2-27-2-37-10z" fill="url(#skin)"/><path d="M192 164c7 1 13 4 18 8" stroke="#bd4d3b" stroke-width="2" stroke-linecap="round" opacity=".55"/></g>
+    <path d="M78 126c6-14 20-24 36-24 19 0 35 9 43 24 7 25 3 56-10 83-19 8-49 8-68-1-8-24-11-56-1-82z" fill="url(#vest)"/>
+    <path d="M88 126l25 75 27-75" fill="none" stroke="#f0c247" stroke-width="3"/><path d="M112 118l-19 78h38z" fill="#fff"/>
+    <path d="M96 121c10 8 23 8 33 0l4 11c-11 8-29 8-41 0z" fill="#cc151e"/><circle cx="113" cy="147" r="3" fill="#e8a91c"/><circle cx="114" cy="166" r="3" fill="#e8a91c"/><circle cx="115" cy="185" r="3" fill="#e8a91c"/>
+    <path d="M121 172c15 7 23 17 30 31" fill="none" stroke="#e6b12c" stroke-width="2" stroke-linecap="round"/>
+    <path d="M75 59c-8-16-20-28-31-31-5 16 2 34 19 45z" fill="url(#skin)"/><path d="M150 58c7-16 20-28 32-30 4 16-4 34-21 45z" fill="url(#skin)"/>
+    <ellipse cx="112" cy="86" rx="54" ry="47" fill="url(#skin)"/>
+    <ellipse cx="88" cy="94" rx="18" ry="16" fill="url(#cheek)"/><ellipse cx="136" cy="94" rx="18" ry="16" fill="url(#cheek)"/>
+    <ellipse cx="112" cy="91" rx="26" ry="20" fill="#ff7d72" stroke="#b94438" stroke-width="2"/><ellipse cx="104" cy="91" rx="5" ry="8" fill="#4c130e"/><ellipse cx="121" cy="91" rx="5" ry="8" fill="#4c130e"/>
+    <g id="eyes-open"><ellipse cx="92" cy="74" rx="11" ry="14" fill="#fff"/><ellipse cx="132" cy="74" rx="11" ry="14" fill="#fff"/><circle cx="94" cy="75" r="6" fill="#27b449"/><circle cx="130" cy="75" r="6" fill="#27b449"/><circle cx="96" cy="72" r="2" fill="#fff"/><circle cx="132" cy="72" r="2" fill="#fff"/></g>
+    <g id="eyes-closed"><path d="M82 75c6 5 14 5 21 0" stroke="#4b160d" stroke-width="4" stroke-linecap="round"/><path d="M122 75c6 5 14 5 21 0" stroke="#4b160d" stroke-width="4" stroke-linecap="round"/></g>
+    <path d="M88 111c15 11 37 11 51 0" fill="none" stroke="#4b160d" stroke-width="5" stroke-linecap="round"/><path d="M94 116c13 5 27 5 38 0" stroke="#fff" stroke-width="2" opacity=".75"/>
+    <path d="M91 56c14-14 29-15 42-2" fill="none" stroke="#6c2b13" stroke-width="8" stroke-linecap="round"/><path d="M108 37c12-12 25-6 22 8" fill="none" stroke="#9b4a1e" stroke-width="7" stroke-linecap="round"/>
+    <path d="M74 196c-7 4-15 0-16-9 4 4 10 5 17 2z" fill="#d95c47"/>
+  </g>
+</svg>

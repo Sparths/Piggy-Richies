@@ -1,0 +1,1 @@
+window.PIGGY_STAKE_NETWORK_NOTE = true;

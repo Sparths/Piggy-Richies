@@ -98,27 +98,52 @@
   }
 
   function bookFromEvents(events, meta = {}) {
-    return { ...meta, events, payoutMultiplier: Number(meta.payoutMultiplier) || 0 };
+    return finalizeBook({ ...meta, events, payoutMultiplier: Number(meta.payoutMultiplier) || 0 });
+  }
+
+  const STAKE_MONEY_KEYS = new Set(["amount", "baseGameWins", "freeGameWins", "payoutMultiplier", "stepWin", "totalWin", "win"]);
+
+  function looksLikeStakeMoneyBook(book) {
+    return !!(book && Array.isArray(book.events) && (book.criteria != null || book.baseGameWins != null || book.freeGameWins != null));
+  }
+
+  function normalizeStakeMoney(key, value) {
+    if (typeof value === "number" && STAKE_MONEY_KEYS.has(key)) return value / 100;
+    if (Array.isArray(value)) return value.map((item) => normalizeStakeMoney("", item));
+    if (value && typeof value === "object") {
+      const out = {};
+      Object.keys(value).forEach((k) => { out[k] = normalizeStakeMoney(k, value[k]); });
+      return out;
+    }
+    return value;
+  }
+
+  function finalizeBook(book) {
+    if (!book || book.__piggyMoneyNormalized) return book;
+    if (!looksLikeStakeMoneyBook(book)) return book;
+    const normalized = normalizeStakeMoney("", book);
+    Object.defineProperty(normalized, "__piggyMoneyNormalized", { value: true });
+    return normalized;
   }
 
   function normalizeBook(round) {
     if (!round) return null;
     if (Array.isArray(round)) return bookFromEvents(round);
-    if (Array.isArray(round.events)) return round;
+    if (Array.isArray(round.events)) return finalizeBook(round);
     if (round.state) {
       if (Array.isArray(round.state)) return bookFromEvents(round.state, round);
       const stateBook = normalizeBook(round.state);
-      if (stateBook) return { ...round, ...stateBook, events: stateBook.events };
+      if (stateBook) return finalizeBook({ ...round, ...stateBook, events: stateBook.events });
     }
     if (round.event) {
       const eventBook = normalizeBook(round.event);
-      if (eventBook) return { ...round, ...eventBook, events: eventBook.events };
+      if (eventBook) return finalizeBook({ ...round, ...eventBook, events: eventBook.events });
     }
-    if (round.book && Array.isArray(round.book.events)) return round.book;
-    if (round.result && Array.isArray(round.result.events)) return round.result;
-    if (round.game && Array.isArray(round.game.events)) return round.game;
-    if (round.round && Array.isArray(round.round.events)) return round.round;
-    if (round.data && Array.isArray(round.data.events)) return round.data;
+    if (round.book && Array.isArray(round.book.events)) return finalizeBook(round.book);
+    if (round.result && Array.isArray(round.result.events)) return finalizeBook(round.result);
+    if (round.game && Array.isArray(round.game.events)) return finalizeBook(round.game);
+    if (round.round && Array.isArray(round.round.events)) return finalizeBook(round.round);
+    if (round.data && Array.isArray(round.data.events)) return finalizeBook(round.data);
     if (typeof round === "string") return safe(() => normalizeBook(JSON.parse(round)), null);
     return null;
   }

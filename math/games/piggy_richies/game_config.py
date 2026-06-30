@@ -172,7 +172,7 @@ class GameConfig(Config):
                     Distribution(
                         "freegame",
                         quota=1.0,
-                        conditions={"start_level": 2, "start_bricks": 2, "extra_spins": 2},
+                        conditions={"start_level": 2, "start_bricks": 5, "extra_spins": 2},
                     )
                 ],
             ),

@@ -1,84 +1,117 @@
 #!/usr/bin/env python3
-"""Optimize generated PNG art into web-ready WebP for the front-end.
+"""Convert project PNG assets to WebP without visible quality loss.
 
-Drop your generated PNGs (see docs/ASSET_PROMPTS.md) into frontend/assets/ and
-frontend/assets/symbols/, then run:
+This script is intentionally conservative:
+- converts PNG files under ``frontend/assets`` to sibling ``.webp`` files
+- uses WebP lossless mode with ``exact=True`` for alpha preservation
+- rewrites project text references from those PNG paths to WebP
+- removes the converted PNG files after the WebP exists
+
+Run locally or via the GitHub Action:
 
     python tools/optimize_assets.py
-
-For every PNG it finds it writes a sibling .webp:
-- symbols/*.png  -> crop to content, pad to square, 512px, WebP (so they fill
-  the reel cells regardless of the source aspect ratio)
-- background.png -> opaque, max 1920 wide, WebP
-- logo.png       -> crop to content, max 760 wide, WebP (keeps alpha)
-
-Then list the .webp files in frontend/assets/manifest.js. Needs Pillow
-(`pip install Pillow`).
 """
 from __future__ import annotations
 
-import glob
 import os
-import sys
+from pathlib import Path
 
 from PIL import Image
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS = os.path.join(ROOT, "frontend", "assets")
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "frontend" / "assets"
+TEXT_EXTS = {
+    ".css",
+    ".html",
+    ".js",
+    ".json",
+    ".md",
+    ".py",
+    ".ts",
+    ".tsx",
+    ".yml",
+    ".yaml",
+}
+SKIP_DIRS = {".git", "node_modules", ".next", "dist", "build", "__pycache__"}
 
 
-def crop_alpha(im: Image.Image) -> Image.Image:
-    bbox = im.getchannel("A").getbbox()
-    return im.crop(bbox) if bbox else im
+def is_text_file(path: Path) -> bool:
+    return path.suffix.lower() in TEXT_EXTS
 
 
-def to_square(im: Image.Image, margin: float = 0.05) -> Image.Image:
-    w, h = im.size
-    s = max(w, h) + 2 * int(max(w, h) * margin)
-    canvas = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-    canvas.paste(im, ((s - w) // 2, (s - h) // 2), im)
-    return canvas
+def convert_png(path: Path) -> Path:
+    out = path.with_suffix(".webp")
+    with Image.open(path) as im:
+        if im.mode not in {"RGB", "RGBA"}:
+            im = im.convert("RGBA" if "A" in im.getbands() else "RGB")
+        # WebP lossless keeps pixels/alpha visually identical. exact=True avoids
+        # color loss in fully transparent pixels, useful for slot sprites/UI.
+        im.save(out, "WEBP", lossless=True, quality=100, method=6, exact=True)
+    return out
 
 
-def kb(path: str) -> float:
-    return os.path.getsize(path) / 1024
+def rel_posix(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def rewrite_references(mapping: dict[str, str]) -> int:
+    changed = 0
+    for path in ROOT.rglob("*"):
+        if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        if not path.is_file() or not is_text_file(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        new_text = text
+        for png_rel, webp_rel in mapping.items():
+            new_text = new_text.replace(png_rel, webp_rel)
+            # Most frontend paths are relative to frontend/, so update those too.
+            if png_rel.startswith("frontend/"):
+                new_text = new_text.replace(png_rel.removeprefix("frontend/"), webp_rel.removeprefix("frontend/"))
+        if new_text != text:
+            path.write_text(new_text, encoding="utf-8")
+            changed += 1
+    return changed
 
 
 def main() -> None:
-    if not os.path.isdir(ASSETS):
-        sys.exit(f"assets dir not found: {ASSETS}")
-    total = 0.0
+    if not ASSETS.is_dir():
+        raise SystemExit(f"assets dir not found: {ASSETS}")
 
-    for p in sorted(glob.glob(os.path.join(ASSETS, "symbols", "*.png"))):
-        im = to_square(crop_alpha(Image.open(p).convert("RGBA"))).resize((512, 512), Image.LANCZOS)
-        out = p[:-4] + ".webp"
-        im.save(out, "WEBP", quality=90, method=6)
-        total += kb(out)
-        print(f"symbol  {os.path.basename(out):12s} {kb(out):6.1f} KB")
+    mapping: dict[str, str] = {}
+    total_before = 0
+    total_after = 0
 
-    bgp = os.path.join(ASSETS, "background.png")
-    if os.path.exists(bgp):
-        bg = Image.open(bgp).convert("RGBA")
-        flat = Image.new("RGB", bg.size, (7, 15, 30))
-        flat.paste(bg, (0, 0), bg)
-        if flat.width > 1920:
-            flat = flat.resize((1920, round(flat.height * 1920 / flat.width)), Image.LANCZOS)
-        out = os.path.join(ASSETS, "background.webp")
-        flat.save(out, "WEBP", quality=82, method=6)
-        total += kb(out)
-        print(f"background {kb(out):9.1f} KB  ({flat.width}x{flat.height})")
+    pngs = sorted(ASSETS.rglob("*.png"))
+    if not pngs:
+        print("No PNG assets found under frontend/assets.")
+        return
 
-    lgp = os.path.join(ASSETS, "logo.png")
-    if os.path.exists(lgp):
-        lg = crop_alpha(Image.open(lgp).convert("RGBA"))
-        if lg.width > 760:
-            lg = lg.resize((760, round(lg.height * 760 / lg.width)), Image.LANCZOS)
-        out = os.path.join(ASSETS, "logo.webp")
-        lg.save(out, "WEBP", quality=92, method=6)
-        total += kb(out)
-        print(f"logo {kb(out):14.1f} KB  ({lg.width}x{lg.height})")
+    for png in pngs:
+        before = png.stat().st_size
+        webp = convert_png(png)
+        after = webp.stat().st_size
+        total_before += before
+        total_after += after
+        mapping[rel_posix(png)] = rel_posix(webp)
+        print(f"{rel_posix(png)} -> {rel_posix(webp)}  {before/1024:.1f} KB -> {after/1024:.1f} KB")
 
-    print(f"\nTOTAL WebP: {total/1024:.2f} MB. Now list them in frontend/assets/manifest.js")
+    changed_files = rewrite_references(mapping)
+
+    for png in pngs:
+        if png.with_suffix(".webp").exists():
+            png.unlink()
+
+    saved = total_before - total_after
+    print("\nPNG to WebP complete")
+    print(f"Converted: {len(pngs)} files")
+    print(f"Reference files changed: {changed_files}")
+    print(f"Before: {total_before/1024/1024:.2f} MB")
+    print(f"After:  {total_after/1024/1024:.2f} MB")
+    print(f"Delta:  {saved/1024/1024:.2f} MB")
 
 
 if __name__ == "__main__":

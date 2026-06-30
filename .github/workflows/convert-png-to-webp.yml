@@ -1,0 +1,46 @@
+name: Convert PNG assets to WebP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/assets/**/*.png'
+      - 'tools/optimize_assets.py'
+      - '.github/workflows/convert-png-to-webp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Pillow
+        run: python -m pip install --upgrade pillow
+
+      - name: Convert PNG assets to lossless WebP
+        run: python tools/optimize_assets.py
+
+      - name: Commit converted assets
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No PNG assets left to convert."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Convert PNG assets to lossless WebP"
+          git push

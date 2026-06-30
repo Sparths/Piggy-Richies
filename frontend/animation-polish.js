@@ -1,4 +1,4 @@
-/* Piggy Richies animation polish: sharp Free Spins trigger + lightweight win sparks. */
+/* Piggy Richies animation polish: single Free Spins WebP + lightweight win sparks. */
 (() => {
   "use strict";
 
@@ -13,6 +13,11 @@
     return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   }
 
+  function ui(name, fallback) {
+    const assets = (window.PIGGY_ASSETS && window.PIGGY_ASSETS.ui) || {};
+    return assets[name] || fallback || "";
+  }
+
   function freeSpinCountFrom(html) {
     const text = typeof html === "string" ? html : "";
     return (text.match(/<p>\s*(\d+)\s*Free Spins/i) || text.match(/(\d+)\s*Free Spins/i) || [null, ""])[1];
@@ -22,15 +27,10 @@
     if (typeof html !== "string" || (!html.includes("fs-splash-img") && !html.includes("FREE SPINS"))) return html;
     const spins = freeSpinCountFrom(html);
     const caption = spins ? `${spins} FREISPIELE` : "FREISPIELE";
+    const badge = ui("freeSpinsTriggerImage", ui("freeSpinsTriggerSprite", "assets/ui/freespinsasset.webp"));
     return [
-      '<div class="fs-simple-shell fs-clean-shell">',
-      '  <div class="fs-clean-badge" role="img" aria-label="FREE SPINS">',
-      '    <span class="fs-crown">◆</span>',
-      '    <span class="fs-word fs-word-free">FREE</span>',
-      '    <span class="fs-word fs-word-spins">SPINS</span>',
-      '    <i class="fs-ribbon fs-ribbon-left"></i>',
-      '    <i class="fs-ribbon fs-ribbon-right"></i>',
-      '  </div>',
+      '<div class="fs-simple-shell fs-image-shell">',
+      `  <img class="fs-trigger-image" src="${esc(badge)}" alt="FREE SPINS" decoding="async">`,
       `  <div class="fs-simple-caption">${esc(caption)}</div>`,
       '</div>',
     ].join("");

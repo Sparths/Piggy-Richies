@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 306" role="img" aria-label="Piggy host win reaction">
+  <defs>
+    <linearGradient id="skin" x1="70" y1="35" x2="158" y2="160" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd0bf"/><stop offset="0.55" stop-color="#ff987f"/><stop offset="1" stop-color="#d95c47"/></linearGradient>
+    <linearGradient id="vest" x1="73" y1="132" x2="154" y2="230" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35a539"/><stop offset="0.58" stop-color="#176522"/><stop offset="1" stop-color="#073c19"/></linearGradient>
+    <linearGradient id="pants" x1="79" y1="210" x2="145" y2="296" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8a471f"/><stop offset="1" stop-color="#4a220f"/></linearGradient>
+    <filter id="shadow" x="-35%" y="-35%" width="170%" height="180%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/></filter>
+    <style>
+      #host{animation:winBounce 1.08s cubic-bezier(.18,1.2,.32,1) both;transform-origin:112px 292px;}
+      #leftArm{animation:leftPump 1.08s cubic-bezier(.18,1.2,.32,1) both;transform-origin:75px 137px;}
+      #rightArm{animation:rightPump 1.08s cubic-bezier(.18,1.2,.32,1) both;transform-origin:150px 137px;}
+      #spark1{animation:spark 1.08s ease both;transform-origin:42px 75px;}#spark2{animation:spark 1.08s .12s ease both;transform-origin:184px 66px;}#spark3{animation:spark 1.08s .22s ease both;transform-origin:180px 126px;}
+      @keyframes winBounce{0%{transform:translateY(0) scale(1)}25%{transform:translateY(-9px) scale(1.05)}55%{transform:translateY(2px) scale(.99)}100%{transform:translateY(0) scale(1)}}
+      @keyframes leftPump{0%{transform:rotate(0)}30%{transform:rotate(-42deg) translate(-7px,-7px)}70%{transform:rotate(-25deg) translate(-2px,-2px)}100%{transform:rotate(0)}}
+      @keyframes rightPump{0%{transform:rotate(0)}30%{transform:rotate(24deg) translate(8px,-8px)}70%{transform:rotate(12deg)}100%{transform:rotate(0)}}
+      @keyframes spark{0%,100%{opacity:0;transform:scale(.2) rotate(0)}30%,72%{opacity:1;transform:scale(1) rotate(25deg)}}
+    </style>
+  </defs>
+  <g filter="url(#shadow)">
+    <g id="spark1" opacity="0"><path d="M42 56l5 14 14 5-14 5-5 14-5-14-14-5 14-5z" fill="#ffe46a"/></g>
+    <g id="spark2" opacity="0"><path d="M184 45l4 11 11 4-11 4-4 11-4-11-11-4 11-4z" fill="#fff4a2"/></g>
+    <g id="spark3" opacity="0"><path d="M178 114l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#ffe46a"/></g>
+  </g>
+  <g id="host" filter="url(#shadow)">
+    <ellipse cx="112" cy="294" rx="55" ry="9" fill="#000" opacity="0.2"/>
+    <path d="M82 193c-4 31-2 67 8 95h26c2-26 1-55-2-87z" fill="url(#pants)"/><path d="M118 200c-2 32-1 61 5 88h27c6-29 6-62-3-94z" fill="url(#pants)"/>
+    <path d="M91 286c-13 3-23 9-26 18h52c4-8-6-18-26-18z" fill="#3b1d0f"/><path d="M122 286c20 0 34 6 39 18h-53c-4-9 2-18 14-18z" fill="#3b1d0f"/>
+    <g id="leftArm"><path d="M78 130c-25 2-45 20-50 43-2 11 5 20 16 21 10 1 17-6 20-16 3-12 11-20 23-23z" fill="#fff"/><circle cx="43" cy="182" r="15" fill="url(#skin)"/></g>
+    <g id="rightArm"><path d="M149 128c23-2 43 9 55 29 5 9 2 20-7 25-10 5-20 1-25-8-5-9-13-14-25-15z" fill="#fff"/><circle cx="194" cy="166" r="15" fill="url(#skin)"/></g>
+    <path d="M78 126c6-14 20-24 36-24 19 0 35 9 43 24 7 25 3 56-10 83-19 8-49 8-68-1-8-24-11-56-1-82z" fill="url(#vest)"/>
+    <path d="M88 126l25 75 27-75" fill="none" stroke="#f0c247" stroke-width="3"/><path d="M112 118l-19 78h38z" fill="#fff"/>
+    <path d="M96 121c10 8 23 8 33 0l4 11c-11 8-29 8-41 0z" fill="#d91520"/><circle cx="113" cy="147" r="3" fill="#e8a91c"/><circle cx="114" cy="166" r="3" fill="#e8a91c"/><circle cx="115" cy="185" r="3" fill="#e8a91c"/>
+    <path d="M121 172c15 7 23 17 30 31" fill="none" stroke="#e6b12c" stroke-width="2" stroke-linecap="round"/>
+    <path d="M75 59c-8-16-20-28-31-31-5 16 2 34 19 45z" fill="url(#skin)"/><path d="M150 58c7-16 20-28 32-30 4 16-4 34-21 45z" fill="url(#skin)"/>
+    <ellipse cx="112" cy="86" rx="54" ry="47" fill="url(#skin)"/>
+    <ellipse cx="112" cy="91" rx="26" ry="20" fill="#ff7d72" stroke="#b94438" stroke-width="2"/><ellipse cx="104" cy="91" rx="5" ry="8" fill="#4c130e"/><ellipse cx="121" cy="91" rx="5" ry="8" fill="#4c130e"/>
+    <ellipse cx="92" cy="74" rx="11" ry="14" fill="#fff"/><ellipse cx="132" cy="74" rx="11" ry="14" fill="#fff"/><circle cx="94" cy="75" r="6" fill="#27b449"/><circle cx="130" cy="75" r="6" fill="#27b449"/><circle cx="96" cy="72" r="2" fill="#fff"/><circle cx="132" cy="72" r="2" fill="#fff"/>
+    <path d="M82 111c18 21 47 21 62 0" fill="#4b160d"/><path d="M91 115c14 6 32 6 45 0" stroke="#fff" stroke-width="3" opacity=".8"/>
+    <path d="M91 56c14-14 29-15 42-2" fill="none" stroke="#6c2b13" stroke-width="8" stroke-linecap="round"/><path d="M108 37c12-12 25-6 22 8" fill="none" stroke="#9b4a1e" stroke-width="7" stroke-linecap="round"/>
+  </g>
+</svg>

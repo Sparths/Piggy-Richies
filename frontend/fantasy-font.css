@@ -1,0 +1,11 @@
+:root{--fantasy-font-sheet:url("assets/ui/fontsheetasset.webp");}
+.fantasy-atlas-text{display:inline-flex;align-items:center;justify-content:center;gap:.025em;line-height:1;white-space:nowrap;vertical-align:middle;font-family:var(--font-title);}
+.fantasy-atlas-text.ff-ready{color:transparent;text-shadow:none;}
+.ff-glyph{display:inline-block;flex:0 0 auto;width:.68em;height:1em;overflow:hidden;color:transparent;background-image:var(--fantasy-font-sheet);background-repeat:no-repeat;background-size:var(--ff-bg-size,2600% 400%);background-position:var(--ff-bg-pos,0% 0%);filter:drop-shadow(0 .06em .03em rgba(80,36,0,.72)) drop-shadow(0 .1em .12em rgba(0,0,0,.45));}
+.ff-space{display:inline-block;flex:0 0 auto;width:.38em;height:1em;}
+.ff-glyph.ff-narrow{width:.42em;}
+.ff-glyph.ff-wide{width:.86em;}
+.ff-glyph.ff-extra-wide{width:1em;}
+.fs-simple-caption.fantasy-atlas-text{gap:.02em;filter:drop-shadow(0 7px 10px rgba(0,0,0,.52)) drop-shadow(0 0 9px rgba(255,220,78,.28));}
+.bigwin-tier.fantasy-atlas-text,.hc-title.fantasy-atlas-text,.hc-sub.fantasy-atlas-text{filter:drop-shadow(0 8px 14px rgba(0,0,0,.55)) drop-shadow(0 0 14px rgba(255,218,72,.35));}
+.phase-banner.fantasy-atlas-text,.fs-counter .fantasy-atlas-text{gap:.01em;}

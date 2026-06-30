@@ -1,15 +1,15 @@
-/* Piggy host mascot: 8-frame transparent WebP spritesheets, positioned beside the reels. */
+/* Piggy host mascot: grounded WebP character beside the reels. */
 :root{
   --pig-host-idle:url("assets/ui/piggy-host-idle.webp");
   --pig-host-win:url("assets/ui/piggy-host-win.webp");
 }
 .pig-host{
   position:absolute;
-  left:1.1%;
-  top:19.2%;
+  left:8.4%;
+  top:44.6%;
   z-index:9;
-  width:18.6%;
-  aspect-ratio:1024/700;
+  width:13.4%;
+  aspect-ratio:512/700;
   pointer-events:none;
   transform-origin:50% 96%;
   filter:drop-shadow(0 14px 18px rgba(0,0,0,.48)) drop-shadow(0 0 12px rgba(255,220,96,.12));
@@ -34,23 +34,27 @@
   background-repeat:no-repeat;
   background-size:800% 100%;
   background-position:0 0;
-  animation:pigHostIdle 1.72s steps(8,end) infinite;
-  will-change:background-position,transform;
+  animation:pigHostBreath 3.1s ease-in-out infinite;
+  transform-origin:50% 96%;
+  will-change:transform,filter;
 }
 .pig-host.is-win{
   z-index:12;
 }
 .pig-host.is-win .pig-host-sprite{
   background-image:var(--pig-host-win);
-  animation:pigHostWin 1.08s steps(8,end) 1 both;
+  background-position:42.857% 0;
+  animation:pigHostWinPop 1.08s cubic-bezier(.18,1.18,.32,1) 1 both;
 }
-@keyframes pigHostIdle{
-  from{background-position:0 0;}
-  to{background-position:100% 0;}
+@keyframes pigHostBreath{
+  0%,100%{transform:translateY(0) scale(1);filter:brightness(1);}
+  50%{transform:translateY(-1.2%) scale(1.012);filter:brightness(1.03);}
 }
-@keyframes pigHostWin{
-  from{background-position:0 0;}
-  to{background-position:100% 0;}
+@keyframes pigHostWinPop{
+  0%{transform:translateY(0) scale(1);filter:brightness(1);}
+  28%{transform:translateY(-3.2%) scale(1.055);filter:brightness(1.12);}
+  68%{transform:translateY(0) scale(1.01);filter:brightness(1.05);}
+  100%{transform:translateY(0) scale(1);filter:brightness(1);}
 }
 @media (max-width:760px),(max-height:520px){
   .pig-host{display:none;}

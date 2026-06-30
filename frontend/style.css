@@ -15,23 +15,23 @@
   --reel-w:62.8%;
   --reel-h:64.2%;
   --ui-screenShell:url("assets/ui/screen-shell.webp");
-  --ui-reelFrame:url("assets/ui/reel-frame.png");
+  --ui-reelFrame:url("assets/ui/reel-frame.webp");
   --ui-reelCell:url("assets/ui/reel-cell.webp");
   --ui-reelBed:url("assets/ui/reel-bed.webp");
-  --ui-housePanel:url("assets/ui/house-panel.png");
-  --ui-multBadge:url("assets/ui/mult-badge.png");
-  --ui-spinButton:url("assets/ui/spin-button.png");
-  --ui-bonusButton:url("assets/ui/bonus-button.png");
+  --ui-housePanel:url("assets/ui/house-panel.webp");
+  --ui-multBadge:url("assets/ui/mult-badge.webp");
+  --ui-spinButton:url("assets/ui/spin-button.webp");
+  --ui-bonusButton:url("assets/ui/bonus-button.webp");
   --ui-controlConsole:url("assets/ui/control-console.webp");
   --ui-iconButton:url("assets/ui/icon-button.webp");
   --ui-stepper:url("assets/ui/stepper.webp");
   --ui-phasePill:url("assets/ui/phase-pill.webp");
-  --ui-multX1:url("assets/ui/mult-x1.png");
-  --ui-brickToken:url("assets/ui/brick-token.png");
-  --ui-brickSlotEmpty:url("assets/ui/brick-slot-empty.png");
-  --ui-brickSlotFilled:url("assets/ui/brick-slot-filled.png");
-  --ui-houseSlotEmpty:url("assets/ui/house-slot-empty.png");
-  --ui-houseSlotActive:url("assets/ui/house-slot-active.png");
+  --ui-multX1:url("assets/ui/mult-x1.webp");
+  --ui-brickToken:url("assets/ui/brick-token.webp");
+  --ui-brickSlotEmpty:url("assets/ui/brick-slot-empty.webp");
+  --ui-brickSlotFilled:url("assets/ui/brick-slot-filled.webp");
+  --ui-houseSlotEmpty:url("assets/ui/house-slot-empty.webp");
+  --ui-houseSlotActive:url("assets/ui/house-slot-active.webp");
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
@@ -183,7 +183,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 .cell .wmult{
   position:absolute;right:0;top:-5%;z-index:6;width:42%;height:42%;min-width:44px;min-height:44px;
   display:flex;align-items:center;justify-content:center;
-  color:#ffe969;background:var(--wolf-mult-badge,url("assets/ui/wolf-mult-badge.png")) center/contain no-repeat;
+  color:#ffe969;background:var(--wolf-mult-badge,url("assets/ui/wolf-mult-badge.webp")) center/contain no-repeat;
   font-family:var(--font-title);font-weight:900;font-size:clamp(11px,1.15vw,20px);line-height:1;
   text-align:center;text-shadow:0 2px 0 #743700,0 4px 5px rgba(0,0,0,.62);
   filter:drop-shadow(0 4px 5px rgba(0,0,0,.55)) drop-shadow(0 0 7px rgba(255,219,70,.35));
@@ -537,7 +537,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   content:"";
   position:absolute;
   inset:0;
-  background:url("assets/ui/win-celebration-overlay.png") center/cover no-repeat;
+  background:url("assets/ui/win-celebration-overlay.webp") center/cover no-repeat;
   opacity:.98;
   animation:winOverlayPop .7s cubic-bezier(.2,1.22,.35,1) both;
 }
@@ -578,7 +578,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   padding:58px 64px 54px;
   border:0;
   border-radius:18px;
-  background:url("assets/ui/modal-frame.png") center/100% 100% no-repeat;
+  background:url("assets/ui/modal-frame.webp") center/100% 100% no-repeat;
   background-position:center;
   background-repeat:no-repeat;
   box-shadow:0 28px 70px rgba(0,0,0,.62),0 0 28px rgba(255,215,92,.22);
@@ -636,7 +636,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 #buy-pop{
   padding:18px;
   width:min(360px,32vw);
-  background:url("assets/ui/modal-frame.png") center/100% 100% no-repeat;
+  background:url("assets/ui/modal-frame.webp") center/100% 100% no-repeat;
   background-position:center;
   background-repeat:no-repeat;
   border:0;

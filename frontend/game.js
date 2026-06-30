@@ -508,7 +508,7 @@
   async function freeIntro(ev) {
     fsFlash.innerHTML =
       `<div class="fs-splash-card">` +
-      `<img class="fs-splash-img" src="${uiAsset("freeSpinsSplash") || "assets/ui/free-spins-splash.png"}" alt="">` +
+      `<img class="fs-splash-img" src="${uiAsset("freeSpinsSplash") || "assets/ui/free-spins-splash.webp"}" alt="">` +
       `<div class="fs-splash-copy"><span>HOUSE BUILD</span><h1>FREE SPINS</h1><p>${ev.totalSpins} Free Spins &middot; Collect bricks on the reels</p></div>` +
       `</div>`;
     fsFlash.className = "fs-flash zoom";
@@ -687,9 +687,9 @@
   function houseFullHTML(level) {
     const ui = ((window.PIGGY_ASSETS || {}).ui) || {};
     const url = {
-      1: ui.strawHouseFull || "assets/ui/strohhaus.png",
-      2: ui.stoneHouseFull || "assets/ui/steinhaus.png",
-      3: ui.fortressHouseFull || "assets/ui/festung.png",
+      1: ui.strawHouseFull || "assets/ui/strohhaus.webp",
+      2: ui.stoneHouseFull || "assets/ui/steinhaus.webp",
+      3: ui.fortressHouseFull || "assets/ui/festung.webp",
     }[Math.max(1, Math.min(3, +level || 1))];
     return url ? `<img class="hc-house-full" src="${url}" alt="">` : icoHTML("house" + level);
   }

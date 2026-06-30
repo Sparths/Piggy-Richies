@@ -19,7 +19,7 @@
   width:10.15%!important;
   height:7.05%!important;
   z-index:14!important;
-  background:url("assets/ui/multiplier-frame.png") center/100% 100% no-repeat!important;
+  background:url("assets/ui/multiplier-frame.webp") center/100% 100% no-repeat!important;
   border:0!important;
   border-radius:0!important;
   box-shadow:none!important;
@@ -99,7 +99,7 @@
   position:absolute;
   inset:-4% -3%;
   z-index:4;
-  background:url("assets/ui/hausrahmen-cutout.png") center/100% 100% no-repeat;
+  background:url("assets/ui/hausrahmen-cutout.webp") center/100% 100% no-repeat;
   pointer-events:none;
 }
 

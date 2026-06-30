@@ -3,10 +3,10 @@
 
   const PARTS = 5;
   const FALLBACK_ASSETS = {
-    frame: "assets/ui/hausrahmen-cutout.png",
-    straw: "assets/ui/strohhaus.png",
-    stone: "assets/ui/steinhaus.png",
-    fortress: "assets/ui/festung.png",
+    frame: "assets/ui/hausrahmen-cutout.webp",
+    straw: "assets/ui/strohhaus.webp",
+    stone: "assets/ui/steinhaus.webp",
+    fortress: "assets/ui/festung.webp",
   };
 
   let container = null;

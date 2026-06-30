@@ -1,8 +1,8 @@
 #btn-menu,#btn-turbo,.bar-icon.buy,.spin-btn{background-color:transparent!important;background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important;border:0!important;box-shadow:none!important;filter:drop-shadow(0 6px 8px rgba(0,0,0,.38))!important;}
-#btn-menu{background-image:url("assets/ui/menubutton-cutout.png")!important;}
-#btn-turbo{background-image:url("assets/ui/turbobutton-cutout.png")!important;}
-.bar-icon.buy{background-image:url("assets/ui/bonusbutton-cutout.png")!important;}
-.spin-btn{background-image:url("assets/ui/spinbuttun-cutout.png")!important;}
+#btn-menu{background-image:url("assets/ui/menubutton-cutout.webp")!important;}
+#btn-turbo{background-image:url("assets/ui/turbobutton-cutout.webp")!important;}
+.bar-icon.buy{background-image:url("assets/ui/bonusbutton-cutout.webp")!important;}
+.spin-btn{background-image:url("assets/ui/spinbuttun-cutout.webp")!important;}
 #btn-menu .ui-ico,#btn-turbo .ui-ico,.bar-icon.buy b,.bar-icon.buy small,.spin-btn .spin-label{display:none!important;}
 #btn-auto{
   display:flex!important;background:linear-gradient(180deg,#297f32,#0d4420)!important;

@@ -97,16 +97,22 @@
     balanceListeners.forEach((fn) => safe(() => fn(balance, source)));
   }
 
+  function bookFromEvents(events, meta = {}) {
+    return { ...meta, events, payoutMultiplier: Number(meta.payoutMultiplier) || 0 };
+  }
+
   function normalizeBook(round) {
     if (!round) return null;
+    if (Array.isArray(round)) return bookFromEvents(round);
     if (Array.isArray(round.events)) return round;
     if (round.state) {
+      if (Array.isArray(round.state)) return bookFromEvents(round.state, round);
       const stateBook = normalizeBook(round.state);
-      if (stateBook) return stateBook;
+      if (stateBook) return { ...round, ...stateBook, events: stateBook.events };
     }
     if (round.event) {
       const eventBook = normalizeBook(round.event);
-      if (eventBook) return eventBook;
+      if (eventBook) return { ...round, ...eventBook, events: eventBook.events };
     }
     if (round.book && Array.isArray(round.book.events)) return round.book;
     if (round.result && Array.isArray(round.result.events)) return round.result;

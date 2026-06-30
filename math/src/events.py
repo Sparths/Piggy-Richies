@@ -101,8 +101,8 @@ class EventStream:
     def collect_brick(self, bricks: int, position: list[int]) -> dict:
         return self.add({"type": "collectBrick", "bricks": bricks, "position": position})
 
-    def enter_freegame(self, total_spins: int, house: str) -> dict:
-        return self.add({"type": "enterFreeGame", "totalSpins": total_spins, "house": house})
+    def enter_freegame(self, total_spins: int, house: str, bricks: int = 0) -> dict:
+        return self.add({"type": "enterFreeGame", "totalSpins": total_spins, "house": house, "bricks": bricks})
 
     def exit_freegame(self, total_win: float) -> dict:
         return self.add({"type": "exitFreeGame", "totalWin": round(total_win, 4)})

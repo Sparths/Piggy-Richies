@@ -320,7 +320,7 @@
           fsTot = ev.totalSpins;
           fsNow = 0;
           const lvl = { "Stroh-Haus": 1, "Holz-Haus": 2, "Ziegel-Festung": 3 }[ev.house] || 1;
-          currentBricks = Math.max(0, Number(ev.bricks) || 0);
+          currentBricks = Math.max(0, Number.isFinite(Number(ev.bricks)) ? Number(ev.bricks) : (currentMode === "bonus_vip" ? 5 : 0));
           setHouse(lvl, ev.house, currentBricks);
           syncHouseUI(currentBricks);
           completedHouseStages = new Set([1]);

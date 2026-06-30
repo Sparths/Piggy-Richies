@@ -110,7 +110,7 @@ class GameState:
         spins_done = 0
         total = 0.0
 
-        es.enter_freegame(spins_total, self._house_name(level))
+        es.enter_freegame(spins_total, self._house_name(level), bricks)
 
         def bank_brick(pos):
             """Collect one brick: bank it, animate it, apply any house upgrade."""
@@ -150,12 +150,9 @@ class GameState:
             # spins at Level 3 (Brick Fortress) and resets to x1 at Levels 1-2.
             es.update_global_mult(ladder[min(mult_start, len(ladder) - 1)])
 
-            # Collect every brick on the *revealed* board (any reel/row), banking
-            # and animating each in turn. Deliberately only the bricks present at
-            # the reveal: this preserves the designed ~0.44 bricks/spin upgrade
-            # pace. (Also counting bricks that tumble in mid-cascade snowballs
-            # upgrades and ~doubles the bonus EV -- a long cascade can drop a
-            # brick on every step.)
+            # Collect every brick on the revealed board, then every newly dropped
+            # brick after cascades. The frontend animates both paths, so the math
+            # state must count both as well or house levels desync from the UI.
             for pos in self.board.positions_of("BR"):
                 bank_brick(pos)
 
@@ -166,6 +163,7 @@ class GameState:
                 sticky_wilds=sticky_wilds if sticky_active else {},
                 persist=sticky_active,
                 mult_start=mult_start,
+                collect_drop_brick=bank_brick,
             )
             if sticky_active:
                 persist_index = end_index
@@ -193,6 +191,7 @@ class GameState:
         sticky_wilds: dict[tuple[int, int], int],
         persist: bool,
         mult_start: int,
+        collect_drop_brick=None,
     ) -> tuple[float, int]:
         """Run cascades until no win; return (spin_win, final_mult_index)."""
         es, board, cfg = self.es, self.board, self.config
@@ -225,8 +224,12 @@ class GameState:
             es.win_info(win_dicts, step, mult)
 
             es.tumble(sorted([list(p) for p in removal]), gametype)
+            before_collapse = board.snapshot()
             board.collapse(removal)
             es.drop_board(board.snapshot(), gametype)
+            if gametype == "freegame" and collect_drop_brick:
+                for pos in self._new_drop_bricks(before_collapse, removal):
+                    collect_drop_brick(pos)
             mult_index += 1
 
             if spin_win >= cfg.wincap:
@@ -262,6 +265,19 @@ class GameState:
         amount = self.config.scatter_pays[min(scatters, 5)]
         self.es.scatter_pay(scatters, amount)
         return amount
+
+    def _new_drop_bricks(self, before: list[list[str]], removal: set[tuple[int, int]]) -> list[tuple[int, int]]:
+        """Return BR positions introduced by the last collapse, excluding survivors."""
+        out: list[tuple[int, int]] = []
+        for r in range(self.board.num_reels):
+            removed_rows = {row for col, row in removal if col == r}
+            if not removed_rows:
+                continue
+            missing = len(removed_rows)
+            for row in range(missing):
+                if self.board.grid[r][row] == "BR":
+                    out.append((r, row))
+        return out
 
     def _maybe_upgrade(self, level: int, bricks: int):
         """Return (new_level, extra_spins, house_name) if bricks unlock the next."""

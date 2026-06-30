@@ -120,7 +120,12 @@
 
   function finalizeBook(book) {
     if (!book || book.__piggyMoneyNormalized) return book;
-    if (!looksLikeStakeMoneyBook(book)) return book;
+    // In a live RGS session every /play book is in Stake's x100 integer money
+    // format, so always normalize it back to frontend units -- the round object
+    // does not reliably expose criteria/baseGameWins/freeGameWins. Outside a
+    // session (standalone/replay dev) only touch books that look RGS-shaped so
+    // raw demo books are never halved.
+    if (!active && !looksLikeStakeMoneyBook(book)) return book;
     const normalized = normalizeStakeMoney("", book);
     Object.defineProperty(normalized, "__piggyMoneyNormalized", { value: true });
     return normalized;

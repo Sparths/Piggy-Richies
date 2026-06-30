@@ -1,0 +1,40 @@
+/* Layout overrides: host right of reels, controls lower-right. */
+#pig-host.pig-host{
+  left:auto!important;
+  right:5.6%!important;
+  top:36.8%!important;
+  width:17.2%!important;
+  z-index:14!important;
+  transform:scaleX(-1)!important;
+  transform-origin:50% 96%!important;
+}
+#pig-host.pig-host::after{
+  transform:scaleX(1.08)!important;
+}
+#pig-host .pig-host-sprite{
+  transform-origin:50% 96%!important;
+}
+#btn-auto{
+  right:3.2%!important;
+  top:56.2%!important;
+  width:4.4%!important;
+  height:7.8%!important;
+  z-index:34!important;
+}
+#spin.spin-btn{
+  right:6.6%!important;
+  top:54.8%!important;
+  width:9.6%!important;
+  height:17.1%!important;
+  z-index:35!important;
+}
+#btn-buy.bar-icon.buy{
+  right:6.4%!important;
+  top:73.8%!important;
+  width:5.2%!important;
+  height:9.2%!important;
+  z-index:34!important;
+}
+@media (max-width:760px),(max-height:520px){
+  #pig-host.pig-host{display:none!important;}
+}

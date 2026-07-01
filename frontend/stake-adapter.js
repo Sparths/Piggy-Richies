@@ -14,7 +14,9 @@
   const params = new URLSearchParams(window.location.search || "");
   const sessionID = params.get("sessionID") || params.get("sessionId") || params.get("session_id") || "";
   const rawRgsUrl = params.get("rgs_url") || params.get("rgsUrl") || params.get("rgs") || "";
-  const lang = params.get("lang") || params.get("language") || navigator.language || "de";
+  // i18n.js reads the same launch `lang` param, so start from its resolved
+  // language; applyLang() below keeps both in sync on any live change.
+  let lang = (window.PIGGY_I18N && window.PIGGY_I18N.getLang()) || params.get("lang") || params.get("language") || "en";
   const device = params.get("device") || "desktop";
   let currency = params.get("currency") || params.get("token") || "";
   const hasInjectedStake = !!(window.StakeEngine || window.stakeEngine || window.Stake || window.stake);
@@ -243,6 +245,7 @@
       connectionReady = !!data || hasInjectedStake;
       if (data) {
         readConfig(data);
+        applyLang(data.language || data.locale || (data.config && (data.config.language || data.config.locale)));
         if (data.balance != null) setBalance(data.balance, "authenticate");
         replayBook = normalizeBook(data.round || data.replay || data.lastRound || data.activeRound) || replayBook;
         roundActive = !!(data.round && data.round.active);
@@ -275,6 +278,18 @@
     return String((data && (data.type || data.event || data.name || data.action)) || "").toLowerCase();
   }
 
+  // Push a language to the i18n layer (Stake may change it live) and keep the
+  // adapter's own `lang` -- used for authenticate + number formatting -- in sync.
+  function applyLang(value) {
+    if (!value) return;
+    safe(() => {
+      if (window.PIGGY_I18N && typeof window.PIGGY_I18N.setLang === "function") {
+        window.PIGGY_I18N.setLang(value);
+        lang = window.PIGGY_I18N.getLang();
+      }
+    });
+  }
+
   window.addEventListener("message", (ev) => safe(() => {
     const data = typeof ev.data === "string" ? safe(() => JSON.parse(ev.data), { type: ev.data }) : ev.data;
     const type = messageType(data);
@@ -285,6 +300,9 @@
       if (book) replayListeners.forEach((fn) => safe(() => fn(book)));
     }
     if (type.includes("reset") || type.includes("newsession")) resetListeners.forEach((fn) => safe(fn));
+    const langValue = payload && (payload.language || payload.lang || payload.locale);
+    if (type.includes("lang") || type.includes("locale")) applyLang(langValue || (typeof payload === "string" ? payload : data && data.value));
+    else if (langValue && (type.includes("config") || type.includes("setting") || type.includes("update"))) applyLang(langValue);
     if (type.includes("mute") || type.includes("sound")) {
       muted = payload && (payload.muted === true || payload.sound === false);
       if (window.PIGGY_AUDIO && typeof window.PIGGY_AUDIO.setMuted === "function") window.PIGGY_AUDIO.setMuted(muted);
@@ -317,7 +335,8 @@
     onReset(fn) { if (typeof fn === "function") resetListeners.add(fn); },
     format(value) {
       const opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-      return safe(() => new Intl.NumberFormat(lang || "de-DE", opts).format(Number(value) || 0), (Number(value) || 0).toFixed(2));
+      const loc = (window.PIGGY_I18N && window.PIGGY_I18N.locale()) || lang || "en-US";
+      return safe(() => new Intl.NumberFormat(loc, opts).format(Number(value) || 0), (Number(value) || 0).toFixed(2));
     },
     async play({ amount, mode, bet }) {
       if (!active) return null;

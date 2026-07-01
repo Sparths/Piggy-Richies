@@ -8,6 +8,7 @@
   const BOOKS = window.PIGGY_BOOKS || { base: [], bonus: [], bonus_vip: [] };
   const ART = window.PIGGY_ART, SND = window.PIGGY_AUDIO;
   const STAKE = window.PIGGY_STAKE || fallbackStakeAdapter();
+  const I18N = window.PIGGY_I18N || { t: (k) => k, locale: () => "en-US", symName: (id) => id, houseName: (l) => l, onChange() {}, applyStatic() {}, getLang: () => "en" };
   const SYM = {}; CFG.symbols.forEach((s) => (SYM[s.id] = s));
   const REELS = CFG.numReels, ROWS = CFG.numRows;
 
@@ -28,7 +29,7 @@
   const bet = () => BETS[betIdx];
   const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
-  const fmt = (n) => (STAKE && STAKE.format ? STAKE.format(n) : n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const fmt = (n) => (STAKE && STAKE.format ? STAKE.format(n) : n.toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   function uiAsset(name) { const A = window.PIGGY_ASSETS || {}; return (A.ui || {})[name] || ""; }
   function safeHouse(method, ...args) {
     try {
@@ -189,7 +190,7 @@
 
   // ---- HUD ----------------------------------------------------------------
   function setPhase(extra) {
-    phaseEl.textContent = extra || (curGametype === "freegame" ? `FREISPIEL ${fsNow}/${fsTot}` : "BASISSPIEL");
+    phaseEl.textContent = extra || (curGametype === "freegame" ? I18N.t("phase.free", { n: fsNow, t: fsTot }) : I18N.t("phase.base"));
     phaseEl.classList.toggle("bonus", curGametype === "freegame");
   }
   let lastMult = 1;
@@ -302,7 +303,7 @@
           await collectBoardBricks(ev.board, eventIndex, prevBoard, removedMap, true);
           break;
         }
-        case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}x ${chip("pot")} zahlt ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
+        case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}x ${chip("pot")} ${I18N.t("word.pays")} ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
         case "freeSpinTrigger":
           roundHadBonusTrigger = true;
           if (curGametype === "freegame") { toast(`RETRIGGER &middot; +${ev.spinsAwarded} ${chip("pot")}`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
@@ -355,7 +356,7 @@
   // ---- house upgrade meter (organic ring + level chips, no progress bar) ----
   function setHouse(level, name, bricks) {
     currentHouseLevel = level;
-    houseLabel = name; houseName.textContent = name;
+    houseLabel = name; houseName.textContent = I18N.houseName(level);
     houseEmoji.innerHTML = icoHTML("house" + level);
     housePanel.dataset.level = String(level);
     const L = CFG.features.houseLevels;
@@ -392,7 +393,7 @@
     slots.forEach((slot, i) => slot.classList.toggle("filled", i < Math.min(10, Math.max(0, bricks))));
   }
   function houseDisplayName(level, fallback) {
-    return ({ 1: "Strohhaus", 2: "Steinhaus", 3: "Festung" }[Math.max(1, Math.min(3, Number(level) || 1))]) || fallback || "";
+    return I18N.houseName(level) || fallback || "";
   }
   function houseCompleteEvent(level, bricks) {
     const lvl = Math.max(1, Math.min(3, Number(level) || 1));
@@ -509,7 +510,7 @@
     fsFlash.innerHTML =
       `<div class="fs-splash-card">` +
       `<img class="fs-splash-img" src="${uiAsset("freeSpinsSplash") || "assets/ui/free-spins-splash.webp"}" alt="">` +
-      `<div class="fs-splash-copy"><span>HOUSE BUILD</span><h1>FREE SPINS</h1><p>${ev.totalSpins} Free Spins &middot; Collect bricks on the reels</p></div>` +
+      `<div class="fs-splash-copy"><span>${I18N.t("fs.build")}</span><h1>${I18N.t("fs.freespins")}</h1><p>${I18N.t("fs.collect", { n: ev.totalSpins })}</p></div>` +
       `</div>`;
     fsFlash.className = "fs-flash zoom";
     SND.trigger();
@@ -538,7 +539,7 @@
     const ov = $("house-cine"); if (!ov) return;
     $("hc-house").innerHTML = houseFullHTML(ev.level);
     $("hc-title").textContent = houseDisplayName(ev.level, ev.house);
-    $("hc-sub").textContent = ev.extraSpins ? "+" + ev.extraSpins + " FREE SPINS" : "HOUSE COMPLETE";
+    $("hc-sub").textContent = ev.extraSpins ? I18N.t("cine.extraSpins", { n: ev.extraSpins }) : I18N.t("cine.complete");
     ov.classList.remove("hidden");
     const h = $("hc-house"); h.classList.remove("smash"); void h.offsetWidth; h.classList.add("smash");
     (SND.houseComplete || SND.upgrade).call(SND);
@@ -579,7 +580,7 @@
   async function doSpin(mode) {
     if (busy) return; SND.unlock(); closePops();
     const cost = (mode === "base" ? 1 : mode === "bonus" ? buyA : buyB) * bet();
-    if (balance < cost) { toast("Nicht genug Guthaben"); autoLeft = 0; return; }
+    if (balance < cost) { toast(I18N.t("toast.noBalance")); autoLeft = 0; return; }
     busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
     let book = null;
     stakeLocalRound = false;
@@ -602,7 +603,7 @@
       await play(book, mode);
     } catch (err) {
       console.warn("[game] spin failed", err);
-      toast("Connection not ready");
+      toast(I18N.t("toast.notReady"));
       autoLeft = 0;
     }
     busy = false; spinBtn.disabled = false; spinBtn.classList.remove("spinning"); ctlEnable(true);
@@ -623,9 +624,9 @@
       const s = SYM[id]; if (!s) return; let pay = "";
       if (CFG.paytable[id]) { const t = CFG.paytable[id]; pay = `5x <b>${t[5]}</b> &middot; 4x ${t[4]} &middot; 3x ${t[3]}`; }
       else if (s.scatter) { const sp = CFG.scatterPays; pay = `5x <b>${sp[5]}</b> &middot; 4x ${sp[4]} &middot; 3x ${sp[3]}`; }
-      else if (s.wild) pay = "<small>Wild - ersetzt alle Symbole</small>";
-      else if (s.collectible) pay = "<small>Ziegel - Haus-Upgrade</small>";
-      grid.insertAdjacentHTML("beforeend", `<div class="pt-row"><div class="pt-ico">${symInner(id)}</div><div class="pt-vals"><span class="pt-name">${s.name || id}</span><span class="pt-pay">${pay}</span></div></div>`);
+      else if (s.wild) pay = `<small>${I18N.t("pay.wild")}</small>`;
+      else if (s.collectible) pay = `<small>${I18N.t("pay.brick")}</small>`;
+      grid.insertAdjacentHTML("beforeend", `<div class="pt-row"><div class="pt-ico">${symInner(id)}</div><div class="pt-vals"><span class="pt-name">${I18N.symName(id) || s.name || id}</span><span class="pt-pay">${pay}</span></div></div>`);
     });
   }
 
@@ -635,8 +636,8 @@
   function openModal(id) { closePops(); $(id).classList.remove("hidden"); }
   function refreshBet() {
     betEl.textContent = fmt(bet());
-    $("buy-a-cost").textContent = buyA + "x bet";
-    $("buy-b-cost").textContent = buyB + "x bet";
+    $("buy-a-cost").textContent = buyA + I18N.t("buy.xbet");
+    $("buy-b-cost").textContent = buyB + I18N.t("buy.xbet");
     const aPrice = $("buy-a-price"), bPrice = $("buy-b-price");
     if (aPrice) aPrice.textContent = fmt(bet() * buyA);
     if (bPrice) bPrice.textContent = fmt(bet() * buyB);
@@ -656,7 +657,7 @@
       const a = b.dataset.act;
       if (a === "help") openModal("modal-help");
       else if (a === "paytable") openModal("modal-paytable");
-      else if (a === "sound") { muted = SND.toggle(); $("sound-state").textContent = muted ? "aus" : "an"; const si = $("sound-ico"); if (si) si.innerHTML = icoHTML(muted ? "soundOff" : "sound"); }
+      else if (a === "sound") { muted = SND.toggle(); $("sound-state").textContent = muted ? I18N.t("sound.off") : I18N.t("sound.on"); const si = $("sound-ico"); if (si) si.innerHTML = icoHTML(muted ? "soundOff" : "sound"); }
     }));
     $("buy-pop").querySelectorAll("button").forEach((b) => (b.onclick = () => { closePops(); doSpin(b.dataset.buy); }));
     document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => b.closest(".modal").classList.add("hidden")));
@@ -754,7 +755,7 @@
       await play(book, replayMode);
     } catch (err) {
       console.warn("[game] replay failed", err);
-      toast("Replay nicht verfuegbar");
+      toast(I18N.t("toast.replayUnavailable"));
     }
     busy = false; spinBtn.disabled = false; spinBtn.classList.remove("spinning"); ctlEnable(true);
   }
@@ -777,8 +778,20 @@
       setBalance: (v) => STAKE.setBalance(v, "api"),
       state: gameState,
     };
-    $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString("de-DE") + "x";
+    $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString(I18N.locale()) + "x";
     buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire(); paintIcons();
+    // Live language switch (Stake pushes a new lang): i18n has already re-applied
+    // the static DOM; refresh the dynamic + icon-bearing bits and re-format numbers.
+    I18N.onChange(() => {
+      paintIcons(document);
+      buildPaytable();
+      setPhase();
+      refreshBet();
+      houseName.textContent = I18N.houseName(currentHouseLevel);
+      $("sound-state").textContent = muted ? I18N.t("sound.off") : I18N.t("sound.on");
+      $("meta-max").textContent = CFG.wincap.toLocaleString(I18N.locale()) + "x";
+      balanceEl.textContent = fmt(balance); winEl.textContent = fmt(dispWin * bet());
+    });
     if (FX) FX.init($("fx"), document.querySelector(".stage"));
     if (FX && FX.ambient) FX.ambient($("ambient"));   // drifting fireflies behind the reels
     $("bigwin").addEventListener("click", () => (skipBig = true));
@@ -837,7 +850,7 @@
       ready() {},
       isLocalFallback: () => false,
       recordState() {},
-      format: (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      format: (n) => n.toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     };
   }
   function fallbackConfig() {

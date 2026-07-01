@@ -174,10 +174,12 @@
     container = document.getElementById("house-upgrade-meter");
     if (!container || !window.PIGGY_ASSETS) return;
 
+    const I18N = window.PIGGY_I18N;
+    const hn = (lvl, fb) => (I18N && I18N.houseName ? I18N.houseName(lvl) : fb);
     const stages = [
-      { id: "straw", label: "Strohhaus", image: asset("straw") },
-      { id: "stone", label: "Steinhaus", image: asset("stone") },
-      { id: "fortress", label: "Festung", image: asset("fortress") },
+      { id: "straw", label: hn(1, "Straw House"), image: asset("straw") },
+      { id: "stone", label: hn(2, "Wood House"), image: asset("stone") },
+      { id: "fortress", label: hn(3, "Brick Fortress"), image: asset("fortress") },
     ];
 
     container.textContent = "";

@@ -29,6 +29,7 @@ import math
 import os
 import random
 import shutil
+import subprocess
 import sys
 import time
 
@@ -284,10 +285,49 @@ def _stake_book(book: dict, mode: str) -> dict:
     return converted
 
 
-def _write_stake_books_jsonl(path: str, books: list[dict], mode: str) -> None:
-    with open(path, "w", encoding="UTF-8", newline="\n") as fh:
+def _zstd_compressor():
+    """Return a zStandard compressor if the optional module is installed.
+
+    Stake's canonical book format is zStandard-compressed ``.jsonl.zst`` (the RGS
+    decompresses on read). ``zstandard`` is an *optional* dependency -- see
+    ``math/requirements.txt`` -- so builds still succeed without it; we then fall
+    back to the ``zstd`` CLI, and finally to a plain ``.jsonl`` the RGS also
+    accepts. Multithreaded so the large feature-buy book sets compress quickly.
+    """
+    try:
+        import zstandard  # noqa: WPS433 (optional dependency, imported lazily)
+    except Exception:  # pragma: no cover - module simply absent
+        return None
+    return zstandard.ZstdCompressor(level=12, threads=-1)
+
+
+def _write_stake_books(path_base: str, books: list[dict], mode: str, compressor) -> str:
+    """Write ``<path_base>.jsonl.zst`` (preferred) or ``.jsonl`` (fallback).
+
+    Returns the full path actually written so ``index.json`` and the backend
+    config reference the real filename + checksum.
+    """
+    def _lines():
         for book in books:
-            fh.write(json.dumps(_stake_book(book, mode), separators=(",", ":")) + "\n")
+            yield json.dumps(_stake_book(book, mode), separators=(",", ":")) + "\n"
+
+    if compressor is not None:
+        final = path_base + ".jsonl.zst"
+        with open(final, "wb") as raw, compressor.stream_writer(raw, closefd=False) as fh:
+            for line in _lines():
+                fh.write(line.encode("utf-8"))
+        return final
+
+    plain = path_base + ".jsonl"
+    with open(plain, "w", encoding="UTF-8", newline="\n") as fh:
+        for line in _lines():
+            fh.write(line)
+    zstd_bin = shutil.which("zstd")
+    if zstd_bin:
+        # Compress in place; --rm drops the large plain file after success.
+        subprocess.run([zstd_bin, "-q", "-12", "-T0", "-f", "--rm", plain], check=True)
+        return plain + ".zst"
+    return plain
 
 
 def _write_stake_publish(cfg: GameConfig, generated: dict, fair_costs: dict) -> None:
@@ -297,6 +337,9 @@ def _write_stake_publish(cfg: GameConfig, generated: dict, fair_costs: dict) -> 
     a CSV header. Stake's RGS/upload helpers read lookup payouts as cents
     (``payout / 100``) and locate files from ``publish_files/index.json``. Keep
     both formats: demo files stay untouched, upload files are written separately.
+    Books are emitted as zStandard-compressed ``.jsonl.zst`` (Stake's canonical
+    format, ~10x smaller); ``index.json`` and the backend config reference
+    whichever extension was actually produced (see ``_write_stake_books``).
     """
     publish_dir = os.path.join(LIB, "publish_files")
     config_dir = os.path.join(LIB, "configs")
@@ -305,6 +348,14 @@ def _write_stake_publish(cfg: GameConfig, generated: dict, fair_costs: dict) -> 
 
     for path in (publish_dir, config_dir, force_dir, upload_dir):
         os.makedirs(path, exist_ok=True)
+
+    compressor = _zstd_compressor()
+    if compressor is None and shutil.which("zstd") is None:
+        print(
+            "  ! zstandard not installed and no `zstd` CLI found -- writing plain "
+            ".jsonl books (RGS accepts them, but they upload ~10x larger).\n"
+            "    Install with: pip install -r math/requirements.txt"
+        )
 
     fe_config_name = f"config_fe_{cfg.game_id}.json"
     fe_config_path = os.path.join(config_dir, fe_config_name)
@@ -360,9 +411,8 @@ def _write_stake_publish(cfg: GameConfig, generated: dict, fair_costs: dict) -> 
         cost = fair_costs.get(name, mode.cost)
         int_weights = [_stake_weight(w) for w in (weights or [1.0] * len(payouts))]
 
-        pub_books_name = f"books_{name}.jsonl"
-        pub_books_path = os.path.join(publish_dir, pub_books_name)
-        _write_stake_books_jsonl(pub_books_path, books, name)
+        pub_books_path = _write_stake_books(os.path.join(publish_dir, f"books_{name}"), books, name, compressor)
+        pub_books_name = os.path.basename(pub_books_path)
         shutil.copy2(pub_books_path, os.path.join(upload_dir, pub_books_name))
 
         pub_lut_name = f"lookUpTable_{name}_0.csv"

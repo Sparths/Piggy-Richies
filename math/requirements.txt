@@ -1,0 +1,10 @@
+# Optional dependencies for the Stake Engine publish step.
+#
+# The core math engine (simulation, calibration, demo library) needs NO
+# third-party packages -- plain CPython >= 3.10 is enough.
+#
+# `zstandard` is only used by `run.py build` to write the upload books as
+# Stake's canonical zStandard-compressed `.jsonl.zst` (~10x smaller than plain
+# `.jsonl`). Without it the build still succeeds: it falls back to the `zstd`
+# CLI if present, otherwise to plain `.jsonl` (which the RGS also accepts).
+zstandard>=0.21

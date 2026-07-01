@@ -28,11 +28,19 @@ library/                    OUTPUT: books/ lookup_tables/ config/
 
 ```bash
 python games/piggy_richies/run.py quick               # 30k-spin smoke test + stats
-python games/piggy_richies/run.py build               # write library + frontend data
+python games/piggy_richies/run.py build               # write library + frontend + Stake upload
 python games/piggy_richies/run.py calibrate 4000000   # re-solve PAYTABLE_SCALE for 96.55%
 ```
 
 `run.py` adds the repo root to `sys.path`, so run it from anywhere.
+
+The core engine needs **no third-party packages**. For the Stake upload step,
+install the one optional dependency so books are written in Stake's compressed
+`.jsonl.zst` format (otherwise the build falls back to plain `.jsonl`):
+
+```bash
+pip install -r math/requirements.txt   # zstandard (optional)
+```
 
 ## How RTP is hit
 
@@ -56,3 +64,28 @@ python games/piggy_richies/run.py calibrate 4000000   # re-solve PAYTABLE_SCALE 
 
 The build also writes `../../frontend/game-config.js` and a curated, re-weighted
 `game-books.js` so the web client runs with no server.
+
+## Stake Engine upload (`stake_engine_upload/`)
+
+`build` also emits a ready-to-upload folder at **`math/stake_engine_upload/`**
+(git-ignored, regenerable) in Stake's required RGS format. Upload its contents
+via the Stake Engine ACP:
+
+| File | Contents |
+|------|----------|
+| `index.json` | `modes[]` — each `{name, cost, events, weights}` pointing at the files below |
+| `books_<mode>.jsonl.zst` | one round per line, zStandard-compressed: `{id, payoutMultiplier, events, criteria, baseGameWins, freeGameWins}` — `payoutMultiplier` is an **integer** (× 100) |
+| `lookUpTable_<mode>_0.csv` | headerless `id,weight,payout` — all **integers**; `payout` matches the book's `payoutMultiplier` |
+| `config.json` | backend config (RTP, denominations, per-mode book-shelf + sha256 checksums) |
+| `config_fe_<game>.json` | front-end config (symbols, paytable, padding reels) |
+
+Format notes:
+
+* **Money is scaled ×100** everywhere in the upload (`payoutMultiplier`,
+  `baseGameWins`, `stepWin`, …). The RGS divides by 100 on read; the front-end
+  `stake-adapter.js` mirrors this so the live game and the demo agree.
+* **Books are `.jsonl.zst`** when `zstandard` (or the `zstd` CLI) is available —
+  Stake's canonical format, ~10x smaller. Without either, the build falls back
+  to plain `.jsonl` and points `index.json` at that (the RGS accepts both).
+* The lookup `payout` and the book `payoutMultiplier` are asserted equal at
+  build time, so the published RTP matches the books exactly.

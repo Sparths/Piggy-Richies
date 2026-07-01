@@ -761,3 +761,18 @@ body.fs-active .reel-panel{filter:drop-shadow(0 20px 34px rgba(0,0,0,.56)) drop-
   .bigwin-amount{font-size:52px;}
   .paytable{grid-template-columns:1fr;}
 }
+
+/* ---- how-to-play controls sub-list + buy confirmation modal ---- */
+.how-sub{font-family:var(--font-title,inherit);font-size:15px;color:var(--gold,#ffcf5a);margin:6px 0 10px;letter-spacing:.4px;}
+.how.controls li .ui-ico{width:18px;height:18px;display:inline-flex;vertical-align:-4px;}
+#modal-buy-confirm .modal-card{max-width:420px;text-align:center;}
+.buy-confirm-card .bc-house{display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;color:#fff8d8;margin:6px 0 4px;}
+.buy-confirm-card .bc-house .ui-ico{width:34px;height:34px;display:inline-flex;}
+.buy-confirm-card .bc-bet{font-size:13px;color:var(--muted,#b9c4c0);margin-bottom:12px;}
+.buy-confirm-card .bc-cost{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px;border-radius:10px;background:rgba(4,24,26,.55);margin-bottom:16px;}
+.buy-confirm-card .bc-cost span{font-size:11px;letter-spacing:1.5px;color:var(--muted,#b9c4c0);}
+.buy-confirm-card .bc-cost strong{font-family:var(--font-title,inherit);font-size:30px;color:var(--gold,#ffcf5a);line-height:1;}
+.buy-confirm-card .bc-actions{display:flex;gap:10px;}
+.buy-confirm-card .bc-actions .cta{flex:1;margin:0;}
+.cta.ghost{background:rgba(255,255,255,.08);color:#e7e0d5;filter:none;}
+.cta.ghost:hover{background:rgba(255,255,255,.16);filter:none;}

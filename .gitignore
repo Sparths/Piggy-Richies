@@ -23,3 +23,7 @@ math/stake_engine_upload/
 # OS / editor
 .DS_Store
 *.swp
+
+# CDP smoke-test artifacts (tools/cdp_slot_smoke.py)
+tmp-*-cdp.png
+.tmp-chrome-*/

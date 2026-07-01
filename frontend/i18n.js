@@ -73,7 +73,7 @@
       "confirm.realCost": "REAL COST",
       "confirm.confirm": "Confirm",
       "confirm.cancel": "Cancel",
-      "confirm.betLine": "Bet {bet} x {mult}",
+      "confirm.betLine": "Bet {bet} × {mult}",
       // --- paytable modal ---
       "paytable.title": "Paytable",
       "paytable.sub": "(x bet, per winning way)",
@@ -172,7 +172,7 @@
       "confirm.realCost": "ECHTE KOSTEN",
       "confirm.confirm": "Bestätigen",
       "confirm.cancel": "Abbrechen",
-      "confirm.betLine": "Einsatz {bet} x {mult}",
+      "confirm.betLine": "Einsatz {bet} × {mult}",
       "paytable.title": "Auszahlungen",
       "paytable.sub": "(x Einsatz, pro Gewinnweg)",
       "paytable.note": "Wild <span class=\"ui-ico\" data-ico=\"wolf\"></span> ersetzt alle Symbole außer Scatter <span class=\"ui-ico\" data-ico=\"pot\"></span>. Scatter zahlt überall.",

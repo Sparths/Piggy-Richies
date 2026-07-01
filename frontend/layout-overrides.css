@@ -405,3 +405,32 @@ button:focus-visible{outline:2px solid rgba(255,235,140,.9)!important;outline-of
 
 /* -- G) HUD numbers never jitter -- */
 #balance,#win-amount,#bet,.bc-cost strong,.house-upgrade-count{font-variant-numeric:tabular-nums!important;}
+
+/* ================= polish pass v9 (live-audit fixes) ================= */
+
+/* Free-spin counter was invisible (house-panel is visibility:hidden).
+   Re-surface the live phase banner as a premium pill during free spins only. */
+body.fs-active .phase-banner{
+  display:flex!important;
+  left:auto!important;right:3.6%!important;top:30.5%!important;
+  width:10.9%!important;min-width:96px!important;height:4.8%!important;min-height:22px!important;
+  align-items:center!important;justify-content:center!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,rgba(16,66,24,.94),rgba(7,38,16,.96))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,224,98,.55),0 4px 9px rgba(0,0,0,.4)!important;
+  color:#ffe98f!important;font-family:var(--font-title)!important;
+  font-size:clamp(9px,.8vw,14px)!important;font-weight:900!important;letter-spacing:.05em!important;
+  font-variant-numeric:tabular-nums!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.6)!important;
+  pointer-events:none!important;z-index:19!important;
+}
+
+/* Cancel must read as the secondary action (the .cta override was gilding it). */
+.cta.ghost{
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05))!important;
+  border:2px solid rgba(255,238,128,.4)!important;
+  color:#f3ecd9!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14)!important;
+  text-shadow:none!important;
+}
+.cta.ghost:hover{background:linear-gradient(180deg,rgba(255,255,255,.24),rgba(255,255,255,.1))!important;filter:none!important;}

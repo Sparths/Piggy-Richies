@@ -118,8 +118,9 @@ def wait_eval(cdp: CDP, expression: str, timeout=15):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "desktop"
-    width, height = (390, 844) if mode == "mobile" else (1365, 768)
-    port = 9333 if mode == "desktop" else 9334
+    sizes = {"desktop": (1365, 768), "mobile": (390, 844), "landscape": (844, 390)}
+    width, height = sizes.get(mode, sizes["desktop"])
+    port = {"desktop": 9333, "mobile": 9334, "landscape": 9335}.get(mode, 9333)
     out = ROOT / f"tmp-{mode}-cdp.png"
     out_bonus = ROOT / f"tmp-{mode}-bonus-cdp.png"
     profile = ROOT / f".tmp-chrome-{mode}"
@@ -141,13 +142,39 @@ def main():
         cdp = CDP(ws)
         cdp.call("Page.enable")
         cdp.call("Runtime.enable")
-        wait_eval(cdp, "document.readyState === 'complete' && getComputedStyle(document.querySelector('#loader')).display === 'none'", 20)
+        # collect page errors from a fresh load
+        cdp.call("Page.addScriptToEvaluateOnNewDocument", {"source": (
+            "window.__jsErrors=[];window.addEventListener('error',e=>__jsErrors.push(String(e.message)));"
+            "window.__consoleErrors=[];const __ce=console.error.bind(console);"
+            "console.error=(...a)=>{__consoleErrors.push(a.map(String).join(' '));__ce(...a)};"
+        )})
+        cdp.call("Page.reload", {"ignoreCache": True})
+        wait_eval(cdp, "document.readyState === 'complete' && getComputedStyle(document.querySelector('#loader')).display === 'none'", 25)
         time.sleep(0.4)
         cdp.screenshot(out)
+        # menu + modals
+        cdp.eval("document.querySelector('#btn-menu').click()")
+        time.sleep(0.3)
+        cdp.screenshot(ROOT / f"tmp-{mode}-menu-cdp.png")
+        cdp.eval("document.querySelector('#menu-pop button[data-act=\"help\"]').click()")
+        time.sleep(0.3)
+        cdp.screenshot(ROOT / f"tmp-{mode}-help-cdp.png")
+        cdp.eval("document.querySelector('#modal-help .modal-x').click()")
+        cdp.eval("document.querySelector('#btn-menu').click()")
+        cdp.eval("document.querySelector('#menu-pop button[data-act=\"paytable\"]').click()")
+        time.sleep(0.3)
+        cdp.screenshot(ROOT / f"tmp-{mode}-paytable-cdp.png")
+        cdp.eval("document.querySelector('#modal-paytable .modal-x').click()")
+        time.sleep(0.2)
+        # buy flow now goes through the confirm modal
         cdp.eval("document.querySelector('#btn-buy').click()")
         wait_eval(cdp, "!document.querySelector('#buy-pop').classList.contains('hidden')", 5)
+        cdp.screenshot(ROOT / f"tmp-{mode}-buypop-cdp.png")
         cdp.eval("document.querySelector('#buy-pop button[data-buy=\"bonus\"]').click()")
-        wait_eval(cdp, "!document.querySelector('#house-panel').classList.contains('hidden')", 20)
+        wait_eval(cdp, "!document.querySelector('#modal-buy-confirm').classList.contains('hidden')", 5)
+        cdp.screenshot(ROOT / f"tmp-{mode}-buyconfirm-cdp.png")
+        cdp.eval("document.querySelector('#bc-confirm').click()")
+        wait_eval(cdp, "!document.querySelector('#house-panel').classList.contains('hidden')", 30)
         try:
             wait_eval(cdp, "document.querySelectorAll('#brick-rack span.filled').length > 0", 35)
             time.sleep(0.4)
@@ -162,7 +189,8 @@ def main():
             "cells:[...document.querySelectorAll('#board .cell')].map((e,i)=>{const b=e.getBoundingClientRect();return {i,x:b.x,y:b.y,w:b.width,h:b.height,bottom:b.bottom,text:e.dataset.sym}}),"
             "grid:getComputedStyle(document.querySelector('#board')).gridTemplateRows,"
             "house:document.querySelector('#house-panel')?.innerText, filled:document.querySelectorAll('#brick-rack span.filled').length,"
-            "multBg:getComputedStyle(document.querySelector('#mult-tab')).backgroundImage};})()"
+            "multBg:getComputedStyle(document.querySelector('#mult-tab')).backgroundImage,"
+            "jsErrors:window.__jsErrors||[],consoleErrors:window.__consoleErrors||[]};})()"
         )
         print(json.dumps({"base": str(out), "bonus": str(out_bonus), "metrics": metrics}, indent=2))
     finally:

@@ -197,6 +197,7 @@
 
     container.textContent = "";
     stages.forEach((stage) => container.appendChild(createCard(stage)));
+    container.classList.add("is-base-preview"); // idle boot = base game -> locked preview until a bonus starts
     applyProgress([0, 0, 0]);
 
     window.PIGGY_HOUSE_UI = {

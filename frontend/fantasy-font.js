@@ -7,8 +7,9 @@
     "#bigwin-tier",
     "#hc-title",
     "#hc-sub",
-    "#phase",
     ".fs-counter label",
+    // "#phase" intentionally NOT styled: it renders as the small live
+    // free-spin pill, where gradient-clipped text turns muddy at ~10px.
   ];
 
   const ui = (window.PIGGY_ASSETS && window.PIGGY_ASSETS.ui) || {};

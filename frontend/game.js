@@ -240,36 +240,54 @@
     chip.style.setProperty("--cascade-mult-img", `url("${url}")`);
     cell.appendChild(chip);
   }
+  // The multiplier chips leave the badge on a rising arc, overshoot slightly and
+  // slam onto their winning tiles (impact pulse + sparkle) -- not a straight lerp.
   async function flyCascadeMultToWins(mult, keys) {
     const url = cascadeMultUrl(mult);
     const unique = [...new Set(keys || [])];
     if (!url || !unique.length) return;
     clearCascadeMultFliers();
     const start = multBadgeCenter();
-    const dur = Math.max(280, 480 * SPD());
+    const dur = Math.max(320, 560 * SPD());
     const jobs = unique.map((key, i) => new Promise((resolve) => {
       const [col, row] = key.split(",").map(Number);
       const target = cellCenter(col, row);
-      const delay = Math.min(i * 28, 220);
+      const delay = Math.min(i * 55, 240);
       const fly = document.createElement("span");
       fly.className = "cascade-mult-fly";
       fly.setAttribute("aria-hidden", "true");
       fly.style.left = start.x + "px";
       fly.style.top = start.y + "px";
-      fly.style.transitionDuration = dur + "ms,.16s";
-      fly.style.transitionDelay = delay + "ms,0ms";
       fly.style.setProperty("--cascade-mult-img", `url("${url}")`);
       document.body.appendChild(fly);
-      void fly.offsetWidth;
-      requestAnimationFrame(() => {
-        fly.style.opacity = "1";
-        fly.style.transform = `translate(calc(-50% + ${Math.round(target.x - start.x)}px),calc(-50% + ${Math.round(target.y - start.y)}px)) scale(.5) rotate(5deg)`;
-      });
-      setTimeout(() => {
+      const dx = target.x - start.x, dy = target.y - start.y;
+      const arc = Math.max(36, Math.min(130, Math.hypot(dx, dy) * 0.24)); // arc height scales with distance
+      const land = () => {
         stickCascadeMultToCell(col, row, url);
+        const cell = cellAt(col, row);
+        if (cell) { cell.classList.remove("mult-hit"); void cell.offsetWidth; cell.classList.add("mult-hit"); setTimeout(() => cell.classList.remove("mult-hit"), 380); }
+        if (FX) FX.sparkle(target.x, target.y);
         fly.remove();
         resolve();
-      }, dur + delay + 45);
+      };
+      if (typeof fly.animate === "function") {
+        const anim = fly.animate([
+          { transform: "translate(-50%,-50%) scale(.35) rotate(-12deg)", opacity: 0, offset: 0 },
+          { transform: `translate(calc(-50% + ${dx * 0.18}px),calc(-50% + ${dy * 0.18 - arc * 0.7}px)) scale(1.1) rotate(-2deg)`, opacity: 1, offset: 0.22 },
+          { transform: `translate(calc(-50% + ${dx * 0.62}px),calc(-50% + ${dy * 0.62 - arc}px)) scale(1) rotate(4deg)`, opacity: 1, offset: 0.6 },
+          { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.52) rotate(9deg)`, opacity: 1, offset: 1 },
+        ], { duration: dur, delay, easing: "cubic-bezier(.32,.08,.24,1)", fill: "forwards" });
+        anim.onfinish = land;
+      } else {
+        // ancient-webview fallback: straight transition
+        fly.style.transition = `transform ${dur}ms cubic-bezier(.32,.08,.24,1) ${delay}ms,opacity .16s ease-out ${delay}ms`;
+        void fly.offsetWidth;
+        requestAnimationFrame(() => {
+          fly.style.opacity = "1";
+          fly.style.transform = `translate(calc(-50% + ${Math.round(dx)}px),calc(-50% + ${Math.round(dy)}px)) scale(.52) rotate(9deg)`;
+        });
+        setTimeout(land, dur + delay + 45);
+      }
     }));
     await Promise.all(jobs);
     await sleep(120);

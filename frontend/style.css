@@ -166,13 +166,30 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 @keyframes anticipPulse{50%{box-shadow:inset 0 0 80px rgba(255,177,61,.6);}}
 
 .cell.win{z-index:5;}
-.cell.win::after{
-  content:"";position:absolute;inset:4%;z-index:1;border-radius:12%;pointer-events:none;
-  box-shadow:0 0 0 2px rgba(255,235,150,.9),0 0 12px 2px var(--glow-win),inset 0 0 10px rgba(255,235,150,.22);
-  animation:winRing .9s ease-in-out infinite;
+/* premium winner treatment: no boxes -- a soft golden backlight blooms in
+   behind the symbol, breathes gently, and the symbol lifts above it */
+.cell.win::before{
+  content:"";position:absolute;left:50%;top:50%;z-index:1;width:112%;aspect-ratio:1/1;pointer-events:none;
+  margin-left:-56%;transform:translateY(-50%);
+  background:radial-gradient(circle,rgba(255,240,170,.5) 0%,rgba(255,214,100,.26) 38%,rgba(255,200,80,.08) 58%,transparent 70%);
+  animation:winHaloIn .32s var(--ease-pop) both,winHalo 1.6s ease-in-out .32s infinite;
 }
-.cell.win .sym{animation:winPop .42s var(--ease-pop) both;}
-@keyframes winRing{50%{box-shadow:0 0 0 2px rgba(255,235,150,.55),0 0 6px 1px var(--glow-win),inset 0 0 6px rgba(255,235,150,.12);}}
+.cell.win::after{
+  content:"";position:absolute;left:50%;top:50%;z-index:1;width:96%;aspect-ratio:1/1;pointer-events:none;
+  margin-left:-48%;transform:translateY(-50%) rotate(0deg);border-radius:50%;
+  background:
+    conic-gradient(from 0deg,transparent 0 78deg,rgba(255,244,190,.85) 90deg,transparent 102deg 258deg,rgba(255,244,190,.6) 270deg,transparent 282deg 360deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 62%,#000 66% 74%,transparent 78%);
+  mask:radial-gradient(circle,transparent 0 62%,#000 66% 74%,transparent 78%);
+  animation:winOrbit 2.6s linear infinite;opacity:.9;
+}
+.cell.win .sym{
+  animation:winPop .42s var(--ease-pop) both;
+  filter:var(--shadow-sym) drop-shadow(0 0 7px rgba(255,228,130,.4)) brightness(1.05);
+}
+@keyframes winHaloIn{from{opacity:0;transform:translateY(-50%) scale(.35);}to{opacity:1;transform:translateY(-50%) scale(1);}}
+@keyframes winHalo{50%{opacity:.72;transform:translateY(-50%) scale(.94);}}
+@keyframes winOrbit{to{transform:translateY(-50%) rotate(360deg);}}
 @keyframes winPop{0%{transform:scale(1);}55%{transform:scale(1.16);}100%{transform:scale(1.08);}}
 .cell.dim{filter:brightness(.66) saturate(.85);transition:filter .25s ease;}
 .cell.explode{z-index:7;}
@@ -208,10 +225,20 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   position:fixed;left:0;top:0;z-index:280;width:clamp(58px,5.8vw,98px);aspect-ratio:1/1;
   background:var(--cascade-mult-img) center/contain no-repeat;
   pointer-events:none;opacity:0;
-  transform:translate(-50%,-50%) scale(.72) rotate(-8deg);
-  transition:transform .48s cubic-bezier(.16,.84,.22,1),opacity .16s ease-out;
-  filter:drop-shadow(0 8px 8px rgba(0,0,0,.62)) drop-shadow(0 0 14px rgba(255,231,95,.55));
+  transform:translate(-50%,-50%) scale(.35) rotate(-12deg);
+  filter:drop-shadow(0 8px 8px rgba(0,0,0,.62)) drop-shadow(0 0 12px rgba(255,231,95,.5));
   will-change:transform,opacity;
+}
+.cascade-mult-fly::after{ /* soft comet glow trailing the chip */
+  content:"";position:absolute;inset:-28%;z-index:-1;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,236,130,.4) 0%,rgba(255,220,90,.14) 45%,transparent 68%);
+  filter:blur(2px);
+}
+/* landing beat: the receiving tile flashes once under the chip */
+.cell.mult-hit{animation:multHit .34s ease-out;}
+@keyframes multHit{
+  0%{filter:brightness(1.55) drop-shadow(0 0 14px rgba(255,232,110,.75));}
+  100%{filter:none;}
 }
 @keyframes cascadeMultStick{
   0%{opacity:0;transform:scale(.38) rotate(-14deg);}

@@ -1,4 +1,4 @@
-/* Stake's Huff & Puff: Piggy Richies -- front-end event player.
+/* Bricked Up -- front-end event player.
  * Stake Web SDK model: no game maths on the client. Each spin pulls a
  * predetermined "book" (from the math-engine sample, at true odds) and animates
  * its event stream, with phase labels, sound, count-up, turbo and autoplay. */
@@ -846,7 +846,7 @@
       document.documentElement.style.setProperty(`--ui-${name}`, `url("${url}")`);
     });
     if (A.background) { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }
-    if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
+    if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Bricked Up">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
     setStatic(randomBoard()); buildPaytable();
     const ld = $("loader"); ld.classList.add("gone"); setTimeout(() => (ld.style.display = "none"), 600);
     if (STAKE.ready) STAKE.ready(gameState());
@@ -878,7 +878,7 @@
     };
   }
   function fallbackConfig() {
-    return { gameName: "Piggy Richies", rtp: 0.9655, wincap: 15000, numReels: 5, numRows: 4, reels: null, paytable: {}, scatterPays: {},
+    return { gameName: "Bricked Up", rtp: 0.9655, wincap: 15000, numReels: 5, numRows: 4, reels: null, paytable: {}, scatterPays: {},
       symbols: [{ id: "W", kind: "wild", wild: true, name: "Wolf" }, { id: "S", kind: "scatter", scatter: true, name: "Topf" }, { id: "P1", kind: "premium", name: "Ziegel-Schwein" }, { id: "P2", kind: "premium", name: "Holz-Schwein" }, { id: "P3", kind: "premium", name: "Stroh-Schwein" }, { id: "M1", kind: "mid", name: "Axt" }, { id: "M2", kind: "mid", name: "Kelle" }, { id: "M3", kind: "mid", name: "Gabel" }, { id: "A", kind: "low", name: "Ass" }, { id: "K", kind: "low", name: "Koenig" }, { id: "Q", kind: "low", name: "Dame" }, { id: "J", kind: "low", name: "Bube" }, { id: "BR", kind: "collect", collectible: true, name: "Ziegel" }],
       betModes: [{ name: "bonus", cost: 70 }, { name: "bonus_vip", cost: 234 }],
       features: { baseMultLadder: [1, 2, 3, 5], freeMultLadder: [1, 2, 3, 5, 8], houseLevels: [{ level: 1, bricks: 0 }, { level: 2, bricks: 5 }, { level: 3, bricks: 10 }] } };

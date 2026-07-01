@@ -1,4 +1,4 @@
-/* Stake's Huff & Puff: Piggy Richies -- front-end event player.
+/* Bricked Up -- front-end event player.
  * Stake Web SDK model: no game maths on the client. Each spin pulls a
  * predetermined "book" (from the math-engine sample, at true odds) and animates
  * its event stream, with phase labels, sound, count-up, turbo and autoplay. */
@@ -21,12 +21,12 @@
   const toastEl = $("toast"), fsFlash = $("fs-flash"), autoNEl = $("auto-n");
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
-  let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0;
+  let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0, betOverride = null, pendingBuy = null;
   let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", currentMode = "base", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false, currentPlayEvents = [], completedHouseStages = new Set(), stakeLocalRound = false;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
-  const bet = () => BETS[betIdx];
+  const bet = () => (betOverride != null ? betOverride : BETS[betIdx]);
   const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
   const fmt = (n) => (STAKE && STAKE.format ? STAKE.format(n) : n.toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -642,11 +642,21 @@
     if (aPrice) aPrice.textContent = fmt(bet() * buyA);
     if (bPrice) bPrice.textContent = fmt(bet() * buyB);
   }
+  function openBuyConfirm(mode) {
+    if (mode !== "bonus" && mode !== "bonus_vip") return;
+    pendingBuy = mode;
+    const mult = mode === "bonus" ? buyA : buyB, ico = mode === "bonus" ? "house1" : "house2";
+    $("bc-name").textContent = mode === "bonus" ? I18N.t("buy.aName") : I18N.t("buy.bName");
+    const bcIco = $("bc-ico"); bcIco.dataset.ico = ico; bcIco.dataset.painted = ""; bcIco.innerHTML = icoHTML(ico);
+    $("bc-bet").textContent = I18N.t("confirm.betLine", { bet: fmt(bet()), mult });
+    $("bc-cost").textContent = fmt(mult * bet());
+    openModal("modal-buy-confirm");
+  }
 
   function wire() {
     spinBtn.onclick = () => doSpin("base");
-    $("bet-up").onclick = () => { betIdx = Math.min(BETS.length - 1, betIdx + 1); refreshBet(); };
-    $("bet-down").onclick = () => { betIdx = Math.max(0, betIdx - 1); refreshBet(); };
+    $("bet-up").onclick = () => { betOverride = null; betIdx = Math.min(BETS.length - 1, betIdx + 1); refreshBet(); };
+    $("bet-down").onclick = () => { betOverride = null; betIdx = Math.max(0, betIdx - 1); refreshBet(); };
     $("btn-turbo").onclick = () => { turbo = !turbo; $("btn-turbo").classList.toggle("on", turbo); };
     $("btn-auto").onclick = () => { if (autoLeft > 0) { autoLeft = 0; } else { autoLeft = 25; $("btn-auto").classList.add("on"); runAuto(); } };
     $("btn-menu").onclick = (e) => { e.stopPropagation(); togglePop("menu-pop"); };
@@ -659,7 +669,11 @@
       else if (a === "paytable") openModal("modal-paytable");
       else if (a === "sound") { muted = SND.toggle(); $("sound-state").textContent = muted ? I18N.t("sound.off") : I18N.t("sound.on"); const si = $("sound-ico"); if (si) si.innerHTML = icoHTML(muted ? "soundOff" : "sound"); }
     }));
-    $("buy-pop").querySelectorAll("button").forEach((b) => (b.onclick = () => { closePops(); doSpin(b.dataset.buy); }));
+    $("buy-pop").querySelectorAll("button").forEach((b) => (b.onclick = () => { closePops(); openBuyConfirm(b.dataset.buy); }));
+    // Explicit confirmation before spending a >2x bet-mode (Stake approval #14/#23):
+    // a buy can never fire from a single button -- it always shows the real cost first.
+    $("bc-confirm").onclick = () => { const m = pendingBuy; pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); if (m) doSpin(m); };
+    $("bc-cancel").onclick = () => { pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); };
     document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => b.closest(".modal").classList.add("hidden")));
     document.querySelectorAll(".modal").forEach((m) => (m.onclick = (e) => { if (e.target === m) m.classList.add("hidden"); }));
     document.addEventListener("click", closePops);
@@ -764,6 +778,15 @@
   let started = false;
   function boot() {
     balance = STAKE.init(balance) || balance;
+    // Honour the launch/replay `amount` parameter so replayed rounds show wins at
+    // the original stake (Stake approval #21/#23), not the default bet.
+    const launchBet = STAKE.getBetAmount ? STAKE.getBetAmount() : null;
+    if (launchBet != null && launchBet > 0) {
+      betOverride = launchBet;
+      let bi = 0, bd = Infinity;
+      BETS.forEach((v, i) => { const d = Math.abs(v - launchBet); if (d < bd) { bd = d; bi = i; } });
+      betIdx = bi;
+    }
     STAKE.onBalance((nextBalance) => {
       balance = nextBalance;
       if (balanceEl) balanceEl.textContent = fmt(balance);
@@ -823,7 +846,7 @@
       document.documentElement.style.setProperty(`--ui-${name}`, `url("${url}")`);
     });
     if (A.background) { const bg = $("bg"); bg.style.backgroundImage = `url(${A.background})`; const sc = bg.querySelector(".bg-scene"); if (sc) sc.style.display = "none"; }
-    if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Piggy Richies">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
+    if (A.logo) { const m = $("logo-mark"); m.innerHTML = `<img src="${A.logo}" alt="Bricked Up">`; m.style.display = "block"; m.style.width = "auto"; m.style.height = "auto"; document.querySelector(".logo-txt").style.display = "none"; }
     setStatic(randomBoard()); buildPaytable();
     const ld = $("loader"); ld.classList.add("gone"); setTimeout(() => (ld.style.display = "none"), 600);
     if (STAKE.ready) STAKE.ready(gameState());
@@ -841,6 +864,7 @@
       active: false,
       init: (v) => v,
       getBalance: () => null,
+      getBetAmount: () => null,
       setBalance() {},
       onBalance() {},
       onReplay() {},
@@ -854,7 +878,7 @@
     };
   }
   function fallbackConfig() {
-    return { gameName: "Piggy Richies", rtp: 0.9655, wincap: 15000, numReels: 5, numRows: 4, reels: null, paytable: {}, scatterPays: {},
+    return { gameName: "Bricked Up", rtp: 0.9655, wincap: 15000, numReels: 5, numRows: 4, reels: null, paytable: {}, scatterPays: {},
       symbols: [{ id: "W", kind: "wild", wild: true, name: "Wolf" }, { id: "S", kind: "scatter", scatter: true, name: "Topf" }, { id: "P1", kind: "premium", name: "Ziegel-Schwein" }, { id: "P2", kind: "premium", name: "Holz-Schwein" }, { id: "P3", kind: "premium", name: "Stroh-Schwein" }, { id: "M1", kind: "mid", name: "Axt" }, { id: "M2", kind: "mid", name: "Kelle" }, { id: "M3", kind: "mid", name: "Gabel" }, { id: "A", kind: "low", name: "Ass" }, { id: "K", kind: "low", name: "Koenig" }, { id: "Q", kind: "low", name: "Dame" }, { id: "J", kind: "low", name: "Bube" }, { id: "BR", kind: "collect", collectible: true, name: "Ziegel" }],
       betModes: [{ name: "bonus", cost: 70 }, { name: "bonus_vip", cost: 234 }],
       features: { baseMultLadder: [1, 2, 3, 5], freeMultLadder: [1, 2, 3, 5, 8], houseLevels: [{ level: 1, bricks: 0 }, { level: 2, bricks: 5 }, { level: 3, bricks: 10 }] } };

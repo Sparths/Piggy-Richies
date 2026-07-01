@@ -1,4 +1,4 @@
-/* Lightweight i18n layer for Piggy Richies.
+/* Lightweight i18n layer for Bricked Up.
  *
  * Stake launches the game with a `lang` URL parameter (and may push a live
  * language change via postMessage -- see stake-adapter.js). This module owns the
@@ -47,11 +47,24 @@
       // --- how-to-play modal ---
       "help.title": "How to play",
       "help.li1": "<b>5x4 reels, 1024 ways.</b> Matching symbols on adjacent reels from the left pay.",
-      "help.li2": "<b>Huff &amp; Puff cascades.</b> The wolf blows winning symbols away, new ones fall in.",
+      "help.li2": "<b>Wolf cascades.</b> The wolf blows winning symbols away, new ones fall in.",
       "help.li3": "<b>Wolf multiplier.</b> Every cascade in a row raises the multiplier.",
       "help.li4": "<b>3x <span class=\"ui-ico\" data-ico=\"pot\"></span> Soup Pot</b> starts the House-Building Free Spins.",
       "help.li5": "<b>Level up your house.</b> Collect <span class=\"ui-ico\" data-ico=\"brick\"></span>: Straw -> Wood -> Brick Fortress.",
       "help.cta": "Let's go",
+      "help.ctrlTitle": "Controls",
+      "ctrl.spin": "<b>Spin</b> - start a spin (or press the Spacebar).",
+      "ctrl.bet": "<b>Bet up / down</b> - raise or lower your stake.",
+      "ctrl.turbo": "<b><span class=\"ui-ico\" data-ico=\"bolt\"></span> Turbo</b> - faster spins and cascades.",
+      "ctrl.auto": "<b><span class=\"ui-ico\" data-ico=\"auto\"></span> Autoplay</b> - spins a batch of rounds automatically.",
+      "ctrl.buy": "<b>Buy Bonus</b> - pay to start the House-Building Free Spins instantly (asks you to confirm first).",
+      "ctrl.menu": "<b><span class=\"ui-ico\" data-ico=\"menu\"></span> Menu</b> - how to play, paytable and the sound toggle.",
+      // --- buy confirmation ---
+      "confirm.title": "Buy Bonus?",
+      "confirm.realCost": "REAL COST",
+      "confirm.confirm": "Confirm",
+      "confirm.cancel": "Cancel",
+      "confirm.betLine": "Bet {bet} x {mult}",
       // --- paytable modal ---
       "paytable.title": "Paytable",
       "paytable.sub": "(x bet, per winning way)",
@@ -122,11 +135,23 @@
       "buy.note": "Startet direkt die Hausbau-Freispiele.",
       "help.title": "So funktioniert's",
       "help.li1": "<b>5x4 Walzen, 1024 Wege.</b> Gleiche Symbole auf benachbarten Walzen von links zahlen.",
-      "help.li2": "<b>Huff &amp; Puff Kaskaden.</b> Der Wolf pustet Gewinnsymbole weg, neue fallen nach.",
+      "help.li2": "<b>Wolf-Kaskaden.</b> Der Wolf pustet Gewinnsymbole weg, neue fallen nach.",
       "help.li3": "<b>Wolf-Multiplikator.</b> Jede Kaskade in Folge erhöht den Multiplikator.",
       "help.li4": "<b>3x <span class=\"ui-ico\" data-ico=\"pot\"></span> Suppentopf</b> startet die Hausbau-Freispiele.",
       "help.li5": "<b>Häuser aufleveln.</b> Sammle <span class=\"ui-ico\" data-ico=\"brick\"></span>: Stroh -> Holz -> Ziegel-Festung.",
       "help.cta": "Los geht's",
+      "help.ctrlTitle": "Steuerung",
+      "ctrl.spin": "<b>Spin</b> - startet einen Dreh (oder Leertaste).",
+      "ctrl.bet": "<b>Einsatz hoch / runter</b> - Einsatz erhöhen oder verringern.",
+      "ctrl.turbo": "<b><span class=\"ui-ico\" data-ico=\"bolt\"></span> Turbo</b> - schnellere Drehs und Kaskaden.",
+      "ctrl.auto": "<b><span class=\"ui-ico\" data-ico=\"auto\"></span> Autoplay</b> - dreht automatisch mehrere Runden.",
+      "ctrl.buy": "<b>Bonus kaufen</b> - startet die Hausbau-Freispiele sofort gegen Bezahlung (mit Bestätigung).",
+      "ctrl.menu": "<b><span class=\"ui-ico\" data-ico=\"menu\"></span> Menü</b> - Anleitung, Auszahlungen und Ton.",
+      "confirm.title": "Bonus kaufen?",
+      "confirm.realCost": "ECHTE KOSTEN",
+      "confirm.confirm": "Bestätigen",
+      "confirm.cancel": "Abbrechen",
+      "confirm.betLine": "Einsatz {bet} x {mult}",
       "paytable.title": "Auszahlungen",
       "paytable.sub": "(x Einsatz, pro Gewinnweg)",
       "paytable.note": "Wild <span class=\"ui-ico\" data-ico=\"wolf\"></span> ersetzt alle Symbole außer Scatter <span class=\"ui-ico\" data-ico=\"pot\"></span>. Scatter zahlt überall.",

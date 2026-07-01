@@ -320,6 +320,15 @@
       return balance;
     },
     getBalance() { return balance; },
+    // Base bet from the launch/replay URL (`amount`), in frontend units. Stake
+    // sends replay `amount` in x1e6 minor units; scale it back like the balance.
+    getBetAmount() {
+      const raw = params.get("amount") || params.get("betAmount") || params.get("bet");
+      if (raw == null || raw === "") return null;
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n <= 0) return null;
+      return Math.abs(n) > 10000 ? n / SCALE : n;
+    },
     getConfig() { return authConfig; },
     getBetLevels() { return authConfig && Array.isArray(authConfig.betLevels) ? authConfig.betLevels.map((v) => Number(v) / SCALE) : null; },
     setBalance,

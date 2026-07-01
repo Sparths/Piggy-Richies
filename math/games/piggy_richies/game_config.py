@@ -33,8 +33,8 @@ class GameConfig(Config):
 
     def __init__(self) -> None:
         super().__init__()
-        self.game_id = "piggy_richies"
-        self.game_name = "Stake's Huff & Puff: Piggy Richies"
+        self.game_id = "piggy_richies"  # internal RGS id -- keep stable across renames
+        self.game_name = "Bricked Up"
         self.provider = "Stake Engine (concept build)"
 
         # -- Technical frame (GDD section 2) -------------------------------

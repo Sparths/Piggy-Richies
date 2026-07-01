@@ -95,6 +95,8 @@
       "fs.build": "HOUSE BUILD",
       "fs.freespins": "FREE SPINS",
       "fs.collect": "{n} Free Spins &middot; Collect bricks on the reels",
+      "fs.totalWin": "TOTAL WIN",
+      "retrigger.sub": "RETRIGGER",
       "cine.extraSpins": "+{n} FREE SPINS",
       "cine.complete": "HOUSE COMPLETE",
       // --- portrait ---
@@ -190,6 +192,8 @@
       "fs.build": "HAUSBAU",
       "fs.freespins": "FREISPIELE",
       "fs.collect": "{n} Freispiele &middot; Sammle Ziegel auf den Walzen",
+      "fs.totalWin": "GESAMTGEWINN",
+      "retrigger.sub": "RETRIGGER",
       "cine.extraSpins": "+{n} FREISPIELE",
       "cine.complete": "HAUS FERTIG",
       "portrait.title": "Zum Spielen drehen",

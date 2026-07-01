@@ -252,15 +252,7 @@
 #menu-pop>button .ui-ico{flex:0 0 22px!important;width:22px!important;height:22px!important;}
 #menu-pop>button span:not(.ui-ico){margin-right:0!important;}
 
-.burst.scatter{
-  min-width:min(420px,82vw)!important;
-  padding:22px 36px!important;
-  border:3px solid rgba(255,232,110,.9)!important;
-  border-radius:22px!important;
-  background:linear-gradient(180deg,rgba(255,235,120,.96),rgba(231,133,26,.96) 56%,rgba(112,54,10,.98))!important;
-  color:#fffbe2!important;
-  box-shadow:0 20px 44px rgba(0,0,0,.46),inset 0 0 0 2px rgba(116,48,4,.45),0 0 28px rgba(255,205,73,.4)!important;
-}
+/* (removed: .burst was replaced by the .celebrate banner in style.css) */
 
 .portrait-rotate{
   position:fixed;

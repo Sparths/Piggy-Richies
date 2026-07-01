@@ -407,13 +407,52 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 .pop-info.small{font-size:10px;word-break:break-word;}
 
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:12;}
-.burst{
-  font-family:var(--font-title);font-size:48px;font-weight:900;text-align:center;color:var(--gold);
-  text-shadow:0 4px 0 #6a320d,0 12px 24px rgba(0,0,0,.75),0 0 24px rgba(255,214,110,.65);
-  animation:burstIn 1s ease forwards;
+
+/* ---- celebration banner (scatter, retrigger, total win) ---- */
+.celebrate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.celebrate.out{animation:celebOut .38s ease-in both;}
+.celebrate-rays{
+  position:absolute;left:50%;top:50%;width:min(120vmin,900px);aspect-ratio:1/1;
+  transform:translate(-50%,-50%);
+  background:repeating-conic-gradient(from 0deg,rgba(255,222,96,.2) 0 5deg,transparent 5deg 14deg);
+  -webkit-mask:radial-gradient(circle,#000 0 16%,transparent 44%);
+  mask:radial-gradient(circle,#000 0 16%,transparent 44%);
+  animation:celebRaysIn .45s ease-out both,celebRays 16s linear .1s infinite;
 }
-.burst.scatter{color:#ffbf62;}
-@keyframes burstIn{0%{transform:scale(.35);opacity:0;}30%{transform:scale(1.13);opacity:1;}80%{opacity:1;}100%{transform:scale(1.04);opacity:0;}}
+.celebrate-card{
+  position:relative;display:flex;align-items:center;gap:clamp(10px,1.4vw,20px);
+  padding:clamp(12px,1.8vw,22px) clamp(26px,3.6vw,48px);
+  border-radius:999px;border:2px solid rgba(255,234,124,.9);
+  background:linear-gradient(180deg,rgba(26,88,34,.97),rgba(9,44,21,.98) 55%,rgba(72,41,17,.97));
+  box-shadow:var(--shadow-pop),0 0 0 2px rgba(91,42,6,.85),inset 0 0 0 2px rgba(255,247,168,.2),inset 0 12px 22px rgba(255,255,190,.09);
+  overflow:hidden;
+  animation:celebPop .5s var(--ease-pop) both;
+}
+.celebrate-card::after{ /* one shine sweep across the pill */
+  content:"";position:absolute;inset:-40% -20%;
+  background:linear-gradient(65deg,transparent 0 42%,rgba(255,252,220,.34) 50%,transparent 58% 100%);
+  transform:translateX(-120%);
+  animation:celebShine .8s ease-out .3s both;
+}
+.celebrate-ico{width:clamp(44px,4.6vw,72px);height:clamp(44px,4.6vw,72px);flex:none;display:flex;align-items:center;justify-content:center;}
+.celebrate-ico img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));}
+.celebrate-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;}
+.celebrate-txt.solo{align-items:center;}
+.celebrate-txt b{
+  font-family:var(--font-title);font-size:clamp(24px,3vw,44px);line-height:1;
+  color:#fff15e;-webkit-text-stroke:1.2px #743507;
+  text-shadow:0 3px 0 #235b11,0 8px 16px rgba(0,0,0,.55),0 0 18px rgba(255,236,95,.4);
+  font-variant-numeric:tabular-nums;
+}
+.celebrate-txt small{
+  font-size:clamp(10px,1vw,15px);font-weight:900;letter-spacing:.22em;
+  color:#ffd9a0;text-shadow:0 2px 3px rgba(0,0,0,.6);
+}
+@keyframes celebPop{0%{transform:scale(.45);opacity:0;}62%{transform:scale(1.07);opacity:1;}100%{transform:scale(1);}}
+@keyframes celebRaysIn{from{opacity:0;transform:translate(-50%,-50%) scale(.6);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+@keyframes celebRays{to{transform:translate(-50%,-50%) rotate(360deg);}}
+@keyframes celebShine{to{transform:translateX(120%);}}
+@keyframes celebOut{to{opacity:0;transform:scale(1.07);}}
 .toast{
   position:fixed;left:50%;top:17%;z-index:200;max-width:90%;pointer-events:none;
   transform:translateX(-50%) scale(.86);opacity:0;transition:.24s;

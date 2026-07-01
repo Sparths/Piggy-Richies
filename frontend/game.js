@@ -302,7 +302,22 @@
     });
     setTimeout(() => el.remove(), 760);
   }
-  function burst(t, cls = "") { const b = document.createElement("div"); b.className = "burst " + cls; b.innerHTML = t; overlay.appendChild(b); setTimeout(() => b.remove(), 1000); }
+  // Premium celebration banner: gold-framed pill with icon, title and subline,
+  // ray burst behind it and a shine sweep across -- replaces the old raw-text burst.
+  function celebrate({ icon, title, sub, holdMs = 1100 }) {
+    overlay.querySelectorAll(".celebrate").forEach((e) => e.remove());
+    const el = document.createElement("div");
+    el.className = "celebrate";
+    el.innerHTML =
+      '<div class="celebrate-rays" aria-hidden="true"></div>' +
+      '<div class="celebrate-card">' +
+      (icon ? `<span class="celebrate-ico">${icoHTML(icon)}</span>` : "") +
+      `<span class="celebrate-txt${sub ? "" : " solo"}"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span>` +
+      "</div>";
+    overlay.appendChild(el);
+    setTimeout(() => el.classList.add("out"), holdMs);
+    setTimeout(() => el.remove(), holdMs + 400);
+  }
   let toastT;
   function toast(t, bonus = false) { toastEl.innerHTML = t; toastEl.className = "toast show" + (bonus ? " bonus" : ""); clearTimeout(toastT); toastT = setTimeout(() => (toastEl.className = "toast hidden"), 1600); }
   function countWin(toMult) {
@@ -392,14 +407,23 @@
           await collectBoardBricks(ev.board, eventIndex, prevBoard, removedMap, true);
           break;
         }
-        case "scatterPay": burst(chip("pot") + " SCATTER"); toast(`${ev.scatters}x ${chip("pot")} ${I18N.t("word.pays")} ${fmt(ev.amount * bet())}`, true); await sleep(550); break;
+        case "scatterPay":
+          celebrate({ icon: "pot", title: "SCATTER", sub: `${ev.scatters}× ${I18N.t("word.pays")} ${fmt(ev.amount * bet())}` });
+          SND.scatter(); if (FX) FX.shake(5, 0.3);
+          await sleep(950); break;
         case "freeSpinTrigger":
           roundHadBonusTrigger = true;
-          if (curGametype === "freegame") { toast(`RETRIGGER &middot; +${ev.spinsAwarded} ${chip("pot")}`, true); SND.trigger(); if (FX) FX.shake(7, 0.4); await sleep(800); }
-          else { // base-game trigger: celebrate the pots before the bonus intro
+          if (curGametype === "freegame") { // retrigger: full celebration, not a toast
+            (ev.positions || []).forEach((p) => { const c = cellAt(p[0], p[1]); if (c) c.classList.add("scat-hot"); if (FX) { const cc = cellCenter(p[0], p[1]); FX.sparkle(cc.x, cc.y); } });
+            celebrate({ icon: "pot", title: I18N.t("cine.extraSpins", { n: ev.spinsAwarded }), sub: I18N.t("retrigger.sub"), holdMs: 1250 });
+            SND.trigger();
+            if (FX) { FX.shake(8, 0.45); FX.confetti(innerWidth / 2, innerHeight * 0.42, 26); }
+            await sleep(1450);
+          } else { // base-game trigger: celebrate the pots before the bonus intro
             ev.positions.forEach((p) => { cellAt(p[0], p[1]).classList.add("scat-hot"); if (FX) { const c = cellCenter(p[0], p[1]); FX.sparkle(c.x, c.y); FX.burst(c.x, c.y, 8, 0.6); } });
-            burst(`${ev.scatters}x ${chip("pot")}`, "scatter"); SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
-            await sleep(750);
+            celebrate({ icon: "pot", title: `${ev.scatters}× SCATTER`, holdMs: 1000 });
+            SND.scatter(); SND.trigger(); if (FX) FX.shake(8, 0.5);
+            await sleep(1100);
           }
           break;
         case "enterFreeGame": {
@@ -437,7 +461,11 @@
         }
         case "exitFreeGame": {
           housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; syncHouseUI(0);
-          if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); }
+          if (ev.totalWin > 0) {
+            celebrate({ icon: "pig", title: fmt(ev.totalWin * bet()), sub: I18N.t("fs.totalWin"), holdMs: 1300 });
+            if (FX) { const c = winBarCenter(); FX.burst(c.x, c.y, 10, 0.8); }
+            await sleep(1500);
+          }
           completedHouseStages = new Set();
           break;
         }
@@ -912,6 +940,7 @@
       replay: replayBook,
       setBalance: (v) => STAKE.setBalance(v, "api"),
       state: gameState,
+      celebrate, // exposed for visual QA tooling
     };
     refreshMeta();
     buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); winEl.textContent = fmt(dispWin * bet()); refreshBet(); wire(); paintIcons();

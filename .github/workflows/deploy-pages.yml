@@ -1,14 +1,14 @@
 name: Deploy frontend to GitHub Pages
 
 # Publishes the playable web client in frontend/ to GitHub Pages.
-# Runs automatically on this feature branch and on main (after a merge),
-# and can be triggered manually from the Actions tab.
+# Deploys only from main (the protected github-pages environment rejects other
+# branches). Push a feature branch, merge to main, and it publishes from there;
+# or trigger manually from the Actions tab.
 
 on:
   push:
     branches:
       - main
-      - claude/quirky-ptolemy-vx82ms
   workflow_dispatch:
 
 # Permissions the deploy needs (and enough for configure-pages to enable Pages).

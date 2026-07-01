@@ -116,6 +116,7 @@
       const active = state.active !== false && state.gametype !== "basegame";
       const total = Number.isFinite(state.visualTotal) ? clamp(state.visualTotal, 0, 15) : totalFromRaw(state.rawBricks, active);
       currentVisualTotal = total;
+      if (container) container.classList.toggle("is-base-preview", !active);
       applyProgress(progressFromTotal(total));
     });
   }

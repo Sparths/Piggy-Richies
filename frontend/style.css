@@ -85,27 +85,6 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   display:none;
 }
 
-.jackpots{
-  position:absolute;left:17.7%;top:4.05%;width:56.8%;height:12.7%;z-index:8;pointer-events:none;
-  display:grid;grid-template-columns:repeat(4,1fr);column-gap:2.3%;
-}
-.jackpot{
-  position:relative;font-family:var(--font-title);font-weight:900;text-align:center;letter-spacing:0;
-  color:#fff8b5;text-shadow:0 2px 0 #113b13,0 4px 5px rgba(0,0,0,.55);
-}
-.jackpot span{
-  position:absolute;left:0;right:0;top:2%;font-size:clamp(9px,1.5vw,24px);line-height:1;
-  -webkit-text-stroke:1px rgba(20,83,16,.75);
-}
-.jackpot b{
-  position:absolute;left:0;right:0;top:43%;display:block;margin:0;font-size:clamp(12px,1.85vw,31px);line-height:.95;color:#ffe35a;
-  -webkit-text-stroke:1px rgba(54,31,0,.88);
-}
-.jackpot.minor span{color:#5af170;}
-.jackpot.grand span{color:#ff4c4c;}
-.jackpot.major span{color:#46a9ff;}
-.jackpot.mini span{color:#ff65ef;}
-
 .board{
   position:absolute;left:var(--reel-x);top:var(--reel-y);width:var(--reel-w);height:var(--reel-h);z-index:6;
   display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));
@@ -194,6 +173,28 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   0%{opacity:0;transform:translate(12%,-5%) scale(.45) rotate(-12deg);}
   68%{opacity:1;transform:translate(12%,-5%) scale(1.08) rotate(5deg);}
   100%{opacity:1;transform:translate(12%,-5%) scale(1) rotate(4deg);}
+}
+.cascade-mult-chip{
+  position:absolute;right:-2%;top:-8%;z-index:9;width:42%;aspect-ratio:1/1;min-width:42px;max-width:78px;
+  background:var(--cascade-mult-img) center/contain no-repeat;
+  pointer-events:none;
+  filter:drop-shadow(0 5px 5px rgba(0,0,0,.58)) drop-shadow(0 0 9px rgba(255,225,88,.48));
+  transform:rotate(6deg);
+  animation:cascadeMultStick .34s cubic-bezier(.2,1.48,.35,1) both;
+}
+.cascade-mult-fly{
+  position:fixed;left:0;top:0;z-index:280;width:clamp(58px,5.8vw,98px);aspect-ratio:1/1;
+  background:var(--cascade-mult-img) center/contain no-repeat;
+  pointer-events:none;opacity:0;
+  transform:translate(-50%,-50%) scale(.72) rotate(-8deg);
+  transition:transform .48s cubic-bezier(.16,.84,.22,1),opacity .16s ease-out;
+  filter:drop-shadow(0 8px 8px rgba(0,0,0,.62)) drop-shadow(0 0 14px rgba(255,231,95,.55));
+  will-change:transform,opacity;
+}
+@keyframes cascadeMultStick{
+  0%{opacity:0;transform:scale(.38) rotate(-14deg);}
+  62%{opacity:1;transform:scale(1.13) rotate(8deg);}
+  100%{opacity:1;transform:scale(1) rotate(6deg);}
 }
 .cell.sticky{filter:drop-shadow(0 0 14px rgba(120,170,255,.8));}
 .cell.collected .sym{opacity:.28;filter:grayscale(.8);transition:opacity .25s,filter .25s;}

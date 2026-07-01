@@ -321,7 +321,7 @@
     },
     getBalance() { return balance; },
     // Base bet from the launch/replay URL (`amount`), in frontend units. Stake
-    // sends replay `amount` in x1e6 minor units; scale it back like the balance.
+    // sends replay `amount` in x1e6 currency subunits; scale it back like the balance.
     getBetAmount() {
       const raw = params.get("amount") || params.get("betAmount") || params.get("bet");
       if (raw == null || raw === "") return null;

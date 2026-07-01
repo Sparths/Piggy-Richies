@@ -1,7 +1,4 @@
 /* Progressive house-upgrade meter. Safe overlay; game core DOM stays intact. */
-.jackpots{
-  display:none!important;
-}
 
 #house-panel{
   visibility:hidden!important;
@@ -92,6 +89,26 @@
 
 .house-upgrade-card.is-active{
   animation:houseUpgradeWake .8s ease-out;
+}
+
+.house-upgrade-meter.is-base-preview .house-upgrade-card{
+  opacity:.55;
+  filter:grayscale(.2) brightness(.78) drop-shadow(0 5px 6px rgba(20,75,8,.24));
+}
+
+.house-upgrade-meter.is-base-preview .house-upgrade-card::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:48%;
+  z-index:6;
+  width:22%;
+  height:28%;
+  transform:translate(-50%,-50%);
+  background:url("assets/ui/icon-lock.webp") center/contain no-repeat;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));
+  opacity:.86;
+  pointer-events:none;
 }
 
 .house-upgrade-card::after{

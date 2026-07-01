@@ -7,16 +7,21 @@
     if (!buy || buy.dataset.enhanced === "1") return;
     buy.dataset.enhanced = "1";
 
-    const close = document.createElement("button");
-    close.type = "button";
-    close.className = "modal-x buy-modal-x";
-    close.setAttribute("aria-label", "Schliessen");
-    close.textContent = "x";
+    let close = buy.querySelector("[data-pop-close]");
+    if (!close) {
+      close = document.createElement("button");
+      close.type = "button";
+      close.className = "modal-x buy-modal-x";
+      close.setAttribute("data-pop-close", "");
+      close.setAttribute("data-i18n-attr", "aria-label:a11y.close");
+      close.textContent = "x";
+      buy.insertBefore(close, buy.firstChild);
+      if (window.PIGGY_I18N && window.PIGGY_I18N.applyStatic) window.PIGGY_I18N.applyStatic(close);
+    }
     close.addEventListener("click", (event) => {
       event.stopPropagation();
       buy.classList.add("hidden");
     });
-    buy.insertBefore(close, buy.firstChild);
 
     buy.addEventListener("click", (event) => {
       if (event.target === buy) buy.classList.add("hidden");

@@ -22,14 +22,17 @@
 
   const BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 25, 50, 100];
   let betIdx = 3, balance = 1000, busy = false, muted = false, turbo = false, autoLeft = 0, betOverride = null, pendingBuy = null;
-  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", currentMode = "base", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false, currentPlayEvents = [], completedHouseStages = new Set(), stakeLocalRound = false;
+  let cells = [], curBoard = [], dispWin = 0, bricksTarget = 5, bricksFloor = 0, curGametype = "basegame", currentMode = "base", houseLabel = "Stroh-Haus", fsNow = 0, fsTot = 0, casc = 0, explodeMap = null, currentHouseLevel = 1, currentBricks = 0, roundHadBonusTrigger = false, currentPlayEvents = [], completedHouseStages = new Set(), stakeLocalRound = false, pendingCascadeMult = 0;
 
   const buyA = (CFG.betModes.find((m) => m.name === "bonus") || {}).cost || 70;
   const buyB = (CFG.betModes.find((m) => m.name === "bonus_vip") || {}).cost || 234;
   const bet = () => (betOverride != null ? betOverride : BETS[betIdx]);
   const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
+  const sleepReal = (ms) => new Promise((r) => setTimeout(r, ms));
   const fmt = (n) => (STAKE && STAKE.format ? STAKE.format(n) : n.toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const fmtMult = (n) => Number(n || 0).toLocaleString(I18N.locale(), { maximumFractionDigits: 2 });
+  const fmtPct = (n) => Number(n || 0).toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
   function uiAsset(name) { const A = window.PIGGY_ASSETS || {}; return (A.ui || {})[name] || ""; }
   function safeHouse(method, ...args) {
     try {
@@ -85,13 +88,13 @@
   function paintCell(col, row, id) {
     const c = cellAt(col, row), s = SYM[id] || { kind: "low" };
     c.dataset.kind = s.kind; c.classList.remove("win", "explode", "dim", "sticky", "scat-hot", "collected");
-    c.querySelectorAll(".wmult").forEach((e) => e.remove());
+    c.querySelectorAll(".wmult,.cascade-mult-chip").forEach((e) => e.remove());
     const sym = c.querySelector(".sym"); sym.style.transition = "none"; sym.style.transform = "none"; sym.style.animationDuration = "";
     if (c.dataset.sym !== id) { setSym(sym, id); c.dataset.sym = id; }  // only re-render on actual change
   }
   // wipe per-cell win/scatter FX from the previous spin (called at each reveal)
   function clearCellFx() {
-    cells.forEach((c) => { c.classList.remove("win", "dim", "explode", "scat-hot", "collected"); const s = c.querySelector(".sym"); if (s) s.style.animationDuration = ""; });
+    cells.forEach((c) => { c.classList.remove("win", "dim", "explode", "scat-hot", "collected"); c.querySelectorAll(".cascade-mult-chip").forEach((e) => e.remove()); const s = c.querySelector(".sym"); if (s) s.style.animationDuration = ""; });
   }
   // instant repaint (no motion) for changed cells
   function setStatic(b) {
@@ -202,12 +205,67 @@
     multBadge.classList.remove("bump"); multTab.classList.remove("pump"); void multBadge.offsetWidth;
     multBadge.classList.add("bump");
     if (celebrate && m > 1) {
+      pendingCascadeMult = m;
       multTab.classList.add("pump");
       if (FX) { const r = multTab.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; FX.sparkle(cx, cy); FX.burst(cx, cy, 8, 0.55); FX.shake(4, 0.2); }
       SND.multUp(m);
+    } else if (m <= 1) {
+      pendingCascadeMult = 0;
     }
   }
   function multBadgeCenter() { const r = multTab.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  function clearCascadeMultFliers() {
+    document.querySelectorAll(".cascade-mult-fly").forEach((e) => e.remove());
+  }
+  function cascadeMultUrl(m) {
+    const exact = Math.max(1, Math.round(Number(m) || 1));
+    const capped = Math.max(1, Math.min(8, exact));
+    return uiAsset("multX" + exact) || uiAsset("multX" + capped) || uiAsset("multX8") || uiAsset("multX5") || uiAsset("multX1");
+  }
+  function stickCascadeMultToCell(col, row, url) {
+    const cell = cellAt(col, row);
+    if (!cell) return;
+    cell.querySelectorAll(".cascade-mult-chip").forEach((e) => e.remove());
+    const chip = document.createElement("span");
+    chip.className = "cascade-mult-chip";
+    chip.setAttribute("aria-hidden", "true");
+    chip.style.setProperty("--cascade-mult-img", `url("${url}")`);
+    cell.appendChild(chip);
+  }
+  async function flyCascadeMultToWins(mult, keys) {
+    const url = cascadeMultUrl(mult);
+    const unique = [...new Set(keys || [])];
+    if (!url || !unique.length) return;
+    clearCascadeMultFliers();
+    const start = multBadgeCenter();
+    const dur = Math.max(280, 480 * SPD());
+    const jobs = unique.map((key, i) => new Promise((resolve) => {
+      const [col, row] = key.split(",").map(Number);
+      const target = cellCenter(col, row);
+      const delay = Math.min(i * 28, 220);
+      const fly = document.createElement("span");
+      fly.className = "cascade-mult-fly";
+      fly.setAttribute("aria-hidden", "true");
+      fly.style.left = start.x + "px";
+      fly.style.top = start.y + "px";
+      fly.style.transitionDuration = dur + "ms,.16s";
+      fly.style.transitionDelay = delay + "ms,0ms";
+      fly.style.setProperty("--cascade-mult-img", `url("${url}")`);
+      document.body.appendChild(fly);
+      void fly.offsetWidth;
+      requestAnimationFrame(() => {
+        fly.style.opacity = "1";
+        fly.style.transform = `translate(calc(-50% + ${Math.round(target.x - start.x)}px),calc(-50% + ${Math.round(target.y - start.y)}px)) scale(.5) rotate(5deg)`;
+      });
+      setTimeout(() => {
+        stickCascadeMultToCell(col, row, url);
+        fly.remove();
+        resolve();
+      }, dur + delay + 45);
+    }));
+    await Promise.all(jobs);
+    await sleep(120);
+  }
   // a floating "xN" readout: rises and fades, or flies to the Wolf badge
   function floatMult(x, y, text, cls, toBadge) {
     const el = document.createElement("div"); el.className = "mfloat " + cls; el.textContent = text;
@@ -229,7 +287,7 @@
 
   // ---- event player -------------------------------------------------------
   async function play(book, mode) {
-    let roundWin = 0; dispWin = 0; winEl.textContent = "0.00"; casc = 0; lastMult = 1;
+    let roundWin = 0; dispWin = 0; winEl.textContent = fmt(0); casc = 0; lastMult = 1; pendingCascadeMult = 0; clearCascadeMultFliers();
     currentMode = mode;
     roundHadBonusTrigger = false;
     curGametype = mode === "base" ? "basegame" : "freegame"; setMult(1); setPhase();
@@ -277,13 +335,14 @@
             ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); sx += p.x; sy += p.y; n++; });
             const amp = Math.min(15, ev.stepWin * 0.7 + (lastMult - 1) * 2); // shake scales with win size AND wolf mult
             if (amp > 2.5) FX.shake(amp, 0.28);
-            // show EXACTLY what multiplied what: each win's summed wild xN pops on its tiles,
-            // and the Wolf cascade xN flies up to the multiplier badge.
+            // show EXACTLY what multiplied what: each win's summed wild xN pops on its tiles.
             ev.wins.forEach((w) => {
               if (w.wildMult > 1) { let wx = 0, wy = 0; w.positions.forEach(([c, r]) => { const p = cellCenter(c, r); wx += p.x; wy += p.y; }); floatMult(wx / w.positions.length, wy / w.positions.length - 6, "x" + w.wildMult, "wild", false); }
             });
-            if (ev.multiplier > 1 && n) floatMult(sx / n, sy / n, "x" + ev.multiplier, "wolf", true);
           }
+          const cascadeMult = pendingCascadeMult || (ev.multiplier > 1 ? ev.multiplier : 0);
+          pendingCascadeMult = 0;
+          if (cascadeMult > 1 && ks.size) await flyCascadeMultToWins(cascadeMult, [...ks]);
           roundWin += ev.stepWin; countWin(roundWin); glow.classList.add("active"); SND.win(casc++); await sleep(620); glow.classList.remove("active"); cells.forEach((c) => c.classList.remove("dim")); break;
         }
         case "tumbleBoard":
@@ -346,7 +405,12 @@
           glow.className = "board-glow bonus";
           break;
         }
-        case "exitFreeGame": housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; completedHouseStages = new Set(); syncHouseUI(0); if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); } break;
+        case "exitFreeGame": {
+          housePanel.classList.add("hidden"); setStorm(false); glow.className = "board-glow"; curGametype = "basegame"; syncHouseUI(0);
+          if (ev.totalWin > 0) { burst(chip("pig") + " " + fmt(ev.totalWin * bet())); await sleep(900); }
+          completedHouseStages = new Set();
+          break;
+        }
         case "setTotalWin": roundWin = ev.amount; countWin(roundWin); break;
         case "finalWin": await settle(ev); break;
       }
@@ -597,7 +661,7 @@
       } else {
         balance -= cost;
       }
-      balanceEl.textContent = fmt(balance); overlay.innerHTML = ""; setMult(1);
+      balanceEl.textContent = fmt(balance); overlay.innerHTML = ""; setMult(1); clearCascadeMultFliers();
       book = book || pickBook(mode);
       if (book.serverSeedHash) $("seed-hash").textContent = book.serverSeedHash.slice(0, 22) + "...";
       await play(book, mode);
@@ -620,10 +684,11 @@
   // ---- paytable -----------------------------------------------------------
   function buildPaytable() {
     const order = ["W", "S", "P1", "P2", "P3", "M1", "M2", "M3", "A", "K", "Q", "J", "BR"], grid = $("paytable-grid"); grid.innerHTML = "";
+    const linePay = (t) => `5x <b>${fmtMult(t[5])}</b> &middot; 4x ${fmtMult(t[4])} &middot; 3x ${fmtMult(t[3])}`;
     order.forEach((id) => {
       const s = SYM[id]; if (!s) return; let pay = "";
-      if (CFG.paytable[id]) { const t = CFG.paytable[id]; pay = `5x <b>${t[5]}</b> &middot; 4x ${t[4]} &middot; 3x ${t[3]}`; }
-      else if (s.scatter) { const sp = CFG.scatterPays; pay = `5x <b>${sp[5]}</b> &middot; 4x ${sp[4]} &middot; 3x ${sp[3]}`; }
+      if (CFG.paytable[id]) pay = linePay(CFG.paytable[id]);
+      else if (s.scatter) pay = linePay(CFG.scatterPays);
       else if (s.wild) pay = `<small>${I18N.t("pay.wild")}</small>`;
       else if (s.collectible) pay = `<small>${I18N.t("pay.brick")}</small>`;
       grid.insertAdjacentHTML("beforeend", `<div class="pt-row"><div class="pt-ico">${symInner(id)}</div><div class="pt-vals"><span class="pt-name">${I18N.symName(id) || s.name || id}</span><span class="pt-pay">${pay}</span></div></div>`);
@@ -636,8 +701,8 @@
   function openModal(id) { closePops(); $(id).classList.remove("hidden"); }
   function refreshBet() {
     betEl.textContent = fmt(bet());
-    $("buy-a-cost").textContent = buyA + I18N.t("buy.xbet");
-    $("buy-b-cost").textContent = buyB + I18N.t("buy.xbet");
+    $("buy-a-cost").textContent = fmtMult(buyA) + I18N.t("buy.xbet");
+    $("buy-b-cost").textContent = fmtMult(buyB) + I18N.t("buy.xbet");
     const aPrice = $("buy-a-price"), bPrice = $("buy-b-price");
     if (aPrice) aPrice.textContent = fmt(bet() * buyA);
     if (bPrice) bPrice.textContent = fmt(bet() * buyB);
@@ -648,9 +713,19 @@
     const mult = mode === "bonus" ? buyA : buyB, ico = mode === "bonus" ? "house1" : "house2";
     $("bc-name").textContent = mode === "bonus" ? I18N.t("buy.aName") : I18N.t("buy.bName");
     const bcIco = $("bc-ico"); bcIco.dataset.ico = ico; bcIco.dataset.painted = ""; bcIco.innerHTML = icoHTML(ico);
-    $("bc-bet").textContent = I18N.t("confirm.betLine", { bet: fmt(bet()), mult });
+    $("bc-bet").textContent = I18N.t("confirm.betLine", { bet: fmt(bet()), mult: fmtMult(mult) });
     $("bc-cost").textContent = fmt(mult * bet());
     openModal("modal-buy-confirm");
+  }
+  function refreshMeta() {
+    $("meta-rtp").textContent = fmtPct(CFG.rtp * 100);
+    $("meta-max").textContent = CFG.wincap.toLocaleString(I18N.locale()) + "x";
+  }
+  function refreshPortraitGuard() {
+    const ov = $("portrait-rotate"); if (!ov) return;
+    const portrait = window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+    const small = Math.min(innerWidth, innerHeight) <= 760 || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+    ov.classList.toggle("hidden", !(portrait && small));
   }
 
   function wire() {
@@ -662,22 +737,26 @@
     $("btn-menu").onclick = (e) => { e.stopPropagation(); togglePop("menu-pop"); };
     $("btn-buy").onclick = (e) => { e.stopPropagation(); togglePop("buy-pop"); };
     $("menu-pop").onclick = (e) => e.stopPropagation();
-    $("buy-pop").onclick = (e) => e.stopPropagation();
+    $("buy-pop").onclick = (e) => { e.stopPropagation(); if (e.target === $("buy-pop")) closePops(); };
     $("menu-pop").querySelectorAll("button").forEach((b) => (b.onclick = () => {
       const a = b.dataset.act;
       if (a === "help") openModal("modal-help");
       else if (a === "paytable") openModal("modal-paytable");
       else if (a === "sound") { muted = SND.toggle(); $("sound-state").textContent = muted ? I18N.t("sound.off") : I18N.t("sound.on"); const si = $("sound-ico"); if (si) si.innerHTML = icoHTML(muted ? "soundOff" : "sound"); }
     }));
-    $("buy-pop").querySelectorAll("button").forEach((b) => (b.onclick = () => { closePops(); openBuyConfirm(b.dataset.buy); }));
+    $("buy-pop").querySelectorAll("[data-buy]").forEach((b) => (b.onclick = () => { closePops(); openBuyConfirm(b.dataset.buy); }));
+    document.querySelectorAll("[data-pop-close]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); closePops(); }));
     // Explicit confirmation before spending a >2x bet-mode (Stake approval #14/#23):
     // a buy can never fire from a single button -- it always shows the real cost first.
     $("bc-confirm").onclick = () => { const m = pendingBuy; pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); if (m) doSpin(m); };
     $("bc-cancel").onclick = () => { pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); };
-    document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => b.closest(".modal").classList.add("hidden")));
+    document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => { const m = b.closest(".modal"); if (m) m.classList.add("hidden"); }));
     document.querySelectorAll(".modal").forEach((m) => (m.onclick = (e) => { if (e.target === m) m.classList.add("hidden"); }));
     document.addEventListener("click", closePops);
     document.addEventListener("keydown", (e) => { if (e.code === "Space" && !busy) { e.preventDefault(); doSpin("base"); } });
+    window.addEventListener("resize", refreshPortraitGuard);
+    window.addEventListener("orientationchange", refreshPortraitGuard);
+    refreshPortraitGuard();
   }
 
   // ---- juice helpers ------------------------------------------------------
@@ -756,7 +835,7 @@
       requestAnimationFrame(step);
     });
     if (tier >= 2) { const c = { x: innerWidth / 2, y: innerHeight * 0.42 }; FX.confetti(c.x, c.y, 50); FX.shake(10, 0.4); }
-    await sleep(skipBig ? 150 : 850);
+    await sleepReal(skipBig ? 150 : [1200, 1350, 1550, 1800][Math.min(tier, 3)]);
     ov.classList.add("hidden");
   }
   async function replayBook(book) {
@@ -764,7 +843,7 @@
     busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
     try {
       overlay.innerHTML = "";
-      setMult(1);
+      setMult(1); clearCascadeMultFliers();
       const replayMode = book.events.some((ev) => ev.type === "enterFreeGame") ? "bonus" : "base";
       await play(book, replayMode);
     } catch (err) {
@@ -794,15 +873,15 @@
     STAKE.onReplay((book) => setTimeout(() => replayBook(book), 650));
     STAKE.onReset(() => {
       if (busy) return;
-      curGametype = "basegame"; housePanel.classList.add("hidden"); currentBricks = 0; completedHouseStages = new Set(); setMult(1); syncHouseUI(0); countWin(0);
+      curGametype = "basegame"; housePanel.classList.add("hidden"); currentBricks = 0; completedHouseStages = new Set(); setMult(1); clearCascadeMultFliers(); syncHouseUI(0); countWin(0);
     });
     window.PIGGY_GAME = {
       replay: replayBook,
       setBalance: (v) => STAKE.setBalance(v, "api"),
       state: gameState,
     };
-    $("meta-rtp").textContent = (CFG.rtp * 100).toFixed(2) + "%"; $("meta-max").textContent = CFG.wincap.toLocaleString(I18N.locale()) + "x";
-    buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); refreshBet(); wire(); paintIcons();
+    refreshMeta();
+    buildBoard(); setMult(1); balanceEl.textContent = fmt(balance); winEl.textContent = fmt(dispWin * bet()); refreshBet(); wire(); paintIcons();
     // Live language switch (Stake pushes a new lang): i18n has already re-applied
     // the static DOM; refresh the dynamic + icon-bearing bits and re-format numbers.
     I18N.onChange(() => {
@@ -812,7 +891,7 @@
       refreshBet();
       houseName.textContent = I18N.houseName(currentHouseLevel);
       $("sound-state").textContent = muted ? I18N.t("sound.off") : I18N.t("sound.on");
-      $("meta-max").textContent = CFG.wincap.toLocaleString(I18N.locale()) + "x";
+      refreshMeta();
       balanceEl.textContent = fmt(balance); winEl.textContent = fmt(dispWin * bet());
     });
     if (FX) FX.init($("fx"), document.querySelector(".stage"));

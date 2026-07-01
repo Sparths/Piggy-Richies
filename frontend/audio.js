@@ -6,7 +6,7 @@
 
   const SAMPLE_URLS = {
     spin: "assets/audio/ui-crisp-casino.wav",
-    reelStop: "assets/audio/vault-drop.wav",
+    reelStop: "assets/audio/brick-impact.wav",
     puff: "assets/audio/deep-cartoon-hit.wav",
     drop: "assets/audio/vault-drop.wav",
     win: "assets/audio/win-celebration.wav",

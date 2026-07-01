@@ -26,26 +26,21 @@ Storybook-Charme trifft Premium-Casino. Alle Prompts unten spiegeln das wider.
 | `houseComplete` | `house-complete.wav` | Haus fertiggestellt |
 | `music` | `background-music.wav` | Hintergrundmusik (Loop) |
 
-## 2. Noch NICHT custom — bitte erstellen 🎙️
+## 2. Status
 
-### Priorität A — rein code-generiert (keine eigene Datei)
+✅ **Erledigt & verdrahtet** (custom WAV vorhanden, mit Synth-Fallback):
 
-| Cue | Zieldatei | Wann im Spiel |
-|-----|-----------|---------------|
+| Cue | Datei | Wann im Spiel |
+|-----|-------|---------------|
 | `riser` | `anticipation-riser.wav` | Anticipation, wenn 2 Töpfe liegen und die letzte Walze den 3. jagt |
 | `coinTick` | `coin-tick.wav` | Münz-Ticks beim Hochzählen im Big-Win |
+| `thunder` | `thunder-roll.wav` | Gewitter-Ambiente in den Freispielen |
+| `multUp` | `multiplier-up.wav` | Wolf-Multiplikator steigt (x2 → x3 → …) |
 
-### Priorität B — nutzt aktuell eine fremde WAV (eigener Sound wäre besser)
-
-| Cue | Nutzt aktuell | Zieldatei | Wann im Spiel |
-|-----|---------------|-----------|---------------|
-| `thunder` | `deep-cartoon-hit.wav` + Synth | `thunder-roll.wav` | Gewitter-Ambiente in den Freispielen |
-| `drop` | `vault-drop.wav` (geteilt mit reelStop) | `cascade-drop.wav` | Symbole fallen nach der Kaskade nach |
-| `multUp` | `win-celebration.wav` (Ausschnitt) | `multiplier-up.wav` | Wolf-Multiplikator steigt (x2 → x3 → …) |
-
-> Kleine Synth-„Sweetener" (z. B. ein Sub-Bass unter Big-Wins, ein Ton in der
-> Anticipation-Walze) liegen bewusst als Layer über den echten Samples — die musst
-> du nicht ersetzen.
+ℹ️ **Bewusst NICHT ersetzt:**
+- `drop` nutzt weiterhin `vault-drop.wav` (geteilt mit `reelStop`) — klingt gut so.
+- Kleine Synth-„Sweetener" (Sub-Bass unter Big-Wins, Ton in der Anticipation-Walze)
+  bleiben als Layer über den echten Samples.
 
 ---
 
@@ -109,10 +104,10 @@ casino-fairytale tone, ending on a bright high note.
 
 ---
 
-## 4. Danach
+## 4. Umsetzung (erledigt)
 
-Damit die neuen Dateien auch benutzt werden, müssen `riser`, `coinTick` und
-`thunder` in `audio.js` einen Sample-Slot bekommen (mit Synth-Fallback, falls die
-Datei fehlt). `drop` und `multUp` brauchen nur ihren Ziel-Dateinamen im
-`SAMPLE_URLS`-Mapping. Das kann ich verdrahten — dann greifen die WAVs, sobald du
-sie in `frontend/assets/audio/` ablegst.
+`riser`, `coinTick`, `thunder` und `multUp` haben in `audio.js` jetzt einen
+Sample-Slot in `SAMPLE_URLS` und laden ihre WAV mit Synth-Fallback. Die langen
+Dateien werden als kurzer Slice gespielt (`coinTick` 0.18 s, `multUp` 0.6 s), damit
+schnelle Wiederholungen tight bleiben. Alle vier decoden verifiziert in Chromium.
+Die Prompts oben bleiben als Referenz, falls du einen Sound neu generieren willst.

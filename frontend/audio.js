@@ -17,6 +17,10 @@
     upgrade: "assets/audio/magic-upgrade.wav",
     smallWin: "assets/audio/small-win-chime.wav",
     houseComplete: "assets/audio/house-complete.wav",
+    riser: "assets/audio/anticipation-riser.wav",
+    coinTick: "assets/audio/coin-tick.wav",
+    thunder: "assets/audio/thunder-roll.wav",
+    multUp: "assets/audio/multiplier-up.wav",
     music: "assets/audio/background-music.wav",
   };
 
@@ -237,7 +241,7 @@
     },
     multUp(m = 2) {
       if (muted || !ensure()) return;
-      const ok = sample("win", { gain: 0.2, rate: 1.05 + Math.min(m, 8) * 0.015, offset: 0.2, duration: 0.38 });
+      const ok = sample("multUp", { gain: 0.32, rate: 1 + Math.min(m, 8) * 0.02, offset: 0, duration: 0.6 });
       if (!ok) {
         const t = now(), base = 520 + Math.min(7, m) * 64;
         tone(base, t, 0.16, "triangle", 0.16, base * 1.5);
@@ -265,6 +269,7 @@
     },
     riser(dur = 1.0) {
       if (muted || !ensure()) return;
+      if (sample("riser", { gain: 0.3, offset: 0 })) return;
       const t = now(), o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "sawtooth";
       o.frequency.setValueAtTime(180, t);
@@ -280,6 +285,7 @@
 
     coinTick() {
       if (muted || !ensure()) return;
+      if (sample("coinTick", { gain: 0.3, rate: 0.98 + Math.random() * 0.06, offset: 0, duration: 0.18 })) return;
       const t = now();
       tone(1320 + Math.random() * 220, t, 0.07, "triangle", 0.09);
       tone(1980, t + 0.01, 0.05, "sine", 0.04);
@@ -310,6 +316,7 @@
     startMusic,
     thunder() {
       if (muted || !ensure()) return;
+      if (sample("thunder", { gain: 0.32, offset: 0 })) return;
       sample("puff", { gain: 0.2, rate: 0.55, offset: 0.05, duration: 0.82 });
       const t = now();
       noise(t, 0.75, 0.11, 130, 0.4, "lowpass");

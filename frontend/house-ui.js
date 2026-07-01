@@ -75,12 +75,24 @@
     }
 
     const count = make("div", "house-upgrade-count");
-    count.textContent = "0/5";
+    renderCount(count, 0);
 
     art.appendChild(mask);
     card.appendChild(art);
     card.appendChild(count);
     return card;
+  }
+
+  // "0/5" raw text read like debug UI; render a brick chip + tabular count,
+  // and a checkmark once the stage is complete.
+  function renderCount(el, value) {
+    if (!el) return;
+    if (value >= PARTS) {
+      el.innerHTML = '<span class="huc-check" aria-hidden="true">✓</span>';
+      return;
+    }
+    const icon = asset("brickToken") || "assets/ui/brick-token.webp";
+    el.innerHTML = `<img class="huc-brick" src="${icon}" alt=""><span class="huc-num">${value}<i>/${PARTS}</i></span>`;
   }
 
   function applyProgress(progress) {
@@ -101,7 +113,7 @@
       });
 
       const count = card.querySelector(".house-upgrade-count");
-      if (count) count.textContent = `${value}/5`;
+      if (count && value !== previous) renderCount(count, value);
 
       if (value !== previous) {
         card.classList.remove("is-tick");

@@ -10,6 +10,16 @@
   --red:#e9474e;
   --font-ui:"Trebuchet MS","Arial Rounded MT Bold","Segoe UI",Arial,Helvetica,sans-serif;
   --font-title:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",Arial,sans-serif;
+  /* ---- design tokens (single source for shadows / radius / motion / glow) ---- */
+  --shadow-sym:drop-shadow(0 3px 3px rgba(15,34,8,.42));
+  --shadow-ui:drop-shadow(0 4px 6px rgba(0,0,0,.32));
+  --shadow-pop:0 18px 42px rgba(0,0,0,.44);
+  --r-sm:8px;--r-md:14px;--r-lg:22px;
+  --ease-pop:cubic-bezier(.2,1.35,.35,1);
+  --ease-settle:cubic-bezier(.22,.9,.32,1.06);
+  --dur-fast:.16s;--dur-med:.3s;
+  --glow-win:rgba(255,226,128,.5);
+  --glow-scatter:rgba(255,177,61,.55);
   --reel-x:15.35%;
   --reel-y:20.2%;
   --reel-w:62.8%;
@@ -96,13 +106,20 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   background:none;
 }
 .cell .sym{
-  position:relative;z-index:2;width:86%;height:86%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;
-  will-change:transform;filter:drop-shadow(0 5px 4px rgba(0,0,0,.48));
+  position:relative;z-index:2;width:84%;height:84%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;
+  will-change:transform;filter:var(--shadow-sym);
 }
 .cell .sym img{width:100%;height:100%;object-fit:contain;display:block;}
 .sym-fallback{font-family:var(--font-title);font-weight:900;font-size:24px;color:var(--gold);text-shadow:0 2px 3px #000;}
-.cell[data-kind="wild"] .sym,.cell[data-kind="scatter"] .sym,.cell[data-kind="premium"] .sym{animation:symBreath 3.2s ease-in-out infinite;}
-@keyframes symBreath{50%{transform:translateY(-1px) scale(1.035);}}
+/* uniform per-tier sizing: royals slightly smaller, premiums/wild/scatter fill the cell */
+.cell[data-kind="low"] .sym,.cell[data-kind="mid"] .sym{width:80%;height:80%;}
+.cell[data-kind="premium"] .sym,.cell[data-kind="wild"] .sym,.cell[data-kind="scatter"] .sym{width:88%;height:88%;}
+/* idle motion only on the scatter (subtle) -- everything else sits firmly in its cell */
+.cell[data-kind="scatter"] .sym{animation:symBreath 3.6s ease-in-out infinite;}
+@keyframes symBreath{50%{transform:translateY(-1px) scale(1.02);}}
+/* cascade landing: one short squash, then rest */
+.cell.settle .sym{animation:symSettle .26s ease-out;}
+@keyframes symSettle{0%{transform:scaleY(.94) scaleX(1.04);}62%{transform:scaleY(1.02) scaleX(.99);}100%{transform:none;}}
 
 .phase-banner{
   position:absolute;left:15.7%;top:15.9%;z-index:10;width:9.2%;min-width:0;height:3.2%;
@@ -133,8 +150,9 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 .board-glow{
   position:absolute;left:var(--reel-x);top:var(--reel-y);width:var(--reel-w);height:var(--reel-h);z-index:7;pointer-events:none;border-radius:4px;
 }
-.board-glow.active{box-shadow:inset 0 0 42px rgba(255,235,85,.38),0 0 18px rgba(255,235,85,.28);}
-.board-glow.bonus{box-shadow:inset 0 0 48px rgba(255,184,56,.36),0 0 22px rgba(255,184,56,.28);}
+.board-glow{box-shadow:inset 0 10px 22px rgba(6,26,10,.32),inset 0 -8px 18px rgba(6,26,10,.26);} /* quiet depth vignette so symbols sit IN the frame */
+.board-glow.active{box-shadow:inset 0 10px 22px rgba(6,26,10,.32),inset 0 0 30px rgba(255,235,110,.22);}
+.board-glow.bonus{box-shadow:inset 0 10px 22px rgba(6,26,10,.32),inset 0 0 34px rgba(255,184,56,.22);}
 
 .spin-layer{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:hidden;border-radius:8px;contain:paint;}
 .spin-strip{position:absolute;top:0;will-change:transform;transform:translate3d(0,0,0);backface-visibility:hidden;}
@@ -143,22 +161,26 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 .spin-cell .sym img{width:100%;height:100%;object-fit:contain;}
 .board.anticip::after{
   content:"";position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:8px;
-  box-shadow:inset 0 0 80px rgba(255,177,61,.55);animation:anticipPulse .7s ease-in-out infinite;
+  box-shadow:inset 0 0 56px rgba(255,177,61,.4);animation:anticipPulse .7s ease-in-out infinite;
 }
-@keyframes anticipPulse{50%{box-shadow:inset 0 0 110px rgba(255,177,61,.78);}}
+@keyframes anticipPulse{50%{box-shadow:inset 0 0 80px rgba(255,177,61,.6);}}
 
-.cell.win{z-index:5;animation:cellWin .8s ease-in-out infinite;}
-.cell.win .sym{animation:winPop .48s cubic-bezier(.2,1.55,.35,1) both,winFloat .8s ease-in-out .48s infinite;}
-@keyframes cellWin{50%{filter:drop-shadow(0 0 14px rgba(255,214,110,.95));}}
-@keyframes winPop{0%{transform:scale(1);}55%{transform:scale(1.24);}100%{transform:scale(1.1);}}
-@keyframes winFloat{50%{transform:translateY(-2px) scale(1.15);}}
-.cell.dim{filter:brightness(.58) saturate(.78);transition:filter .22s;}
+.cell.win{z-index:5;}
+.cell.win::after{
+  content:"";position:absolute;inset:4%;z-index:1;border-radius:12%;pointer-events:none;
+  box-shadow:0 0 0 2px rgba(255,235,150,.9),0 0 12px 2px var(--glow-win),inset 0 0 10px rgba(255,235,150,.22);
+  animation:winRing .9s ease-in-out infinite;
+}
+.cell.win .sym{animation:winPop .42s var(--ease-pop) both;}
+@keyframes winRing{50%{box-shadow:0 0 0 2px rgba(255,235,150,.55),0 0 6px 1px var(--glow-win),inset 0 0 6px rgba(255,235,150,.12);}}
+@keyframes winPop{0%{transform:scale(1);}55%{transform:scale(1.16);}100%{transform:scale(1.08);}}
+.cell.dim{filter:brightness(.66) saturate(.85);transition:filter .25s ease;}
 .cell.explode{z-index:7;}
 .cell.explode .sym{animation:symBurst .42s cubic-bezier(.22,.9,.3,1) forwards;}
 @keyframes symBurst{0%{transform:scale(1);}36%{transform:scale(1.32) rotate(4deg);filter:brightness(1.8) drop-shadow(0 0 18px var(--gold));}100%{transform:scale(.08) rotate(-12deg);opacity:0;}}
-.cell.scat-hot{z-index:6;filter:drop-shadow(0 0 14px rgba(255,177,61,.85));}
-.cell.scat-hot .sym{animation:scatterHot .6s ease-in-out infinite;}
-@keyframes scatterHot{50%{transform:scale(1.08);filter:drop-shadow(0 0 18px rgba(255,177,61,1));}}
+.cell.scat-hot{z-index:6;filter:drop-shadow(0 0 9px var(--glow-scatter));}
+.cell.scat-hot .sym{animation:scatterHot .7s ease-in-out infinite;}
+@keyframes scatterHot{50%{transform:scale(1.06);filter:drop-shadow(0 0 12px var(--glow-scatter));}}
 .cell .wmult{
   position:absolute;right:0;top:-5%;z-index:6;width:42%;height:42%;min-width:44px;min-height:44px;
   display:flex;align-items:center;justify-content:center;
@@ -269,7 +291,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:none;
 }
 .bar-stat label{font-size:clamp(6px,.72vw,12px);font-weight:900;color:#eaffcf;text-shadow:0 1px 2px #0d3108;}
-.bar-stat span{font-size:clamp(9px,1.2vw,20px);font-weight:900;line-height:1;color:#ffffff;text-shadow:0 2px 2px #0d3108;}
+.bar-stat span{font-size:clamp(9px,1.2vw,20px);font-weight:900;line-height:1;color:#ffffff;text-shadow:0 2px 2px #0d3108;font-variant-numeric:tabular-nums;}
 .bar-stat.center{left:36.1%;width:28.7%;}
 .bar-stat.center span{color:#ffe45a;}
 .win-amount.big{animation:winAmount .45s ease;}
@@ -300,11 +322,15 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   pointer-events:auto;
 }
 .bet-steppers button{
-  width:clamp(19px,2.0vw,31px);height:clamp(13px,1.25vw,20px);
+  position:relative;width:clamp(22px,2.0vw,31px);height:clamp(15px,1.25vw,20px);
   background:linear-gradient(180deg,#315a2b,#0c2c18);border:1px solid rgba(255,220,89,.8);border-radius:5px;
   box-shadow:inset 0 1px 0 rgba(255,255,190,.35),0 2px 3px rgba(0,0,0,.35);
   font-size:clamp(8px,.74vw,12px);font-weight:900;color:#f6ffcc;line-height:1;
+  transition:filter var(--dur-fast),transform var(--dur-fast);
 }
+.bet-steppers button::after{content:"";position:absolute;inset:-12px -10px;}  /* 44px touch target, visual stays small */
+.bet-steppers button:hover{filter:brightness(1.15);}
+.bet-steppers button:active:not(:disabled){transform:scale(.92);}
 .spin-btn{
   position:absolute;right:8.55%;top:41.4%;width:10.25%;height:18.25%;flex:none;background:var(--ui-spinButton) center/contain no-repeat;pointer-events:auto;
   filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));transition:transform .14s,filter .14s;
@@ -373,11 +399,14 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 
 .mfloat{
   position:fixed;z-index:240;pointer-events:none;font-family:var(--font-title);font-weight:900;
-  text-shadow:0 3px 8px rgba(0,0,0,.85);transform:translate(-50%,-50%);
+  padding:3px 12px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(28,66,20,.92),rgba(10,36,16,.94));
+  box-shadow:inset 0 0 0 1px rgba(255,226,102,.55),0 6px 14px rgba(0,0,0,.4);
+  text-shadow:0 2px 4px rgba(0,0,0,.7);transform:translate(-50%,-50%);
   transition:transform .7s cubic-bezier(.3,.7,.3,1),opacity .7s ease;
 }
-.mfloat.wild{color:#b6a8ff;font-size:24px;}
-.mfloat.wolf{color:var(--gold);font-size:32px;}
+.mfloat.wild{color:#d8ccff;font-size:20px;}
+.mfloat.wolf{color:var(--gold);font-size:26px;}
 
 .brick-fly{
   position:fixed;z-index:240;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;
@@ -534,14 +563,8 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   background:rgba(7,37,15,.4);
   backdrop-filter:blur(.5px);
 }
-.bigwin::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:url("assets/ui/win-celebration-overlay.webp") center/cover no-repeat;
-  opacity:.98;
-  animation:winOverlayPop .7s cubic-bezier(.2,1.22,.35,1) both;
-}
+/* (removed: referenced non-existent win-celebration-overlay.webp -> 404;
+   animation-polish.css owns the .bigwin backdrop) */
 .bigwin-rays{display:none;}
 .bigwin-tier,.bigwin-amount{
   z-index:1;
@@ -705,7 +728,7 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
 .loader-fill{height:100%;width:0;background:linear-gradient(90deg,#ffd66e,#31dd74);box-shadow:0 0 14px rgba(255,214,110,.75);}
 .loader-pct{font-size:13px;font-weight:900;color:#e7e0d5;}
 
-body.fs-active .reel-panel{filter:drop-shadow(0 20px 34px rgba(0,0,0,.56)) drop-shadow(0 0 24px rgba(255,177,61,.32));}
+body.fs-active .reel-panel{filter:drop-shadow(0 16px 30px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,177,61,.2));}
 
 @media (max-width:900px){
   .logo{height:88px;}

@@ -30,6 +30,7 @@
   const SPD = () => (turbo ? 0.5 : 1); // one speed factor scales BOTH waits and animations
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms * SPD()));
   const sleepReal = (ms) => new Promise((r) => setTimeout(r, ms));
+  const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100; // all balance mutations go through cents
   const fmt = (n) => (STAKE && STAKE.format ? STAKE.format(n) : n.toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   const fmtMult = (n) => Number(n || 0).toLocaleString(I18N.locale(), { maximumFractionDigits: 2 });
   const fmtPct = (n) => Number(n || 0).toLocaleString(I18N.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
@@ -66,7 +67,7 @@
     }
   }
   const cellAt = (col, row) => cells[row * REELS + col];
-  const DROP_DUR = 320, DROP_EASE = "cubic-bezier(.3,1.42,.5,1)";   // overshoot = bounce on impact
+  const DROP_DUR = 320, DROP_EASE = "cubic-bezier(.22,.9,.32,1.06)"; // firm fall, tiny overshoot; squash happens via .settle class on landing
   // full reel-spin slide (reveal): a rigid per-column strip with the incoming
   // symbols stacked directly above the outgoing ones -> one motion, no blink.
   // SPIN_EASE is quick but non-overshooting so Stake scaling does not add a rubbery snap.
@@ -123,7 +124,14 @@
     void boardEl.offsetHeight; // one reflow, then release them all together
     anims.forEach(({ sym }) => { sym.style.transition = `transform ${dur}ms ${DROP_EASE}`; sym.style.transform = "translateY(0)"; });
     curBoard = b.map((c) => c.slice());
-    setTimeout(() => anims.forEach(({ sym }) => { sym.style.transition = ""; sym.style.transform = ""; }), dur + 80);
+    setTimeout(() => {
+      anims.forEach(({ sym }) => {
+        sym.style.transition = ""; sym.style.transform = "";
+        const cell = sym.parentElement; if (!cell) return;
+        cell.classList.remove("settle"); void cell.offsetWidth; cell.classList.add("settle");
+        setTimeout(() => cell.classList.remove("settle"), 320);
+      });
+    }, dur + 80);
     return dur;
   }
 
@@ -330,9 +338,13 @@
           const wd = 0.55 * SPD() + "s";
           cells.forEach((c, i) => { const col = i % REELS, row = (i / REELS) | 0; const w = ks.has(col + "," + row); if (w) { const s = c.querySelector(".sym"); if (s) s.style.animationDuration = wd; } c.classList.toggle("win", w); c.classList.toggle("dim", !w); });
           if (FX) {
-            // a sparkle dead-centre on EVERY winning tile (no 8-cell cap -> no lopsided gaps)
+            // particles are the accent, not the wallpaper: per-tile sparkles only for
+            // small clusters; big clusters get ONE burst at the cluster centre.
             let sx = 0, sy = 0, n = 0;
-            ks.forEach((key) => { const [col, row] = key.split(",").map(Number); const p = cellCenter(col, row); FX.sparkle(p.x, p.y); sx += p.x; sy += p.y; n++; });
+            const pts = [...ks].map((key) => { const [col, row] = key.split(",").map(Number); return cellCenter(col, row); });
+            pts.forEach((p) => { sx += p.x; sy += p.y; n++; });
+            if (n && n <= 6) pts.forEach((p) => FX.sparkle(p.x, p.y));
+            else if (n) { FX.sparkle(sx / n, sy / n); FX.burst(sx / n, sy / n, 10, 0.7); }
             const amp = Math.min(15, ev.stepWin * 0.7 + (lastMult - 1) * 2); // shake scales with win size AND wolf mult
             if (amp > 2.5) FX.shake(amp, 0.28);
             // show EXACTLY what multiplied what: each win's summed wild xN pops on its tiles.
@@ -619,9 +631,9 @@
       const settled = shouldEndRound ? await STAKE.endRound({ win: winAmount, state: gameState() }) : null;
       const synced = STAKE.getBalance();
       if (synced != null) balance = synced;
-      else if (settled && settled.localFallback) balance += winAmount;
+      else if (settled && settled.localFallback) balance = r2(balance + winAmount);
     } else {
-      balance += m * bet();
+      balance = r2(balance + m * bet());
     }
     stakeLocalRound = false;
     balanceEl.textContent = fmt(balance); countWin(m);
@@ -643,7 +655,7 @@
   function pickBook(mode) { const l = BOOKS[mode] || []; if (!l.length) return demoBook(); let t = 0; for (const b of l) t += b.weight || 1; let r = Math.random() * t; for (const b of l) { r -= b.weight || 1; if (r <= 0) return b; } return l[l.length - 1]; }
   async function doSpin(mode) {
     if (busy) return; SND.unlock(); closePops();
-    const cost = (mode === "base" ? 1 : mode === "bonus" ? buyA : buyB) * bet();
+    const cost = r2((mode === "base" ? 1 : mode === "bonus" ? buyA : buyB) * bet());
     if (balance < cost) { toast(I18N.t("toast.noBalance")); autoLeft = 0; return; }
     busy = true; spinBtn.disabled = true; spinBtn.classList.add("spinning"); ctlEnable(false);
     let book = null;
@@ -653,13 +665,13 @@
         const stakeRound = await STAKE.play({ amount: cost, mode, bet: bet() });
         book = stakeRound && stakeRound.book;
         stakeLocalRound = !!(stakeRound && stakeRound.localFallback);
-        if (stakeLocalRound) balance -= cost;
+        if (stakeLocalRound) balance = r2(balance - cost);
         else {
           const synced = STAKE.getBalance();
           if (synced != null) balance = synced;
         }
       } else {
-        balance -= cost;
+        balance = r2(balance - cost);
       }
       balanceEl.textContent = fmt(balance); overlay.innerHTML = ""; setMult(1); clearCascadeMultFliers();
       book = book || pickBook(mode);
@@ -675,7 +687,9 @@
   function ctlEnable(on) { ["bet-up", "bet-down", "btn-buy"].forEach((id) => ($(id).disabled = !on)); }
   async function runAuto() {
     while (autoLeft > 0) {
-      if (busy) return; autoNEl.textContent = autoLeft; await doSpin("base"); autoLeft--;
+      while (busy) await sleepReal(120);      // wait for the running round instead of silently dying
+      if (autoLeft <= 0) break;
+      autoNEl.textContent = autoLeft; await doSpin("base"); autoLeft--;
       autoNEl.textContent = autoLeft > 0 ? autoLeft : ""; if (autoLeft <= 0) break; await sleep(280);
     }
     $("btn-auto").classList.remove("on"); autoNEl.textContent = "";
@@ -708,6 +722,7 @@
     if (bPrice) bPrice.textContent = fmt(bet() * buyB);
   }
   function openBuyConfirm(mode) {
+    if (busy) return;                          // no buy flow while a round is running
     if (mode !== "bonus" && mode !== "bonus_vip") return;
     pendingBuy = mode;
     const mult = mode === "bonus" ? buyA : buyB, ico = mode === "bonus" ? "house1" : "house2";
@@ -748,7 +763,7 @@
     document.querySelectorAll("[data-pop-close]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); closePops(); }));
     // Explicit confirmation before spending a >2x bet-mode (Stake approval #14/#23):
     // a buy can never fire from a single button -- it always shows the real cost first.
-    $("bc-confirm").onclick = () => { const m = pendingBuy; pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); if (m) doSpin(m); };
+    $("bc-confirm").onclick = () => { if (busy) return; const m = pendingBuy; pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); if (m) doSpin(m); }; // double-click safe: doSpin's busy latch + cleared pendingBuy
     $("bc-cancel").onclick = () => { pendingBuy = null; $("modal-buy-confirm").classList.add("hidden"); };
     document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => { const m = b.closest(".modal"); if (m) m.classList.add("hidden"); }));
     document.querySelectorAll(".modal").forEach((m) => (m.onclick = (e) => { if (e.target === m) m.classList.add("hidden"); }));

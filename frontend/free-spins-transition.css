@@ -2,6 +2,13 @@
 .fs-flash.simple-free-transition.hidden{display:none;}
 .fs-flash.simple-free-transition::before,.fs-flash.simple-free-transition::after{display:none;}
 .fs-simple-shell{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;}
+/* impact beats: white flash on entry + one expanding shockwave ring behind the art */
+.fs-simple-shell::before{content:"";position:absolute;inset:0;background:rgba(255,246,200,0);pointer-events:none;}
+.fs-simple-shell.is-running::before{animation:fsEntryFlash .5s ease-out both;}
+.fs-simple-shell::after{content:"";position:absolute;left:50%;top:50%;width:20vmin;height:20vmin;margin:-10vmin 0 0 -10vmin;border-radius:50%;border:3px solid rgba(255,236,120,.85);opacity:0;pointer-events:none;}
+.fs-simple-shell.is-running::after{animation:fsShockwave .85s cubic-bezier(.16,.8,.3,1) .1s both;}
+@keyframes fsEntryFlash{0%{background:rgba(255,246,200,.55);}100%{background:rgba(255,246,200,0);}}
+@keyframes fsShockwave{0%{opacity:.9;transform:scale(.4);}100%{opacity:0;transform:scale(5.2);border-width:1px;}}
 .fs-trigger-image{display:block;width:min(48vw,540px);height:auto;opacity:0;transform:translate3d(0,18px,0) scale(.78);transform-origin:center center;will-change:transform,opacity;backface-visibility:hidden;}
 .fs-simple-shell.is-running .fs-trigger-image{animation:fsImagePop 1.18s cubic-bezier(.18,1.08,.32,1) both;}
 @keyframes fsImagePop{0%{opacity:0;transform:translate3d(0,18px,0) scale(.78);}18%{opacity:1;transform:translate3d(0,-2px,0) scale(1.045);}58%{opacity:1;transform:translate3d(0,0,0) scale(1);}82%{opacity:1;transform:translate3d(0,0,0) scale(.99);}100%{opacity:0;transform:translate3d(0,-12px,0) scale(.96);}}

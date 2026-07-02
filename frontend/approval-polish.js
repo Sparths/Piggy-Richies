@@ -23,7 +23,7 @@
     if (!line || !cost) return;
 
     const source = line.textContent || "";
-    const match = source.match(/([0-9][0-9.,]*)\s*[×x]\s*([0-9][0-9.,]*)/i);
+    const match = source.match(/([0-9][0-9.,]*)(?:\s+[A-Z]{2,6})?\s*[×x]\s*([0-9][0-9.,]*)/i);
     const baseBet = match ? match[1] : firstNumber(source);
     const multiplier = match ? match[2] : "";
     const currentCost = amountWithCurrency(cost.textContent || "");

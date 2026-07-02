@@ -85,6 +85,7 @@
   border-radius:8px;
   filter:drop-shadow(0 5px 6px rgba(20,75,8,.32));
   transform:translateZ(0);
+  isolation:isolate;
 }
 
 .house-upgrade-card.is-active{
@@ -121,22 +122,26 @@
   pointer-events:none;
 }
 
+/* Crop the house artwork to the frame's inner window so it cannot bleed over the decorative border. */
 .house-upgrade-art{
   position:absolute;
-  inset:5.15% 5.15% 11.4%;
+  inset:6.4% 6.2% 14.9%;
   z-index:1;
   overflow:hidden;
-  border-radius:8px 8px 11px 11px;
+  border-radius:7px 7px 10px 10px;
   background:#194d25;
-  clip-path:inset(0 round 8px 8px 11px 11px);
+  clip-path:inset(0 round 7px 7px 10px 10px);
+  contain:paint;
 }
 
 .house-upgrade-mask{
   position:absolute;
-  inset:-3.8% -2.4% -8.5%;
+  inset:0;
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr));
   overflow:hidden;
+  border-radius:inherit;
+  clip-path:inherit;
 }
 
 .house-upgrade-part{
@@ -145,8 +150,8 @@
   min-height:0;
   background-image:var(--house-image);
   background-repeat:no-repeat;
-  background-size:512% 121%;
-  background-position:var(--part-pos) 56%;
+  background-size:500% 100%;
+  background-position:var(--part-pos) 50%;
   transition:filter .24s ease, opacity .24s ease, transform .24s ease;
 }
 

@@ -61,7 +61,6 @@ window.PIGGY_ASSETS = {
     iconButton: "assets/ui/icon-button.webp",
     stepper: "assets/ui/stepper.webp",
     phasePill: "assets/ui/phase-pill.webp",
-    loaderMark: "assets/ui/loader-piggy-mark.svg",
     freeSpinsTriggerImage: "assets/ui/freespinsasset.webp",
     freeSpinsTriggerSprite: "assets/ui/freespinsasset.webp",
     pigHostIdle: "assets/ui/piggy-host-idle.webp",
@@ -83,9 +82,5 @@ window.PIGGY_ASSETS = {
     iconTable: "assets/ui/icon-table.webp",
     iconSound: "assets/ui/icon-sound.webp",
     iconLock: "assets/ui/icon-lock.webp",
-    upgradeBtnMenu: "assets/ui/menubutton.webp",
-    upgradeBtnTurbo: "assets/ui/turbobutton.webp",
-    upgradeBtnCoin: "assets/ui/bonusbutton.webp",
-    upgradeBtnSpin: "assets/ui/spinbuttun.webp",
   },
 };

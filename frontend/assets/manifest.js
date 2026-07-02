@@ -83,9 +83,5 @@ window.PIGGY_ASSETS = {
     iconTable: "assets/ui/icon-table.webp",
     iconSound: "assets/ui/icon-sound.webp",
     iconLock: "assets/ui/icon-lock.webp",
-    upgradeBtnMenu: "assets/ui/menubutton.webp",
-    upgradeBtnTurbo: "assets/ui/turbobutton.webp",
-    upgradeBtnCoin: "assets/ui/bonusbutton.webp",
-    upgradeBtnSpin: "assets/ui/spinbuttun.webp",
   },
 };

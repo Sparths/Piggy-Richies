@@ -12,10 +12,6 @@
     // free-spin pill, where gradient-clipped text turns muddy at ~10px.
   ];
 
-  const ui = (window.PIGGY_ASSETS && window.PIGGY_ASSETS.ui) || {};
-  const sheet = ui.fantasyFontSheet || "assets/ui/fontsheetasset.webp";
-  document.documentElement.style.setProperty("--fantasy-font-sheet", `url("${sheet}")`);
-
   function render(el) {
     if (!el) return;
     const text = String(el.textContent || "").replace(/\s+/g, " ").trim();

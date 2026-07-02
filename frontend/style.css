@@ -214,13 +214,32 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   100%{opacity:1;transform:translate(12%,-5%) scale(1) rotate(4deg);}
 }
 .cascade-mult-chip{
+  --chip-rot:6deg;
   position:absolute;right:-2%;top:-8%;z-index:9;width:42%;aspect-ratio:1/1;min-width:42px;max-width:78px;
   background:var(--cascade-mult-img) center/contain no-repeat;
   pointer-events:none;
   filter:drop-shadow(0 5px 5px rgba(0,0,0,.58)) drop-shadow(0 0 9px rgba(255,225,88,.48));
-  transform:rotate(6deg);
-  animation:cascadeMultStick .34s cubic-bezier(.2,1.48,.35,1) both;
+  transform:rotate(var(--chip-rot));
 }
+/* wild already wears its own multiplier badge top-right -> stack the incoming
+   chip in the opposite corner so both values stay readable */
+.cascade-mult-chip.on-wild{--chip-rot:-6deg;right:auto;left:-2%;}
+/* pre-built landing target: measured by the flyer, invisible until touchdown */
+.cascade-mult-chip.pre{visibility:hidden;}
+.cascade-mult-chip.landed{animation:cascadeMultLand .3s ease-out;}
+@keyframes cascadeMultLand{
+  0%{transform:rotate(var(--chip-rot)) scale(1);}
+  45%{transform:rotate(var(--chip-rot)) scale(1.12);filter:brightness(1.4) drop-shadow(0 5px 5px rgba(0,0,0,.58)) drop-shadow(0 0 13px rgba(255,225,88,.75));}
+  100%{transform:rotate(var(--chip-rot)) scale(1);}
+}
+/* value without exact painted art: real number over the neutral badge frame */
+.cascade-mult-chip.text,.cascade-mult-fly.text{
+  display:flex;align-items:center;justify-content:center;
+  color:#ffe969;font-family:var(--font-title);font-weight:900;line-height:1;
+  text-shadow:0 2px 0 #743700,0 4px 5px rgba(0,0,0,.62);
+}
+.cascade-mult-chip.text{font-size:clamp(11px,1.15vw,20px);}
+.cascade-mult-fly.text{font-size:clamp(14px,1.5vw,26px);}
 .cascade-mult-fly{
   position:fixed;left:0;top:0;z-index:280;width:clamp(58px,5.8vw,98px);aspect-ratio:1/1;
   background:var(--cascade-mult-img) center/contain no-repeat;
@@ -240,10 +259,12 @@ button:disabled{cursor:not-allowed;filter:grayscale(.5) brightness(.65);opacity:
   0%{filter:brightness(1.55) drop-shadow(0 0 14px rgba(255,232,110,.75));}
   100%{filter:none;}
 }
-@keyframes cascadeMultStick{
-  0%{opacity:0;transform:scale(.38) rotate(-14deg);}
-  62%{opacity:1;transform:scale(1.13) rotate(8deg);}
-  100%{opacity:1;transform:scale(1) rotate(6deg);}
+/* the wild's own badge acknowledges an incoming multiplier: upgrade pulse */
+.cell .wmult.upgrade{animation:wmultUpgrade .52s cubic-bezier(.2,1.5,.35,1);}
+@keyframes wmultUpgrade{
+  0%{transform:translate(12%,-5%) scale(1) rotate(4deg);}
+  40%{transform:translate(12%,-5%) scale(1.32) rotate(-4deg);filter:brightness(1.55) drop-shadow(0 4px 5px rgba(0,0,0,.55)) drop-shadow(0 0 15px rgba(255,232,110,.9));}
+  100%{transform:translate(12%,-5%) scale(1) rotate(4deg);}
 }
 .cell.sticky{filter:drop-shadow(0 0 14px rgba(120,170,255,.8));}
 .cell.collected .sym{opacity:.28;filter:grayscale(.8);transition:opacity .25s,filter .25s;}

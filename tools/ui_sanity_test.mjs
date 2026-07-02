@@ -83,6 +83,14 @@ for (const group of ["symbols", "ui"]) {
   }
 }
 check("no missing symbol/ui assets", missing === 0, `${missing} missing`);
+// every multiplier value up to the top of the free-spin ladder must map to its
+// OWN painted badge -- a gap here made values render a neighbour's art (the
+// "4x shows as another multiplier" bug)
+const topMult = Math.max(...(CFG.features.freeMultLadder || [8]), ...(CFG.features.baseMultLadder || [5]));
+for (let v = 1; v <= topMult; v += 1) {
+  const url = (A.ui || {})["multX" + v];
+  check(`exact mult art for x${v}`, typeof url === "string" && existsSync(join(FE, url)), url || "not in manifest");
+}
 
 console.log("\n[4] CSS references no dead asset urls");
 const cssFiles = ["style.css", "button-ui.css", "house-ui.css", "layout-overrides.css", "animation-polish.css", "character-host.css", "fantasy-font.css", "free-spins-transition.css"];

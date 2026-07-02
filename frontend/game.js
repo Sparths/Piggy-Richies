@@ -207,7 +207,12 @@
   let lastMult = 1;
   function setMult(m, celebrate = false) {
     multBadge.textContent = "x" + m;
-    const multUrl = uiAsset("multX" + m) || uiAsset("multX1");
+    // Exact-value art only: a multiplier must never borrow another value's
+    // painted badge. Values without their own artwork show the real number
+    // as text over the neutral badge frame instead.
+    const exactArt = multArtUrl(m);
+    multTab.classList.toggle("mult-text", !exactArt);
+    const multUrl = exactArt || uiAsset("multBadge") || uiAsset("multX1");
     if (multUrl) multTab.style.setProperty("--mult-img", `url("${multUrl}")`);
     multTab.classList.toggle("active", m > 1);
     multBadge.classList.remove("bump"); multTab.classList.remove("pump"); void multBadge.offsetWidth;
@@ -224,46 +229,80 @@
   function multBadgeCenter() { const r = multTab.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
   function clearCascadeMultFliers() {
     document.querySelectorAll(".cascade-mult-fly").forEach((e) => e.remove());
+    document.querySelectorAll(".cascade-mult-chip.pre").forEach((e) => e.remove()); // chips whose flight got cancelled
   }
-  function cascadeMultUrl(m) {
-    const exact = Math.max(1, Math.round(Number(m) || 1));
-    const capped = Math.max(1, Math.min(8, exact));
-    return uiAsset("multX" + exact) || uiAsset("multX" + capped) || uiAsset("multX8") || uiAsset("multX5") || uiAsset("multX1");
+  // Exact-value art only (multX1..multX8): never substitute a neighbouring
+  // value's badge -- a 4x must show the 4x art or render as text, never as 5x.
+  function multArtUrl(m) {
+    const v = Math.round(Number(m) || 0);
+    return v >= 1 ? uiAsset("multX" + v) : "";
   }
-  function stickCascadeMultToCell(col, row, url) {
+  function styleMultVisual(el, mult) {
+    const art = multArtUrl(mult);
+    if (art) { el.style.setProperty("--cascade-mult-img", `url("${art}")`); return; }
+    el.classList.add("text");
+    el.textContent = "x" + mult;
+    const frame = uiAsset("wolfMultBadge") || uiAsset("multBadge");
+    if (frame) el.style.setProperty("--cascade-mult-img", `url("${frame}")`);
+  }
+  // Build the chip hidden in its final resting spot so the flyer can aim at the
+  // real target box. On a wild that already carries its own multiplier badge the
+  // chip takes the opposite corner -- it must never cover the wild's value.
+  function buildCascadeMultChip(col, row, mult) {
     const cell = cellAt(col, row);
-    if (!cell) return;
-    cell.querySelectorAll(".cascade-mult-chip").forEach((e) => e.remove());
+    if (!cell) return null;
     const chip = document.createElement("span");
-    chip.className = "cascade-mult-chip";
+    chip.className = "cascade-mult-chip pre";
     chip.setAttribute("aria-hidden", "true");
-    chip.style.setProperty("--cascade-mult-img", `url("${url}")`);
+    if (cell.querySelector(".wmult")) chip.classList.add("on-wild");
+    styleMultVisual(chip, mult);
     cell.appendChild(chip);
+    return chip;
+  }
+  function revealCascadeMultChip(chip) {
+    const cell = chip.parentElement;
+    if (cell) {
+      cell.querySelectorAll(".cascade-mult-chip").forEach((e) => { if (e !== chip) e.remove(); });
+      if (chip.classList.contains("on-wild")) {
+        const badge = cell.querySelector(".wmult");
+        if (badge) { badge.classList.remove("upgrade"); void badge.offsetWidth; badge.classList.add("upgrade"); }
+      }
+    }
+    chip.classList.remove("pre");
+    chip.classList.add("landed");
   }
   // The multiplier chips leave the badge on a rising arc, overshoot slightly and
   // slam onto their winning tiles (impact pulse + sparkle) -- not a straight lerp.
+  // The flight ends exactly on the pre-built chip's box (position, size and
+  // resting tilt), so the chip takes over in place with no snap.
   async function flyCascadeMultToWins(mult, keys) {
-    const url = cascadeMultUrl(mult);
     const unique = [...new Set(keys || [])];
-    if (!url || !unique.length) return;
+    if (!unique.length) return;
     clearCascadeMultFliers();
     const start = multBadgeCenter();
     const dur = Math.max(320, 560 * SPD());
     const jobs = unique.map((key, i) => new Promise((resolve) => {
       const [col, row] = key.split(",").map(Number);
-      const target = cellCenter(col, row);
+      const chip = buildCascadeMultChip(col, row, mult);
+      if (!chip) { resolve(); return; }
+      const box = chip.getBoundingClientRect();
+      const target = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
       const delay = Math.min(i * 55, 240);
       const fly = document.createElement("span");
       fly.className = "cascade-mult-fly";
       fly.setAttribute("aria-hidden", "true");
       fly.style.left = start.x + "px";
       fly.style.top = start.y + "px";
-      fly.style.setProperty("--cascade-mult-img", `url("${url}")`);
+      styleMultVisual(fly, mult);
       document.body.appendChild(fly);
+      const flyW = fly.offsetWidth || 1; // layout width: the CSS scale(.35) start pose must not skew the end scale
+      const endScale = box.width / flyW;                                  // finish at the chip's exact size...
+      const endRot = chip.classList.contains("on-wild") ? -6 : 6;        // ...and its resting tilt
       const dx = target.x - start.x, dy = target.y - start.y;
       const arc = Math.max(36, Math.min(130, Math.hypot(dx, dy) * 0.24)); // arc height scales with distance
       const land = () => {
-        stickCascadeMultToCell(col, row, url);
+        if (!chip.isConnected) { fly.remove(); resolve(); return; }      // board repainted mid-flight
+        revealCascadeMultChip(chip);
         const cell = cellAt(col, row);
         if (cell) { cell.classList.remove("mult-hit"); void cell.offsetWidth; cell.classList.add("mult-hit"); setTimeout(() => cell.classList.remove("mult-hit"), 380); }
         if (FX) FX.sparkle(target.x, target.y);
@@ -274,17 +313,17 @@
         const anim = fly.animate([
           { transform: "translate(-50%,-50%) scale(.35) rotate(-12deg)", opacity: 0, offset: 0 },
           { transform: `translate(calc(-50% + ${dx * 0.18}px),calc(-50% + ${dy * 0.18 - arc * 0.7}px)) scale(1.1) rotate(-2deg)`, opacity: 1, offset: 0.22 },
-          { transform: `translate(calc(-50% + ${dx * 0.62}px),calc(-50% + ${dy * 0.62 - arc}px)) scale(1) rotate(4deg)`, opacity: 1, offset: 0.6 },
-          { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.52) rotate(9deg)`, opacity: 1, offset: 1 },
+          { transform: `translate(calc(-50% + ${dx * 0.62}px),calc(-50% + ${dy * 0.62 - arc}px)) scale(1) rotate(2deg)`, opacity: 1, offset: 0.6 },
+          { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${endScale}) rotate(${endRot}deg)`, opacity: 1, offset: 1 },
         ], { duration: dur, delay, easing: "cubic-bezier(.32,.08,.24,1)", fill: "forwards" });
         anim.onfinish = land;
       } else {
-        // ancient-webview fallback: straight transition
+        // ancient-webview fallback: straight transition to the same final box
         fly.style.transition = `transform ${dur}ms cubic-bezier(.32,.08,.24,1) ${delay}ms,opacity .16s ease-out ${delay}ms`;
         void fly.offsetWidth;
         requestAnimationFrame(() => {
           fly.style.opacity = "1";
-          fly.style.transform = `translate(calc(-50% + ${Math.round(dx)}px),calc(-50% + ${Math.round(dy)}px)) scale(.52) rotate(9deg)`;
+          fly.style.transform = `translate(calc(-50% + ${Math.round(dx)}px),calc(-50% + ${Math.round(dy)}px)) scale(${endScale}) rotate(${endRot}deg)`;
         });
         setTimeout(land, dur + delay + 45);
       }
@@ -356,12 +395,25 @@
           ev.wilds.forEach((w) => {
             if (w.multiplier > 1) {
               const c = cellAt(w.position[0], w.position[1]);
-              const t = document.createElement("span");
-              t.className = "wmult";
-              t.textContent = "x" + w.multiplier;
-              const badge = uiAsset("wolfMultBadge");
-              if (badge) t.style.setProperty("--wolf-mult-badge", `url("${badge}")`);
-              c.appendChild(t);
+              if (!c) return;
+              const label = "x" + w.multiplier;
+              let t = c.querySelector(".wmult");
+              if (t) {
+                // Sticky wilds re-announce on every cascade: refresh the ONE
+                // badge in place -- never stack a second badge over the old
+                // one -- and pulse only when the value actually changes.
+                if (t.textContent !== label) {
+                  t.textContent = label;
+                  t.classList.remove("upgrade"); void t.offsetWidth; t.classList.add("upgrade");
+                }
+              } else {
+                t = document.createElement("span");
+                t.className = "wmult";
+                t.textContent = label;
+                const badge = uiAsset("wolfMultBadge");
+                if (badge) t.style.setProperty("--wolf-mult-badge", `url("${badge}")`);
+                c.appendChild(t);
+              }
               c.classList.add("sticky");
             }
           });

@@ -57,6 +57,20 @@
   clip:rect(0 0 0 0)!important;
   white-space:nowrap!important;
 }
+/* No exact painted art for this value: surface the true number over the
+   neutral badge frame instead of borrowing another value's x-artwork. */
+.mult-tab.mult-text #mult-badge{
+  position:absolute!important;
+  inset:0!important;
+  width:auto!important;
+  height:auto!important;
+  overflow:visible!important;
+  clip:auto!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  color:#ffe95c!important;font-family:var(--font-title)!important;
+  font-size:clamp(18px,2vw,34px)!important;font-weight:900!important;
+  text-shadow:0 3px 0 #743700,0 6px 9px rgba(0,0,0,.6)!important;
+}
 .mult-tab.pump{animation:multArtPump .48s cubic-bezier(.2,1.45,.35,1)!important;}
 @keyframes multArtPump{48%{transform:scale(1.12) rotate(-2deg);filter:brightness(1.12) drop-shadow(0 11px 13px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,226,92,.48));}}
 

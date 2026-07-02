@@ -5,7 +5,15 @@
   const GAME_NAME = "Bricked Up";
   const params = new URLSearchParams(window.location.search || "");
   const currency = String(params.get("currency") || params.get("token") || "").trim().toUpperCase();
+  const SOCIAL_CURRENCY_CODES = new Set(["GC", "SC", "COIN", "COINS", "TOKEN", "TOKENS", "FUN", "PLAY"]);
+  let socialMode = detectSocialMode();
   let updating = false;
+
+  function detectSocialMode(extra) {
+    const values = [params.get("social"), params.get("socialMode"), params.get("mode"), params.get("wallet"), params.get("jurisdiction"), params.get("environment"), extra]
+      .filter(Boolean).map((v) => String(v).toLowerCase());
+    return values.some((v) => /social|sweep|sweeps|coin/.test(v)) || SOCIAL_CURRENCY_CODES.has(currency);
+  }
 
   function amountWithCurrency(value) {
     const raw = String(value || "").trim().replace(/\s+[A-Z]{2,6}$/i, "");
@@ -29,11 +37,13 @@
     const currentCost = amountWithCurrency(cost.textContent || "");
     const name = (document.getElementById("bc-name") || {}).textContent || "";
     const mode = /vip/i.test(name) ? "BONUS VIP" : "BONUS";
+    const stakeLabel = socialMode ? "PLAY" : "BET";
+    const costLabel = socialMode ? "PLAY AMOUNT" : "REAL COST";
 
     if (baseBet && multiplier) {
-      line.textContent = `${mode} BET ${amountWithCurrency(baseBet)} × ${multiplier} = REAL COST ${currentCost}`;
+      line.textContent = `${mode} ${stakeLabel} ${amountWithCurrency(baseBet)} × ${multiplier} = ${costLabel} ${currentCost}`;
     } else if (baseBet) {
-      line.textContent = `${mode} BET ${amountWithCurrency(baseBet)} = REAL COST ${currentCost}`;
+      line.textContent = `${mode} ${stakeLabel} ${amountWithCurrency(baseBet)} = ${costLabel} ${currentCost}`;
     }
     cost.textContent = currentCost;
   }
@@ -59,6 +69,25 @@
     if (metricLine) metricLine.remove();
   }
 
+  function setText(selector, value) {
+    document.querySelectorAll(selector).forEach((el) => { if (el.textContent !== value) el.textContent = value; });
+  }
+
+  function applySocialWording() {
+    if (!socialMode) return;
+    setText("[data-i18n='hud.balance']", "COINS");
+    setText("[data-i18n='hud.bet']", "PLAY");
+    setText("[data-i18n='btn.buyShort']", "GET");
+    setText("[data-i18n='buy.title']", "Get Bonus");
+    setText("[data-i18n='buy.cost']", "Can be played for:");
+    setText("[data-i18n='buy.total']", "total play");
+    setText("[data-i18n='confirm.title']", "Get Bonus?");
+    setText("[data-i18n='confirm.realCost']", "PLAY AMOUNT");
+    setText("[data-i18n='paytable.title']", "Win Table");
+    setText("[data-act='paytable'] span[data-i18n='menu.paytable']", "Win Table");
+    document.querySelectorAll("#btn-buy").forEach((el) => { el.setAttribute("title", "Get Bonus"); });
+  }
+
   function applyApprovalPolish() {
     if (updating) return;
     updating = true;
@@ -71,6 +100,7 @@
       removeDisplayedMetrics();
       formatBuyPrices();
       formatBonusCostLine();
+      applySocialWording();
     } finally {
       updating = false;
     }
@@ -84,5 +114,8 @@
 
   const observer = new MutationObserver(applyApprovalPolish);
   observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden"] });
-  window.addEventListener("piggy:ready", applyApprovalPolish);
+  window.addEventListener("piggy:ready", (ev) => {
+    socialMode = socialMode || detectSocialMode(ev && ev.detail && JSON.stringify(ev.detail.jurisdiction || ev.detail.config || ""));
+    applyApprovalPolish();
+  });
 })();

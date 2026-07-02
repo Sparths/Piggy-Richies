@@ -61,7 +61,6 @@ window.PIGGY_ASSETS = {
     iconButton: "assets/ui/icon-button.webp",
     stepper: "assets/ui/stepper.webp",
     phasePill: "assets/ui/phase-pill.webp",
-    loaderMark: "assets/ui/loader-piggy-mark.svg",
     freeSpinsTriggerImage: "assets/ui/freespinsasset.webp",
     freeSpinsTriggerSprite: "assets/ui/freespinsasset.webp",
     pigHostIdle: "assets/ui/piggy-host-idle.webp",
